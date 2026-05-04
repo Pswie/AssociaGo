@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Spinner, Dropdown } from 'react-bootstrap';
-import { Plus, MoreVertical, Edit, Trash2, Tag } from 'lucide-react';
+import { Card, Button, Table, Badge, Spinner } from 'react-bootstrap';
+import { Plus, Edit, Trash2, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import CouponForm from './CouponForm'; // Import the form component
+import RowActions from './common/RowActions';
 
 const CouponList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -130,22 +131,21 @@ const CouponList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4">
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Dropdown align="end">
-                                                        <Dropdown.Toggle variant="light" size="sm" className="btn-icon text-muted no-caret">
-                                                            <MoreVertical size={16} />
-                                                        </Dropdown.Toggle>
-                                                        <Dropdown.Menu>
-                                                            <Dropdown.Item onClick={() => handleEdit(coupon)}>
-                                                                <Edit size={14} className="me-2" /> {t('Edit')}
-                                                            </Dropdown.Item>
-                                                            <Dropdown.Divider />
-                                                            <Dropdown.Item className="text-danger" onClick={() => handleDelete(coupon.id)}>
-                                                                <Trash2 size={14} className="me-2" /> {t('Delete')}
-                                                            </Dropdown.Item>
-                                                        </Dropdown.Menu>
-                                                    </Dropdown>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => handleEdit(coupon),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(coupon.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

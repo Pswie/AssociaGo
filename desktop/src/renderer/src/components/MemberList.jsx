@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Form, InputGroup, Badge, Spinner, Dropdown, Alert } from 'react-bootstrap';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, Mail, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Card, Button, Table, Form, InputGroup, Badge, Spinner, Alert } from 'react-bootstrap';
+import { Search, Plus, Edit, Trash2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import CsvImporter from './CsvImporter';
+import { MEMBER_ROLES } from './MemberForm';
+import RowActions from './common/RowActions';
+
+const ROLE_LABEL_BY_VALUE = MEMBER_ROLES.reduce((acc, r) => {
+    acc[r.value] = r.label;
+    return acc;
+}, {});
+
+function formatRoles(roleCsv) {
+    if (!roleCsv) return '-';
+    return String(roleCsv)
+        .split(',')
+        .map((r) => r.trim())
+        .filter(Boolean)
+        .map((code) => ROLE_LABEL_BY_VALUE[code] || code)
+        .join(', ');
+}
 
 const MemberList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -195,27 +212,30 @@ const MemberList = ({ associationId, shell }) => {
                                                     {member.expirationDate ? new Date(member.expirationDate).toLocaleDateString() : '-'}
                                                 </div>
                                             </td>
-                                            <td>{member.role}</td>
+                                            <td>{formatRoles(member.role)}</td>
                                             <td className="text-end pe-4">
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Dropdown align="end">
-                                                        <Dropdown.Toggle variant="light" size="sm" className="btn-icon text-muted no-caret">
-                                                            <MoreVertical size={16} />
-                                                        </Dropdown.Toggle>
-                                                        <Dropdown.Menu>
-                                                            <Dropdown.Item onClick={() => handleRenew(member.id)}>
-                                                                <RefreshCw size={14} className="me-2" /> {t('Renew Membership')}
-                                                            </Dropdown.Item>
-                                                            <Dropdown.Item onClick={() => shell.openModal('member-form', { associationId, memberId: member.id, onSuccess: fetchMembers })}>
-                                                                <Edit size={14} className="me-2" /> {t('Edit')}
-                                                            </Dropdown.Item>
-                                                            <Dropdown.Divider />
-                                                            <Dropdown.Item className="text-danger" onClick={() => handleDelete(member.id)}>
-                                                                <Trash2 size={14} className="me-2" /> {t('Delete')}
-                                                            </Dropdown.Item>
-                                                        </Dropdown.Menu>
-                                                    </Dropdown>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'renew',
+                                                        icon: <RefreshCw size={16} />,
+                                                        label: t('Renew Membership'),
+                                                        textClass: 'text-success',
+                                                        onClick: () => handleRenew(member.id),
+                                                    },
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('member-form', { associationId, memberId: member.id, onSuccess: fetchMembers }),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(member.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

@@ -4,6 +4,7 @@ import { Search, Plus, Edit, Trash2, FileText, Users, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import AssemblyDetail from './AssemblyDetail';
+import RowActions from './common/RowActions';
 
 const AssemblyList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -138,17 +139,28 @@ const AssemblyList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="light" size="sm" className="btn-icon text-primary" onClick={() => setSelectedAssemblyId(assembly.id)}>
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => shell.openModal('assembly-form', { associationId, assemblyId: assembly.id, onSuccess: fetchAssemblies })}>
-                                                        <Edit size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-danger" onClick={() => handleDelete(assembly.id)}>
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'view',
+                                                        icon: <Eye size={16} />,
+                                                        label: t('View Details'),
+                                                        textClass: 'text-primary',
+                                                        onClick: () => setSelectedAssemblyId(assembly.id),
+                                                    },
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('assembly-form', { associationId, assemblyId: assembly.id, onSuccess: fetchAssemblies }),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(assembly.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

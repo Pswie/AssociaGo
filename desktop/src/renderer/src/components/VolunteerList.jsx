@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Form, InputGroup, Badge, Spinner } from 'react-bootstrap';
-import { Search, Plus, Filter, MoreVertical, Edit, Trash2, UserCheck, Clock } from 'lucide-react';
+import { Search, Plus, Filter, Edit, Trash2, UserCheck, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import RowActions from './common/RowActions';
 
 const VolunteerList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -115,14 +116,22 @@ const VolunteerList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4">
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => shell.openModal('volunteer-form', { associationId, volunteerId: volunteer.id, onSuccess: fetchVolunteers })}>
-                                                        <Edit size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-danger">
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('volunteer-form', { associationId, volunteerId: volunteer.id, onSuccess: fetchVolunteers }),
+                                                    },
+                                                    {
+                                                        // Mantenuto come da originale: handler delete
+                                                        // non implementato (placeholder pre-esistente).
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

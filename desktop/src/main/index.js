@@ -249,14 +249,26 @@ function sendSplashStatus(message) {
     }
 }
 
-function waitForBackendPort(retries = 20, delay = 1000) {
+// 120 secondi: il backend Spring Boot impiega fino a ~50s al primo avvio su
+// Windows con Defender attivo (scansione delle classi estratte dal fat-JAR e
+// dei file creati da Flyway/SQLite). Su Linux/Mac veloci esce in ~10s.
+function waitForBackendPort(retries = 120, delay = 1000) {
     return new Promise((resolve) => {
         const portFile = getBackendPortFile();
         let attempts = 0;
 
         const check = () => {
             attempts++;
-            sendSplashStatus(`Starting backend... (${attempts}/${retries})`);
+            const elapsed = attempts;
+            sendSplashStatus(`Avvio backend... (${elapsed}s, può richiedere fino a 60s al primo avvio)`);
+
+            // Early-abort: se il processo Java è già morto, inutile aspettare.
+            if (!isDev && backendProcess === null) {
+                console.error("[Main] Backend process exited before writing port file. Aborting wait.");
+                resolve(null);
+                return;
+            }
+
             try {
                 if (fs.existsSync(portFile)) {
                     const content = fs.readFileSync(portFile, "utf-8");
@@ -272,7 +284,7 @@ function waitForBackendPort(retries = 20, delay = 1000) {
             }
 
             if (attempts >= retries) {
-                console.error("[Main] Timeout waiting for backend port.");
+                console.error(`[Main] Timeout waiting for backend port after ${retries}s.`);
                 resolve(null);
             } else {
                 setTimeout(check, delay);
@@ -283,13 +295,20 @@ function waitForBackendPort(retries = 20, delay = 1000) {
     });
 }
 
-function waitForBackendReady(port, retries = 30, delay = 1000) {
+function waitForBackendReady(port, retries = 60, delay = 1000) {
     return new Promise((resolve) => {
         let attempts = 0;
 
         const check = () => {
             attempts++;
-            sendSplashStatus(`Waiting for backend health check... (${attempts}/${retries})`);
+            sendSplashStatus(`Health check backend... (${attempts}s)`);
+
+            // Early-abort: se il processo Java è già morto, inutile aspettare.
+            if (!isDev && backendProcess === null) {
+                console.error("[Main] Backend process exited before health check passed. Aborting wait.");
+                resolve(false);
+                return;
+            }
 
             const req = http.get(`http://127.0.0.1:${port}/actuator/health`, { timeout: 2000 }, (res) => {
                 let body = '';
@@ -297,7 +316,7 @@ function waitForBackendReady(port, retries = 30, delay = 1000) {
                 res.on('end', () => {
                     if (res.statusCode === 200) {
                         console.log(`[Main] Backend health OK on port ${port} (attempt ${attempts})`);
-                        sendSplashStatus('Backend ready. Loading UI...');
+                        sendSplashStatus('Backend pronto. Caricamento UI...');
                         resolve(true);
                     } else {
                         retry();
@@ -310,7 +329,7 @@ function waitForBackendReady(port, retries = 30, delay = 1000) {
 
             function retry() {
                 if (attempts >= retries) {
-                    console.error("[Main] Timeout waiting for backend health.");
+                    console.error(`[Main] Timeout waiting for backend health after ${retries}s.`);
                     resolve(false);
                 } else {
                     setTimeout(check, delay);
@@ -543,29 +562,33 @@ async function startBackend() {
     });
 
     // Step 1: Wait for port file
-    sendSplashStatus('Waiting for backend port...');
+    sendSplashStatus('Avvio backend...');
     const p = await waitForBackendPort();
     if (!p) {
         console.error("[Main] Failed to retrieve backend port after spawn — backend never wrote connection.json.");
+        if (backendProcess) { try { backendProcess.kill(); } catch (_) {} }
         dialog.showErrorBox(
             "AssociaGo - Backend non risponde",
-            `Il backend Java non si è avviato correttamente.\n\nVerifica i log dettagliati:\n${LOG_FILE_PATH || LOG_DIR}\n\nIncolla il contenuto del file più recente per ottenere supporto.`
+            `Il backend Java non si è avviato entro il timeout.\n\nVerifica i log dettagliati:\n${LOG_FILE_PATH || LOG_DIR}\n\nIncolla il contenuto del file più recente per ottenere supporto.`
         );
-        app.quit();
+        // app.exit() è sincrono e termina subito: evita che createWindow venga
+        // comunque chiamato dopo il return.
+        app.exit(1);
         return;
     }
     backendPort = p;
 
     // Step 2: Health check — wait for Spring Boot to be fully ready
-    sendSplashStatus('Running database migrations...');
+    sendSplashStatus('Verifica backend...');
     const ready = await waitForBackendReady(backendPort);
     if (!ready) {
         console.error("[Main] Backend never became healthy.");
+        if (backendProcess) { try { backendProcess.kill(); } catch (_) {} }
         dialog.showErrorBox(
             "AssociaGo - Backend non sano",
             `Il backend è partito ma /actuator/health non risponde 200.\n\nVerifica i log:\n${LOG_FILE_PATH || LOG_DIR}`
         );
-        app.quit();
+        app.exit(1);
     }
 }
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import EventDetail from './EventDetail';
 import CouponList from './CouponList';
+import RowActions from './common/RowActions';
 
 const EventList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -167,17 +168,28 @@ const EventList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="light" size="sm" className="btn-icon text-primary" onClick={() => setSelectedEventId(event.id)}>
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => shell.openModal('event-form', { associationId, eventId: event.id, onSuccess: fetchEvents })}>
-                                                        <Edit size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-danger" onClick={() => handleDelete(event.id)}>
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'view',
+                                                        icon: <Eye size={16} />,
+                                                        label: t('View Details'),
+                                                        textClass: 'text-primary',
+                                                        onClick: () => setSelectedEventId(event.id),
+                                                    },
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('event-form', { associationId, eventId: event.id, onSuccess: fetchEvents }),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(event.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

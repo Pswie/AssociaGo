@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Form, InputGroup, Badge, Spinner, Nav } from 'react-bootstrap';
 import { Search, Plus, Edit, Trash2, Calendar, Users, Eye } from 'lucide-react';
+import RowActions from './common/RowActions';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import ActivityDetail from './ActivityDetail';
@@ -167,17 +168,28 @@ const ActivityList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="light" size="sm" className="btn-icon text-primary" onClick={() => setSelectedActivityId(activity.id)}>
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => shell.openModal('activity-form', { associationId, activityId: activity.id, onSuccess: fetchActivities })}>
-                                                        <Edit size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-danger" onClick={() => handleDelete(activity.id)}>
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'view',
+                                                        icon: <Eye size={16} />,
+                                                        label: t('View Details'),
+                                                        textClass: 'text-primary',
+                                                        onClick: () => setSelectedActivityId(activity.id),
+                                                    },
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('activity-form', { associationId, activityId: activity.id, onSuccess: fetchActivities }),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(activity.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

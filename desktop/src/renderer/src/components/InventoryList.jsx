@@ -4,6 +4,7 @@ import { Search, Plus, Edit, Trash2, Package, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import InventoryDetail from './InventoryDetail';
+import RowActions from './common/RowActions';
 
 const InventoryList = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -133,17 +134,28 @@ const InventoryList = ({ associationId, shell }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4" onClick={(e) => e.stopPropagation()}>
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="light" size="sm" className="btn-icon text-primary" onClick={() => setSelectedItemId(item.id)}>
-                                                        <Eye size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => shell.openModal('inventory-form', { associationId, itemId: item.id, onSuccess: fetchInventory })}>
-                                                        <Edit size={16} />
-                                                    </Button>
-                                                    <Button variant="light" size="sm" className="btn-icon text-danger" onClick={() => handleDelete(item.id)}>
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
+                                                <RowActions actions={[
+                                                    {
+                                                        key: 'view',
+                                                        icon: <Eye size={16} />,
+                                                        label: t('View Details'),
+                                                        textClass: 'text-primary',
+                                                        onClick: () => setSelectedItemId(item.id),
+                                                    },
+                                                    {
+                                                        key: 'edit',
+                                                        icon: <Edit size={16} />,
+                                                        label: t('Edit'),
+                                                        onClick: () => shell.openModal('inventory-form', { associationId, itemId: item.id, onSuccess: fetchInventory }),
+                                                    },
+                                                    {
+                                                        key: 'delete',
+                                                        icon: <Trash2 size={16} />,
+                                                        label: t('Delete'),
+                                                        textClass: 'text-danger',
+                                                        onClick: () => handleDelete(item.id),
+                                                    },
+                                                ]} />
                                             </td>
                                         </tr>
                                     ))

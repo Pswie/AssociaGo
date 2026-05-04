@@ -6,6 +6,7 @@ import { Save, Database, Download, Globe, Moon, Sun, Building, Upload, Edit, X, 
 import PaymentMethodForm from './PaymentMethodForm';
 import AssociationRegistryPanel from './AssociationRegistryPanel';
 import SignaturePanel from './SignaturePanel';
+import RowActions from './common/RowActions';
 
 const SettingsDashboard = ({ shell }) => {
   const { t, i18n } = useTranslation();
@@ -556,14 +557,22 @@ const SettingsDashboard = ({ shell }) => {
                                 <Badge bg={method.active ? 'success' : 'secondary'}>
                                     {method.active ? t('Active') : t('Inactive')}
                                 </Badge>
-                                <div className="d-flex gap-2">
-                                    <Button variant="light" size="sm" className="btn-icon text-muted" onClick={() => { setSelectedMethod(method); setShowPaymentForm(true); }}>
-                                        <Edit size={16} />
-                                    </Button>
-                                    <Button variant="light" size="sm" className="btn-icon text-danger" onClick={() => handleDeleteMethod(method.id)}>
-                                        <Trash2 size={16} />
-                                    </Button>
-                                </div>
+                                <RowActions actions={[
+                                    {
+                                        key: 'edit',
+                                        icon: <Edit size={16} />,
+                                        label: t('Edit'),
+                                        onClick: () => { setSelectedMethod(method); setShowPaymentForm(true); },
+                                    },
+                                    {
+                                        key: 'delete',
+                                        icon: <Trash2 size={16} />,
+                                        label: t('Delete'),
+                                        textClass: 'text-danger',
+                                        onClick: () => handleDeleteMethod(method.id),
+                                    },
+                                ]} />
+
                             </div>
                         </div>
                     ))

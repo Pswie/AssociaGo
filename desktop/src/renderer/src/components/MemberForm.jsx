@@ -4,9 +4,28 @@ import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import { Calculator, FileHeart, Upload } from 'lucide-react';
 
+// Tipologie/cariche selezionabili per il socio. Sono tutte memorizzate
+// come CSV nel campo UserAssociation.role (es. "FOUNDER,TREASURER").
+export const MEMBER_ROLES = [
+  { value: 'MEMBER',         label: 'Socio Ordinario' },
+  { value: 'FOUNDER',        label: 'Socio Fondatore' },
+  { value: 'HONORARY',       label: 'Socio Onorario' },
+  { value: 'PRESIDENT',      label: 'Presidente' },
+  { value: 'VICE_PRESIDENT', label: 'Vice Presidente' },
+  { value: 'SECRETARY',      label: 'Segretario' },
+  { value: 'TREASURER',      label: 'Tesoriere' },
+  { value: 'COUNCILLOR',     label: 'Consigliere' },
+];
+
 const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => {
   const isASD = associationType === 'ASD';
-  const { register, handleSubmit, setValue, getValues, watch, formState: { errors, isSubmitting } } = useForm();
+  const today = new Date().toISOString().split('T')[0];
+  const { register, handleSubmit, setValue, getValues, watch, formState: { errors, isSubmitting } } = useForm({
+    defaultValues: {
+      registrationDate: today,
+      roles: ['MEMBER'],
+    },
+  });
   const [calculatingCF, setCalculatingCF] = useState(false);
 
   // Watch for payment checkbox to conditionally show payment fields
@@ -14,6 +33,15 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
   const onSubmit = async (data) => {
     try {
+      // Normalizza le tipologie selezionate in CSV. Se nessuna è spuntata
+      // (caso impossibile via UI ma difensivo), usa MEMBER come default.
+      const rolesArray = Array.isArray(data.roles) ? data.roles : (data.roles ? [data.roles] : []);
+      const rolesCsv = rolesArray.length > 0 ? rolesArray.join(',') : 'MEMBER';
+
+      // La data di registrazione vale come arrivo del pagamento e come
+      // data di iscrizione (joinDate sulla membership).
+      const registrationDate = data.registrationDate || today;
+
       // Step 1: Create User (handle duplicate taxCode by finding existing)
       let user;
       try {
@@ -41,9 +69,9 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
       await associago.memberships.create({
         user: { id: user.id },
         association: { id: associationId },
-        role: data.role || 'MEMBER',
+        role: rolesCsv,
         status: 'ACTIVE',
-        joinDate: new Date().toISOString().split('T')[0],
+        joinDate: registrationDate,
         membershipCardNumber: data.cardNumber
       });
 
@@ -70,7 +98,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
         try {
           await associago.finance.createTransaction({
             associationId: associationId,
-            date: new Date().toISOString().split('T')[0],
+            date: registrationDate,
             amount: data.paymentAmount,
             type: 'INCOME',
             description: `Quota associativa - ${data.firstName} ${data.lastName}`,
@@ -204,17 +232,42 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
             <input {...register('cardNumber')} className="form-control" />
         </div>
         <div className="col-md-6">
-            <label className="form-label">Tipologia Membro</label>
-            <select {...register('role')} className="form-select" defaultValue="MEMBER">
-                <option value="MEMBER">Socio Ordinario</option>
-                <option value="FOUNDER">Socio Fondatore</option>
-                <option value="PRESIDENT">Presidente</option>
-                <option value="VICE_PRESIDENT">Vice Presidente</option>
-                <option value="SECRETARY">Segretario</option>
-                <option value="TREASURER">Tesoriere</option>
-                <option value="COUNCILLOR">Consigliere</option>
-                <option value="HONORARY">Socio Onorario</option>
-            </select>
+            <label className="form-label">
+              Data di Registrazione
+              <span className="text-muted small ms-1">(arrivo del pagamento)</span>
+            </label>
+            <input
+              type="date"
+              {...register('registrationDate', { required: 'Data obbligatoria' })}
+              className="form-control"
+              max={today}
+            />
+            {errors.registrationDate && <span className="text-danger small">{errors.registrationDate.message}</span>}
+        </div>
+      </div>
+
+      <div className="row g-3 mt-1">
+        <div className="col-12">
+          <label className="form-label">
+            Tipologia / Cariche
+            <span className="text-muted small ms-1">(seleziona una o più voci)</span>
+          </label>
+          <div className="d-flex flex-wrap gap-3 p-2 border rounded">
+            {MEMBER_ROLES.map((r) => (
+              <div className="form-check" key={r.value}>
+                <input
+                  type="checkbox"
+                  id={`role-${r.value}`}
+                  value={r.value}
+                  className="form-check-input"
+                  {...register('roles')}
+                />
+                <label className="form-check-label" htmlFor={`role-${r.value}`}>
+                  {r.label}
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
