@@ -121,6 +121,7 @@
       "gatekeeperAssess": false
     },
     "dmg": {
+      "background": "build/background.png",
       "contents": [
         {
           "x": 130,

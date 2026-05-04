@@ -17,7 +17,8 @@ const missing = requiredFiles.filter((relativePath) => {
 const iconPairs = [
   ['build/icon.png', 'resources/icon.png'],
   ['build/icon.ico', 'resources/icon.ico'],
-  ['build/icon.icns', 'resources/icon.icns']
+  ['build/icon.icns', 'resources/icon.icns'],
+  ['build/background.png', 'resources/background.png']
 ]
 
 for (const [preferredPath, fallbackPath] of iconPairs) {

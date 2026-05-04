@@ -34,15 +34,20 @@ function copyIcons() {
         fs.mkdirSync(buildDir, { recursive: true });
     }
 
-    const icons = ['icon.ico', 'icon.png', 'icon.icns'];
-    for (const icon of icons) {
-        const src = path.join(resourcesDir, icon);
-        const dest = path.join(buildDir, icon);
+    // background.png è il background del DMG macOS. Va piazzato esplicitamente in
+    // build/ così dmg-builder non cade sul TIFF default vendored: su macos-latest
+    // di GitHub Actions (Apple Silicon, Python 3 di sistema) la chiamata
+    // mac_alias.osx.statfs sul background di default fallisce con FileNotFoundError
+    // a `.background/background.tiff` durante la creazione dell'alias.
+    const buildAssets = ['icon.ico', 'icon.png', 'icon.icns', 'background.png'];
+    for (const asset of buildAssets) {
+        const src = path.join(resourcesDir, asset);
+        const dest = path.join(buildDir, asset);
         if (fs.existsSync(src)) {
             fs.copyFileSync(src, dest);
-            console.log(`  Copied ${icon}`);
+            console.log(`  Copied ${asset}`);
         } else {
-            console.log(`  Warning: Icon ${src} not found`);
+            console.log(`  Warning: ${src} not found`);
         }
     }
 }
