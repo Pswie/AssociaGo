@@ -187,6 +187,14 @@ spring:
 server:
   port: 0
 
+# Disable diskspace health indicator: in AppImage/installed builds the backend's
+# working directory is a read-only mount that reports 0 bytes free, which would
+# mark /actuator/health as DOWN (HTTP 503) and block Electron startup.
+management:
+  health:
+    diskspace:
+      enabled: false
+
 associago:
   mode: desktop
   cors:
