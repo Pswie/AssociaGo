@@ -20,6 +20,53 @@ const APP_USER_MODEL_ID = "com.lorenzodm.associago.desktop";
 
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
+// =========================================================
+// File logging — su Windows il binario Electron gira con
+// subsystem "windows", quindi console.log non ha terminale
+// quando l'app è lanciata da shortcut. Senza file log non
+// possiamo diagnosticare nulla.
+// =========================================================
+const LOG_DIR = path.join(os.homedir(), ".associago", "logs");
+let LOG_FILE_PATH = null;
+
+(function setupFileLogging() {
+    try {
+        if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+        const stamp = new Date().toISOString().slice(0, 10);
+        LOG_FILE_PATH = path.join(LOG_DIR, `electron-main-${stamp}.log`);
+        const stream = fs.createWriteStream(LOG_FILE_PATH, { flags: "a" });
+
+        const stringify = (a) => {
+            if (typeof a === "string") return a;
+            if (a instanceof Error) return a.stack || a.message;
+            try { return JSON.stringify(a); } catch (_) { return String(a); }
+        };
+        const fmt = (level, args) =>
+            `[${new Date().toISOString()}] [${level}] ${args.map(stringify).join(" ")}\n`;
+        const wrap = (level, original) => (...args) => {
+            try { stream.write(fmt(level, args)); } catch (_) {}
+            try { original.apply(console, args); } catch (_) {}
+        };
+        console.log = wrap("INFO", console.log);
+        console.warn = wrap("WARN", console.warn);
+        console.error = wrap("ERROR", console.error);
+
+        process.on("uncaughtException", (err) => {
+            try { stream.write(fmt("FATAL", ["uncaughtException:", err && (err.stack || err.message)])); } catch (_) {}
+        });
+        process.on("unhandledRejection", (reason) => {
+            try { stream.write(fmt("FATAL", ["unhandledRejection:", reason && (reason.stack || reason.message || String(reason))])); } catch (_) {}
+        });
+
+        console.log(`[Main] File logging enabled at: ${LOG_FILE_PATH}`);
+        console.log(`[Main] Platform: ${process.platform} ${process.arch}, Node ${process.versions.node}, Electron ${process.versions.electron}`);
+        console.log(`[Main] resourcesPath: ${process.resourcesPath}`);
+        console.log(`[Main] homedir: ${os.homedir()}`);
+    } catch (e) {
+        try { console.error("[Main] Failed to setup file logging:", e.message); } catch (_) {}
+    }
+})();
+
 // Se ti ricompaiono problemi GPU/ANGLE su Linux, avvia con:
 // ASSOCIAGO_DISABLE_GPU=1 npm run dev
 if (process.env.ASSOCIAGO_DISABLE_GPU === "1") {
@@ -284,6 +331,27 @@ function isExecutable(binPath) {
     }
 }
 
+function dumpDir(label, dir, depth = 1) {
+    try {
+        if (!fs.existsSync(dir)) {
+            console.log(`[Main] ${label}: ${dir} (does not exist)`);
+            return;
+        }
+        const entries = fs.readdirSync(dir);
+        console.log(`[Main] ${label}: ${dir} (${entries.length} entries) -> ${entries.slice(0, 30).join(", ")}${entries.length > 30 ? " ..." : ""}`);
+        if (depth > 0) {
+            for (const e of entries.slice(0, 10)) {
+                const p = path.join(dir, e);
+                try {
+                    if (fs.statSync(p).isDirectory()) dumpDir(`${label}/${e}`, p, depth - 1);
+                } catch (_) {}
+            }
+        }
+    } catch (e) {
+        console.warn(`[Main] dumpDir(${label}) failed: ${e.message}`);
+    }
+}
+
 function getJavaExecutable() {
     // In dev mode, assume 'java' is in PATH
     if (isDev) return "java";
@@ -294,7 +362,14 @@ function getJavaExecutable() {
     const javaRelative = process.platform === "win32" ? "bin/java.exe" : "bin/java";
     const bundledJava = path.join(jreDir, javaRelative);
 
+    console.log(`[Main] Java probe: looking for bundled JRE at ${bundledJava}`);
+    dumpDir("jreDir", jreDir, 1);
+
     if (fs.existsSync(bundledJava)) {
+        try {
+            const st = fs.statSync(bundledJava);
+            console.log(`[Main] Bundled java: size=${st.size}, mode=${(st.mode & 0o777).toString(8)}`);
+        } catch (_) {}
         // Make sure the file is executable on POSIX (extraResources should preserve
         // permissions, but some packagers strip them).
         if (process.platform !== "win32") {
@@ -302,6 +377,15 @@ function getJavaExecutable() {
         }
         console.log("[Main] Using bundled JRE:", bundledJava);
         return bundledJava;
+    }
+
+    // Cross-build trap: on Windows, if jre/bin/java exists (no .exe), it means
+    // the JRE was built on Linux/macOS and shipped to Windows by mistake.
+    if (process.platform === "win32") {
+        const wrongPlatform = path.join(jreDir, "bin", "java");
+        if (fs.existsSync(wrongPlatform)) {
+            console.error(`[Main] CROSS-BUILD ERROR: bundled JRE contains POSIX 'java' (no .exe) — wrong platform image. Expected ${bundledJava}.`);
+        }
     }
 
     console.warn("[Main] Bundled JRE not found at", bundledJava);
@@ -377,7 +461,7 @@ async function startBackend() {
             "AssociaGo non riesce a trovare una runtime Java.\n\n" +
             "Il pacchetto avrebbe dovuto includere una JRE integrata. " +
             "Come fallback prova a installare Java 21 (https://adoptium.net) " +
-            "e a riavviare l'applicazione.";
+            "e a riavviare l'applicazione.\n\nLog: " + (LOG_FILE_PATH || LOG_DIR);
         console.error("[Main] " + message);
         dialog.showErrorBox("AssociaGo - Java non trovato", message);
         app.quit();
@@ -387,11 +471,21 @@ async function startBackend() {
     if (!jarPath) {
         const message =
             "AssociaGo non riesce a trovare il backend (file .jar) all'interno del pacchetto.\n\n" +
-            "Il pacchetto risulta incompleto. Reinstalla l'applicazione.";
+            "Il pacchetto risulta incompleto. Reinstalla l'applicazione.\n\nLog: " + (LOG_FILE_PATH || LOG_DIR);
         console.error("[Main] Cannot start backend: JAR not found.");
         dialog.showErrorBox("AssociaGo - Backend mancante", message);
         app.quit();
         return;
+    }
+
+    // Diagnostic: capture java -version output (Java prints version on stderr)
+    try {
+        const v = spawnSync(javaExec, ["-version"], { encoding: "utf-8" });
+        console.log(`[Main] java -version exit=${v.status}, error=${v.error ? v.error.message : "none"}`);
+        if (v.stdout) console.log(`[Main] java -version stdout: ${v.stdout.trim()}`);
+        if (v.stderr) console.log(`[Main] java -version stderr: ${v.stderr.trim()}`);
+    } catch (e) {
+        console.error("[Main] java -version probe failed:", e.message);
     }
 
     console.log(`[Main] Spawning backend: ${javaExec} -jar ${jarPath}`);
@@ -411,14 +505,28 @@ async function startBackend() {
         try { fs.unlinkSync(portFile); } catch(e) {}
     }
 
-    backendProcess = spawn(javaExec, [
-        `-Dassociago.data.path=${dataPath}`,
-        "-jar",
-        jarPath
-    ], {
-        cwd: path.dirname(jarPath),
-        detached: false,
-        stdio: 'pipe'
+    try {
+        backendProcess = spawn(javaExec, [
+            `-Dassociago.data.path=${dataPath}`,
+            "-jar",
+            jarPath
+        ], {
+            cwd: path.dirname(jarPath),
+            detached: false,
+            stdio: 'pipe'
+        });
+    } catch (e) {
+        console.error(`[Main] spawn() threw: ${e.code || ""} ${e.message}`);
+        dialog.showErrorBox(
+            "AssociaGo - Avvio backend fallito",
+            `Impossibile avviare il processo Java.\n\nDettaglio: ${e.message}\n\nLog: ${LOG_FILE_PATH || LOG_DIR}`
+        );
+        app.quit();
+        return;
+    }
+
+    backendProcess.on('error', (err) => {
+        console.error(`[Main] Backend spawn error: code=${err.code || ""} msg=${err.message}`);
     });
 
     backendProcess.stdout.on('data', (data) => {
@@ -437,12 +545,16 @@ async function startBackend() {
     // Step 1: Wait for port file
     sendSplashStatus('Waiting for backend port...');
     const p = await waitForBackendPort();
-    if (p) {
-        backendPort = p;
-    } else {
-        console.warn("[Main] Failed to retrieve backend port after spawn.");
+    if (!p) {
+        console.error("[Main] Failed to retrieve backend port after spawn — backend never wrote connection.json.");
+        dialog.showErrorBox(
+            "AssociaGo - Backend non risponde",
+            `Il backend Java non si è avviato correttamente.\n\nVerifica i log dettagliati:\n${LOG_FILE_PATH || LOG_DIR}\n\nIncolla il contenuto del file più recente per ottenere supporto.`
+        );
+        app.quit();
         return;
     }
+    backendPort = p;
 
     // Step 2: Health check — wait for Spring Boot to be fully ready
     sendSplashStatus('Running database migrations...');
@@ -450,8 +562,8 @@ async function startBackend() {
     if (!ready) {
         console.error("[Main] Backend never became healthy.");
         dialog.showErrorBox(
-            "Startup Error",
-            "AssociaGo backend failed to start. Check logs for details."
+            "AssociaGo - Backend non sano",
+            `Il backend è partito ma /actuator/health non risponde 200.\n\nVerifica i log:\n${LOG_FILE_PATH || LOG_DIR}`
         );
         app.quit();
     }
@@ -728,6 +840,17 @@ ipcMain.handle("app:getPath", (_, name) => {
 });
 
 ipcMain.handle("data:getLocalDataPath", () => getAssociaGoHome());
+
+ipcMain.handle("app:getLogPath", () => LOG_FILE_PATH || LOG_DIR);
+ipcMain.handle("app:openLogsFolder", async () => {
+    try {
+        if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
+        return await shell.openPath(LOG_DIR);
+    } catch (e) {
+        console.error("[Main] openLogsFolder failed:", e.message);
+        return e.message;
+    }
+});
 
 ipcMain.handle("shell:openPath", async (_, filePath) => shell.openPath(filePath));
 ipcMain.handle("shell:showItemInFolder", (_, filePath) => shell.showItemInFolder(filePath));
