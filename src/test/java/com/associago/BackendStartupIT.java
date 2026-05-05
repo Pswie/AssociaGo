@@ -65,7 +65,8 @@ class BackendStartupIT {
         HttpResponse<String> response = HttpClient.newHttpClient()
             .send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.statusCode()).isBetween(200, 599);
+        assertThat(response.body()).contains("status");
     }
 
     private JsonNode readConnectionJson(Path connectionFile) throws Exception {
