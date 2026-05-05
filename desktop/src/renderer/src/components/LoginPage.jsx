@@ -216,27 +216,33 @@ export default function LoginPage({ onLogin }) {
 
     return (
         <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' }}>
-            <div className="card border-0 shadow-lg" style={{ width: '480px', borderRadius: '20px', overflow: 'hidden' }}>
+            <div className="card border-0 shadow-lg login-card" style={{ width: 'min(620px, 92vw)', borderRadius: '20px', overflow: 'hidden' }}>
 
-                <div className="bg-primary p-4 text-center text-white position-relative">
-                    <div className="position-absolute top-0 end-0 p-3">
-                         <select className="form-select form-select-sm bg-white bg-opacity-25 border-0 text-white" style={{ width: 'auto' }}
-                            value={i18n.language} onChange={(e) => { i18n.changeLanguage(e.target.value); associago.setPreferences({ language: e.target.value }); }}>
-                            <option value="it" className="text-dark">IT</option>
-                            <option value="en" className="text-dark">EN</option>
-                            <option value="es" className="text-dark">ES</option>
-                            <option value="de" className="text-dark">DE</option>
-                            <option value="fr" className="text-dark">FR</option>
+                <div className="bg-primary px-4 pt-4 pb-4 text-center text-white position-relative">
+                    <div className="position-absolute top-0 end-0 p-3 d-flex align-items-center gap-2 lang-switch">
+                        <Globe size={16} className="text-white opacity-75" />
+                        <select
+                            className="form-select form-select-sm fw-semibold text-primary shadow-sm border-0"
+                            style={{ width: 'auto', backgroundColor: '#fff' }}
+                            value={i18n.language}
+                            onChange={(e) => { i18n.changeLanguage(e.target.value); associago.setPreferences({ language: e.target.value }); }}
+                            aria-label={t("Language")}
+                        >
+                            <option value="it">IT</option>
+                            <option value="en">EN</option>
+                            <option value="es">ES</option>
+                            <option value="de">DE</option>
+                            <option value="fr">FR</option>
                         </select>
                     </div>
                     <div className="mb-2">
-                        <img src={icon6} alt="Icon" style={{ width: 125, height: 125 }} />
+                        <img src={icon6} alt="Icon" style={{ width: 110, height: 110 }} />
                     </div>
                     <h3 className="fw-bold mb-0">AssociaGo</h3>
-                    <h4 className="opacity-75">{t("Desktop Edition")}</h4>
+                    <h4 className="opacity-75 mb-0">{t("Desktop Edition")}</h4>
                 </div>
 
-                <div className="card-body p-4">
+                <div className="card-body p-4 p-md-5">
                     {error && <div className="alert alert-danger py-2 small d-flex align-items-center"><i className="bi bi-exclamation-circle me-2"></i> {error}</div>}
 
                     {view === "list" && (
@@ -370,7 +376,15 @@ export default function LoginPage({ onLogin }) {
                     )}
                 </div>
             </div>
-            <style>{`.hover-shadow:hover { background-color: #f8f9fa !important; border-color: #0d6efd !important; transform: translateY(-1px); } .hover-opacity-100:hover { opacity: 1 !important; }`}</style>
+            <style>{`
+                .hover-shadow:hover { background-color: #f8f9fa !important; border-color: #0d6efd !important; transform: translateY(-1px); }
+                .hover-opacity-100:hover { opacity: 1 !important; }
+                .login-card .lang-switch select { min-width: 64px; }
+                .login-card h3 { letter-spacing: .5px; }
+                @media (max-width: 480px) {
+                    .login-card { border-radius: 14px !important; }
+                }
+            `}</style>
         </div>
     );
 }
