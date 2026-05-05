@@ -12,6 +12,7 @@
 // ========================================
 
 let API_BASE_URL = null;
+let _initInFlight = null;
 let CURRENT_ASSOCIATION_ID = null;
 const DEFAULT_PORT = 8080;
 
@@ -21,37 +22,55 @@ const STORAGE_KEY_LANGUAGE = 'associago_language';
 
 async function initializeApi() {
     if (API_BASE_URL) return API_BASE_URL;
-    try {
-        if (window.api && window.api.getBackendPort) {
-            const port = await window.api.getBackendPort();
-            if (port) {
-                API_BASE_URL = `http://localhost:${port}/api`;
-                return API_BASE_URL;
-            }
-        }
-    } catch (e) { console.warn('[API] Config Electron non disponibile:', e); }
+    if (_initInFlight) return _initInFlight;
 
-    const portsToTry = [8080, 45499, 3000];
-    for (const port of portsToTry) {
+    _initInFlight = (async () => {
         try {
-            const testUrl = `http://localhost:${port}/actuator/health`;
-            const response = await fetch(testUrl, { method: 'GET', signal: AbortSignal.timeout(1000) });
-            if (response.ok) {
-                API_BASE_URL = `http://localhost:${port}/api`;
-                return API_BASE_URL;
+            if (window.api && window.api.getBackendInfo) {
+                const info = await window.api.getBackendInfo();
+                if (info?.apiBaseUrl) {
+                    API_BASE_URL = info.apiBaseUrl;
+                    return API_BASE_URL;
+                }
+                if (info?.host && info?.port) {
+                    const protocol = info.protocol || 'http';
+                    API_BASE_URL = `${protocol}://${info.host}:${info.port}/api`;
+                    return API_BASE_URL;
+                }
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+            console.warn('[API] BackendInfo Electron non disponibile:', e);
+        }
+
+        try {
+            if (window.api && window.api.getBackendPort) {
+                const port = await window.api.getBackendPort();
+                if (port) {
+                    API_BASE_URL = `http://127.0.0.1:${port}/api`;
+                    return API_BASE_URL;
+                }
+            }
+        } catch (e) {
+            console.warn('[API] BackendPort Electron non disponibile:', e);
+        }
+
+        API_BASE_URL = `http://127.0.0.1:${DEFAULT_PORT}/api`;
+        return API_BASE_URL;
+    })();
+
+    try {
+        return await _initInFlight;
+    } finally {
+        _initInFlight = null;
     }
-    API_BASE_URL = `http://localhost:${DEFAULT_PORT}/api`;
-    return API_BASE_URL;
 }
 
-async function getApiUrl() {
-    if (!API_BASE_URL) await initializeApi();
-    return API_BASE_URL;
+function shouldRetryNetworkError(error, options) {
+    const method = String(options.method || 'GET').toUpperCase();
+    return error instanceof TypeError && ['GET', 'HEAD', 'OPTIONS'].includes(method);
 }
 
-async function apiRequest(endpoint, options = {}) {
+async function performFetch(endpoint, options = {}) {
     const baseUrl = await getApiUrl();
     const url = `${baseUrl}${endpoint}`;
     const headers = { 'Accept': 'application/json', ...options.headers };
@@ -66,25 +85,44 @@ async function apiRequest(endpoint, options = {}) {
         config.body = JSON.stringify(options.body);
     }
 
+    const response = await fetch(url, config);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+    }
+    if (response.status === 204) return null;
+
+    const contentType = response.headers.get("content-type");
+    if (contentType && (contentType.includes("pdf") || contentType.includes("image") || contentType.includes("octet-stream"))) {
+        return response.blob();
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+}
+
+async function apiRequest(endpoint, options = {}) {
     try {
-        const response = await fetch(url, config);
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP ${response.status}`);
-        }
-        if (response.status === 204) return null;
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && (contentType.includes("pdf") || contentType.includes("image") || contentType.includes("octet-stream"))) {
-            return response.blob();
-        }
-
-        const text = await response.text();
-        return text ? JSON.parse(text) : null;
+        return await performFetch(endpoint, options);
     } catch (error) {
+        if (shouldRetryNetworkError(error, options)) {
+            API_BASE_URL = null;
+            try {
+                return await performFetch(endpoint, options);
+            } catch (retryError) {
+                console.error('[API] Error after retry:', retryError);
+                throw retryError;
+            }
+        }
+
         console.error('[API] Error:', error);
         throw error;
     }
+}
+
+async function getApiUrl() {
+    if (!API_BASE_URL) await initializeApi();
+    return API_BASE_URL;
 }
 
 // ========================================

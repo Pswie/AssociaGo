@@ -6,7 +6,7 @@
  * @updated 0.6.2 - Added Splash Screen & Custom Logo
  */
 
-const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const http = require("http");
@@ -82,6 +82,7 @@ const BACKEND_DEFAULT_PORT = 8080;
 let mainWindow = null;
 let splashWindow = null;
 let backendPort = BACKEND_DEFAULT_PORT;
+let backendInfo = null;
 let backendProcess = null;
 
 // =========================================================
@@ -221,6 +222,60 @@ function getBackendPortFile() {
     return path.join(getAssociaGoHome(), "config", "connection.json");
 }
 
+function normalizeBackendHost(host) {
+    if (!host || String(host).toLowerCase() === "localhost") return "127.0.0.1";
+    return String(host);
+}
+
+function buildBackendInfo(raw = {}) {
+    const port = Number(raw?.port ?? backendPort ?? BACKEND_DEFAULT_PORT);
+    if (!Number.isInteger(port) || port <= 0 || port >= 65536) return null;
+
+    const protocol = raw?.protocol || "http";
+    const host = normalizeBackendHost(raw?.host || "127.0.0.1");
+    const baseUrl = raw?.baseUrl && !String(raw.baseUrl).includes("localhost")
+        ? raw.baseUrl
+        : `${protocol}://${host}:${port}`;
+
+    return {
+        schemaVersion: Number(raw?.schemaVersion) || 1,
+        protocol,
+        host,
+        port,
+        baseUrl,
+        apiBaseUrl: raw?.apiBaseUrl && !String(raw.apiBaseUrl).includes("localhost")
+            ? raw.apiBaseUrl
+            : `${baseUrl}/api`,
+        healthUrl: raw?.healthUrl && !String(raw.healthUrl).includes("localhost")
+            ? raw.healthUrl
+            : `${baseUrl}/actuator/health`
+    };
+}
+
+function readBackendInfoFromDisk() {
+    const portFile = getBackendPortFile();
+    try {
+        if (!fs.existsSync(portFile)) return null;
+
+        const content = fs.readFileSync(portFile, "utf-8").trim();
+        if (!content) return null;
+
+        if (content.startsWith("{")) {
+            const info = buildBackendInfo(JSON.parse(content));
+            if (info) return info;
+        }
+
+        const port = Number(content);
+        if (Number.isInteger(port) && port > 0 && port < 65536) {
+            return buildBackendInfo({ port });
+        }
+    } catch (e) {
+        console.warn(`[Main] Error reading backend info: ${e.message}`);
+    }
+
+    return null;
+}
+
 function tryParseBackendPort(content) {
     const s = (content ?? "").trim();
     if (!s) return null;
@@ -252,9 +307,8 @@ function sendSplashStatus(message) {
 // 30 minuti: su Windows con Defender/antivirus aggressivo l'estrazione del
 // fat-JAR e l'inizializzazione di Flyway/SQLite possono essere molto lente.
 // Tipicamente Linux/Mac escono in ~10s, Windows "sano" in ~50s.
-function waitForBackendPort(retries = 1800, delay = 1000) {
+function waitForBackendInfo(retries = 1800, delay = 1000) {
     return new Promise((resolve) => {
-        const portFile = getBackendPortFile();
         let attempts = 0;
 
         const check = () => {
@@ -270,14 +324,13 @@ function waitForBackendPort(retries = 1800, delay = 1000) {
             }
 
             try {
-                if (fs.existsSync(portFile)) {
-                    const content = fs.readFileSync(portFile, "utf-8");
-                    const port = tryParseBackendPort(content);
-                    if (port) {
-                        console.log(`[Main] Backend port found: ${port} (attempt ${attempts})`);
-                        resolve(port);
-                        return;
-                    }
+                const info = readBackendInfoFromDisk();
+                if (info) {
+                    backendInfo = info;
+                    backendPort = info.port;
+                    console.log(`[Main] Backend info found: ${info.baseUrl} (attempt ${attempts})`);
+                    resolve(info);
+                    return;
                 }
             } catch (e) {
                 console.warn(`[Main] Error reading port file: ${e.message}`);
@@ -295,9 +348,17 @@ function waitForBackendPort(retries = 1800, delay = 1000) {
     });
 }
 
-function waitForBackendReady(port, retries = 1800, delay = 1000) {
+function waitForBackendPort(retries = 1800, delay = 1000) {
+    return waitForBackendInfo(retries, delay).then((info) => info?.port || null);
+}
+
+function waitForBackendReady(infoOrPort, retries = 1800, delay = 1000) {
     return new Promise((resolve) => {
         let attempts = 0;
+        const info = typeof infoOrPort === "object"
+            ? infoOrPort
+            : buildBackendInfo({ port: infoOrPort });
+        const healthUrl = info?.healthUrl || `http://127.0.0.1:${backendPort}/actuator/health`;
 
         const check = () => {
             attempts++;
@@ -310,12 +371,12 @@ function waitForBackendReady(port, retries = 1800, delay = 1000) {
                 return;
             }
 
-            const req = http.get(`http://127.0.0.1:${port}/actuator/health`, { timeout: 2000 }, (res) => {
+            const req = http.get(healthUrl, { timeout: 2000 }, (res) => {
                 let body = '';
                 res.on('data', chunk => body += chunk);
                 res.on('end', () => {
                     if (res.statusCode === 200) {
-                        console.log(`[Main] Backend health OK on port ${port} (attempt ${attempts})`);
+                        console.log(`[Main] Backend health OK at ${healthUrl} (attempt ${attempts})`);
                         sendSplashStatus('Backend pronto. Caricamento UI...');
                         resolve(true);
                     } else {
@@ -465,9 +526,9 @@ function getBackendJar() {
 async function startBackend() {
     if (isDev) {
         console.log("[Main] Dev mode: Skipping backend spawn (assume running externally)");
-        const p = await waitForBackendPort(5, 500);
-        backendPort = p || BACKEND_DEFAULT_PORT;
-        const ready = await waitForBackendReady(backendPort, 10, 500);
+        backendInfo = await waitForBackendInfo(5, 500) || buildBackendInfo({ port: BACKEND_DEFAULT_PORT });
+        backendPort = backendInfo.port;
+        const ready = await waitForBackendReady(backendInfo, 10, 500);
         if (!ready) console.warn("[Main] Dev backend health check failed, proceeding anyway.");
         return;
     }
@@ -527,6 +588,9 @@ async function startBackend() {
     try {
         backendProcess = spawn(javaExec, [
             `-Dassociago.data.path=${dataPath}`,
+            "-Dspring.profiles.active=desktop",
+            "-Dserver.address=127.0.0.1",
+            "-Dfile.encoding=UTF-8",
             "-jar",
             jarPath
         ], {
@@ -563,8 +627,8 @@ async function startBackend() {
 
     // Step 1: Wait for port file
     sendSplashStatus('Avvio backend...');
-    const p = await waitForBackendPort();
-    if (!p) {
+    const info = await waitForBackendInfo();
+    if (!info) {
         console.error("[Main] Failed to retrieve backend port after spawn — backend never wrote connection.json.");
         if (backendProcess) { try { backendProcess.kill(); } catch (_) {} }
         dialog.showErrorBox(
@@ -576,11 +640,12 @@ async function startBackend() {
         app.exit(1);
         return;
     }
-    backendPort = p;
+    backendInfo = info;
+    backendPort = info.port;
 
     // Step 2: Health check — wait for Spring Boot to be fully ready
     sendSplashStatus('Verifica backend...');
-    const ready = await waitForBackendReady(backendPort);
+    const ready = await waitForBackendReady(backendInfo);
     if (!ready) {
         console.error("[Main] Backend never became healthy.");
         if (backendProcess) { try { backendProcess.kill(); } catch (_) {} }
@@ -726,6 +791,7 @@ app.whenReady().then(async () => {
     app.setName(APP_SYSTEM_NAME);
     app.setPath("userData", getUserDataPath());
     electronApp.setAppUserModelId(APP_USER_MODEL_ID);
+    Menu.setApplicationMenu(null);
 
     app.on('browser-window-created', (_, window) => {
         optimizer.watchWindowShortcuts(window);
@@ -833,19 +899,28 @@ ipcMain.handle("associago:focus-window", () => {
 
 ipcMain.handle("get-backend-port", () => {
     try {
-        const portFile = getBackendPortFile();
-        if (fs.existsSync(portFile)) {
-            const content = fs.readFileSync(portFile, "utf-8");
-            const port = tryParseBackendPort(content);
-            if (port) {
-                backendPort = port;
-                return port;
-            }
+        const info = readBackendInfoFromDisk();
+        if (info) {
+            backendInfo = info;
+            backendPort = info.port;
+            return info.port;
         }
     } catch (e) {
         console.warn("[Main] Failed to read port file on request:", e);
     }
     return backendPort;
+});
+
+ipcMain.handle("get-backend-info", () => {
+    const info = readBackendInfoFromDisk();
+    if (info) {
+        backendInfo = info;
+        backendPort = info.port;
+        return info;
+    }
+
+    if (backendInfo) return backendInfo;
+    return buildBackendInfo({ port: backendPort });
 });
 
 ipcMain.handle("backend:refreshPort", () => {
@@ -899,9 +974,10 @@ ipcMain.on("renderer:log", (_, level, ...args) => {
 
 async function callBackend(method, apiPath, body = null, extraHeaders = {}) {
     return new Promise((resolve, reject) => {
+        const info = backendInfo || readBackendInfoFromDisk() || buildBackendInfo({ port: backendPort });
         const options = {
-            hostname: "localhost",
-            port: backendPort,
+            hostname: info.host,
+            port: info.port,
             path: `/api${apiPath}`,
             method,
             headers: {

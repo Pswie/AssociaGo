@@ -104,7 +104,7 @@ local.properties
 # do not commit product drafts, migration notes, planning docs or local AI-tool state
 AssociaGo_PRD.md
 AssociaGo_PRD*
-FETCH_FIX.md
+*FIX*.md
 PLAN*
 PLAN_TRAD*
 /docs/

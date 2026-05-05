@@ -186,6 +186,7 @@ spring:
 
 server:
   port: 0
+  address: 127.0.0.1
 
 # Disable diskspace health indicator: in AppImage/installed builds the backend's
 # working directory is a read-only mount that reports 0 bytes free, which would
