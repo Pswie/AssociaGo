@@ -249,10 +249,10 @@ function sendSplashStatus(message) {
     }
 }
 
-// 120 secondi: il backend Spring Boot impiega fino a ~50s al primo avvio su
-// Windows con Defender attivo (scansione delle classi estratte dal fat-JAR e
-// dei file creati da Flyway/SQLite). Su Linux/Mac veloci esce in ~10s.
-function waitForBackendPort(retries = 120, delay = 1000) {
+// 30 minuti: su Windows con Defender/antivirus aggressivo l'estrazione del
+// fat-JAR e l'inizializzazione di Flyway/SQLite possono essere molto lente.
+// Tipicamente Linux/Mac escono in ~10s, Windows "sano" in ~50s.
+function waitForBackendPort(retries = 1800, delay = 1000) {
     return new Promise((resolve) => {
         const portFile = getBackendPortFile();
         let attempts = 0;
@@ -260,7 +260,7 @@ function waitForBackendPort(retries = 120, delay = 1000) {
         const check = () => {
             attempts++;
             const elapsed = attempts;
-            sendSplashStatus(`Avvio backend... (${elapsed}s, può richiedere fino a 60s al primo avvio)`);
+            sendSplashStatus(`Avvio backend... (${elapsed}s, può richiedere alcuni minuti)`);
 
             // Early-abort: se il processo Java è già morto, inutile aspettare.
             if (!isDev && backendProcess === null) {
@@ -295,7 +295,7 @@ function waitForBackendPort(retries = 120, delay = 1000) {
     });
 }
 
-function waitForBackendReady(port, retries = 60, delay = 1000) {
+function waitForBackendReady(port, retries = 1800, delay = 1000) {
     return new Promise((resolve) => {
         let attempts = 0;
 
@@ -584,11 +584,11 @@ async function startBackend() {
     if (!ready) {
         console.error("[Main] Backend never became healthy.");
         if (backendProcess) { try { backendProcess.kill(); } catch (_) {} }
-        dialog.showErrorBox(
+        dialog.showMessageBox(
             "AssociaGo - Backend non sano",
-            `Il backend è partito ma /actuator/health non risponde 200.\n\nVerifica i log:\n${LOG_FILE_PATH || LOG_DIR}`
+            `Il backend è partito ma potrebbe avere qualche problema.\n\nVerifica i log:\n${LOG_FILE_PATH || LOG_DIR}`
         );
-        app.exit(1);
+        //app.exit(1);
     }
 }
 
