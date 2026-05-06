@@ -188,12 +188,13 @@ server:
   port: 0
   address: 127.0.0.1
 
-# Disable diskspace health indicator: in AppImage/installed builds the backend's
-# working directory is a read-only mount that reports 0 bytes free, which would
-# mark /actuator/health as DOWN (HTTP 503) and block Electron startup.
+# Disable health indicators that are not required for the embedded desktop
+# backend readiness and would otherwise block Electron startup.
 management:
   health:
     diskspace:
+      enabled: false
+    mail:
       enabled: false
 
 associago:

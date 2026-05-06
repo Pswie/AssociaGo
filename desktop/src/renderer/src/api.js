@@ -548,7 +548,13 @@ export const associago = {
         };
     },
     setPreferences: (prefs) => {
-        if (prefs.autologin) localStorage.setItem(STORAGE_KEY_AUTOLOGIN, JSON.stringify(prefs.autologin));
+        if (Object.prototype.hasOwnProperty.call(prefs, 'autologin')) {
+            if (prefs.autologin) {
+                localStorage.setItem(STORAGE_KEY_AUTOLOGIN, JSON.stringify(prefs.autologin));
+            } else {
+                localStorage.removeItem(STORAGE_KEY_AUTOLOGIN);
+            }
+        }
         if (prefs.language) localStorage.setItem(STORAGE_KEY_LANGUAGE, prefs.language);
     },
     setAuthToken: (token) => { /* Token management if needed */ },

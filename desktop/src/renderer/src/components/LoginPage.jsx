@@ -155,6 +155,8 @@ export default function LoginPage({ onLogin }) {
             const result = await associago.login(selectedAssoc.id, passwordInput);
             if (rememberMe) {
                 associago.setPreferences({ autologin: { associationId: selectedAssoc.id, token: result.token } });
+            } else {
+                associago.setPreferences({ autologin: null });
             }
             handleLoginSuccess(selectedAssoc, result.token);
         } catch (err) {
@@ -190,7 +192,13 @@ export default function LoginPage({ onLogin }) {
             };
 
             const newAssoc = await associago.setupAssociation(payload);
-            handleLoginSuccess(newAssoc, "new-session-token");
+            const result = await associago.login(newAssoc.id, formData.password);
+            if (rememberMe) {
+                associago.setPreferences({ autologin: { associationId: newAssoc.id, token: result.token } });
+            } else {
+                associago.setPreferences({ autologin: null });
+            }
+            handleLoginSuccess(newAssoc, result.token);
         } catch (err) {
             setError(err.message || t("Setup failed"));
             setLoading(false);
@@ -352,7 +360,7 @@ export default function LoginPage({ onLogin }) {
                                 </div>
                             </div>
 
-                            <div className="mb-4">
+                            <div className="mb-3">
                                 <label className="form-label small fw-bold text-muted">{t("Master Password")}</label>
                                 <div className="input-group">
                                     <span className="input-group-text bg-light border-end-0"><Lock size={18} className="text-muted"/></span>
@@ -362,6 +370,11 @@ export default function LoginPage({ onLogin }) {
                                         {showSetupPassword ? <EyeOff size={18} className="text-muted" /> : <Eye size={18} className="text-muted" />}
                                     </button>
                                 </div>
+                            </div>
+
+                            <div className="form-check mb-4">
+                                <input className="form-check-input" type="checkbox" id="setup-rem" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
+                                <label className="form-check-label small text-muted" htmlFor="setup-rem">{t("Keep me logged in")}</label>
                             </div>
 
                             <div className="d-grid gap-2">
