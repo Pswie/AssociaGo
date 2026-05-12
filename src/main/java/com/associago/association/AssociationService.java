@@ -1,6 +1,7 @@
 package com.associago.association;
 
 import com.associago.association.repository.AssociationRepository;
+import com.associago.security.dto.AuthRecoveryAssociationDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -8,9 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class AssociationService {
+
+    private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$\\d{2}\\$.{53}$");
 
     private final AssociationRepository associationRepository;
     private final PasswordEncoder passwordEncoder;
@@ -33,6 +37,17 @@ public class AssociationService {
         return associationRepository.findBySlug(slug);
     }
 
+    public List<AuthRecoveryAssociationDTO> findRecoverableAssociations() {
+        return associationRepository.findAll().stream()
+                .map(association -> new AuthRecoveryAssociationDTO(
+                        association.getId(),
+                        association.getName(),
+                        association.getEmail(),
+                        association.getType()
+                ))
+                .toList();
+    }
+
     @Transactional
     public Association create(Association association) {
         if (associationRepository.findBySlug(association.getSlug()).isPresent()) {
@@ -40,9 +55,45 @@ public class AssociationService {
         }
         // Hash the password before saving
         if (association.getPassword() != null && !association.getPassword().isEmpty()) {
-            association.setPassword(passwordEncoder.encode(association.getPassword()));
+            association.setPassword(encodePasswordIfNeeded(association.getPassword()));
         }
         return associationRepository.save(association);
+    }
+
+    public boolean passwordMatches(String rawPassword, String storedPassword) {
+        if (rawPassword == null || storedPassword == null || storedPassword.isEmpty()) {
+            return false;
+        }
+        if (isBcryptHash(storedPassword)) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+        return rawPassword.equals(storedPassword);
+    }
+
+    @Transactional
+    public Association resetPasswordWithFiscalCode(Long associationId, String fiscalCode, String newPassword) {
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters");
+        }
+        return associationRepository.findById(associationId)
+                .map(association -> {
+                    if (!sameNormalizedCode(fiscalCode, association.getTaxCode())) {
+                        throw new IllegalArgumentException("Fiscal code does not match");
+                    }
+                    association.setPassword(passwordEncoder.encode(newPassword));
+                    return associationRepository.save(association);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Association not found"));
+    }
+
+    @Transactional
+    public void upgradePasswordHash(Long id, String rawPassword) {
+        associationRepository.findById(id).ifPresent(association -> {
+            if (!isBcryptHash(association.getPassword()) && passwordMatches(rawPassword, association.getPassword())) {
+                association.setPassword(passwordEncoder.encode(rawPassword));
+                associationRepository.save(association);
+            }
+        });
     }
 
     @Transactional
@@ -86,11 +137,6 @@ public class AssociationService {
                         existing.setLogo(updatedAssociation.getLogo());
                     }
                     
-                    // Update password only if provided and not empty
-                    if (updatedAssociation.getPassword() != null && !updatedAssociation.getPassword().isEmpty()) {
-                        existing.setPassword(passwordEncoder.encode(updatedAssociation.getPassword()));
-                    }
-
                     return associationRepository.save(existing);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Association not found with id: " + id));
@@ -114,5 +160,26 @@ public class AssociationService {
     @Transactional
     public void delete(Long id) {
         associationRepository.deleteById(id);
+    }
+
+    private String encodePasswordIfNeeded(String password) {
+        if (isBcryptHash(password)) {
+            return password;
+        }
+        return passwordEncoder.encode(password);
+    }
+
+    private boolean isBcryptHash(String password) {
+        return password != null && BCRYPT_PATTERN.matcher(password).matches();
+    }
+
+    private boolean sameNormalizedCode(String submittedCode, String storedCode) {
+        String submitted = normalizeCode(submittedCode);
+        String stored = normalizeCode(storedCode);
+        return !submitted.isEmpty() && submitted.equals(stored);
+    }
+
+    private String normalizeCode(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", "").toUpperCase();
     }
 }

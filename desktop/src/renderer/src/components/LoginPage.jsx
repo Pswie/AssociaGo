@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { associago } from "../api.js";
-import { Globe, Lock, Building, Mail, ArrowRight, Plus, Trash2, FileText, Hash, Eye, EyeOff } from 'lucide-react';
+import { Globe, Lock, Building, Mail, ArrowRight, Plus, Trash2, Hash, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import icon6 from '../assets/6.svg';
 
 // Per-language fiscal code / VAT rules used by the entity registration form.
@@ -70,6 +70,17 @@ export default function LoginPage({ onLogin }) {
     const [showSetupPassword, setShowSetupPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [failedAttempts, setFailedAttempts] = useState({});
+    const [recoveryOpen, setRecoveryOpen] = useState(false);
+    const [recoveryReason, setRecoveryReason] = useState("manual");
+    const [recoveryStep, setRecoveryStep] = useState("ownership");
+    const [recoveryAssociations, setRecoveryAssociations] = useState([]);
+    const [recoverySelectedId, setRecoverySelectedId] = useState(null);
+    const [recoveryFiscalCode, setRecoveryFiscalCode] = useState("");
+    const [recoveryPassword, setRecoveryPassword] = useState("");
+    const [recoveryPasswordConfirm, setRecoveryPasswordConfirm] = useState("");
+    const [recoveryError, setRecoveryError] = useState(null);
+    const [recoveryLoading, setRecoveryLoading] = useState(false);
 
     useEffect(() => { bootstrap(); }, []);
 
@@ -160,8 +171,13 @@ export default function LoginPage({ onLogin }) {
             }
             handleLoginSuccess(selectedAssoc, result.token);
         } catch (err) {
+            const nextAttempts = (failedAttempts[selectedAssoc.id] || 0) + 1;
+            setFailedAttempts({ ...failedAttempts, [selectedAssoc.id]: nextAttempts });
             setError(t("Invalid password"));
             setLoading(false);
+            if (nextAttempts >= 2) {
+                await openRecovery("too-many");
+            }
         }
     };
 
@@ -209,6 +225,74 @@ export default function LoginPage({ onLogin }) {
         associago.setAuthToken(token);
         associago.setCurrentAssociation(assoc.id); // Set current association ID
         onLogin(assoc);
+    };
+
+    const openRecovery = async (reason = "manual") => {
+        setRecoveryReason(reason);
+        setRecoveryStep("ownership");
+        setRecoveryError(null);
+        setRecoveryFiscalCode("");
+        setRecoveryPassword("");
+        setRecoveryPasswordConfirm("");
+        setRecoverySelectedId(selectedAssoc?.id || null);
+        setRecoveryOpen(true);
+        setRecoveryLoading(true);
+        try {
+            const list = await associago.getRecoveryAssociations();
+            setRecoveryAssociations(list || []);
+            if (!selectedAssoc?.id && list?.length === 1) {
+                setRecoverySelectedId(list[0].id);
+            }
+        } catch (err) {
+            setRecoveryError(t("Unable to load recovery associations"));
+        } finally {
+            setRecoveryLoading(false);
+        }
+    };
+
+    const closeRecovery = () => {
+        setRecoveryOpen(false);
+        setRecoveryError(null);
+        setRecoveryLoading(false);
+    };
+
+    const confirmRecoveryOwnership = () => {
+        if (!recoverySelectedId) {
+            setRecoveryError(t("Select the association to recover"));
+            return;
+        }
+        setRecoveryError(null);
+        setRecoveryStep("reset");
+    };
+
+    const handleRecoverySubmit = async (e) => {
+        e.preventDefault();
+        if (!recoveryFiscalCode.trim()) {
+            setRecoveryError(t("Fiscal code is required"));
+            return;
+        }
+        if (recoveryPassword.length < 6) {
+            setRecoveryError(t("Password must be at least 6 characters"));
+            return;
+        }
+        if (recoveryPassword !== recoveryPasswordConfirm) {
+            setRecoveryError(t("Passwords do not match"));
+            return;
+        }
+
+        setRecoveryLoading(true);
+        setRecoveryError(null);
+        try {
+            const association = await associago.resetPassword(recoverySelectedId, recoveryFiscalCode, recoveryPassword);
+            const normalized = associago.upsertKnownAssociation(association);
+            setAssociations(associago.getKnownAssociations());
+            const result = await associago.login(normalized.id, recoveryPassword);
+            associago.setPreferences({ autologin: null });
+            handleLoginSuccess(normalized, result.token);
+        } catch (err) {
+            setRecoveryError(t("Recovery data does not match"));
+            setRecoveryLoading(false);
+        }
     };
 
     const handleDelete = (e, id) => {
@@ -306,6 +390,9 @@ export default function LoginPage({ onLogin }) {
                                 <button type="submit" className="btn btn-primary py-2 fw-bold" disabled={loading}>
                                     {loading ? <span className="spinner-border spinner-border-sm"/> : t("Login")}
                                 </button>
+                                <button type="button" className="btn btn-outline-primary" onClick={() => openRecovery("manual")}>
+                                    <ShieldCheck size={16} className="me-1" /> {t("Forgot password?")}
+                                </button>
                                 <button type="button" className="btn btn-light text-muted" onClick={() => setView("list")}>{t("Back")}</button>
                             </div>
                         </form>
@@ -394,10 +481,100 @@ export default function LoginPage({ onLogin }) {
                 .hover-opacity-100:hover { opacity: 1 !important; }
                 .login-card .lang-switch select { min-width: 64px; }
                 .login-card h3 { letter-spacing: .5px; }
+                .recovery-modal-backdrop { background: rgba(15, 23, 42, .55); }
+                .recovery-modal { width: min(560px, 94vw); max-height: 92vh; overflow: auto; }
                 @media (max-width: 480px) {
                     .login-card { border-radius: 14px !important; }
                 }
             `}</style>
+            {recoveryOpen && (
+                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center recovery-modal-backdrop p-3" style={{ zIndex: 1080 }}>
+                    <div className="bg-white shadow-lg recovery-modal" style={{ borderRadius: 8 }}>
+                        <div className="p-4 border-bottom">
+                            <div className="d-flex align-items-center gap-2">
+                                <div className="bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style={{ width: 40, height: 40, borderRadius: 8 }}>
+                                    <ShieldCheck size={22} />
+                                </div>
+                                <div>
+                                    <h5 className="mb-0 fw-bold">
+                                        {recoveryReason === "too-many" ? t("Recover access securely") : t("Password recovery")}
+                                    </h5>
+                                    <div className="small text-muted">{t("Local database access recovery")}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4">
+                            {recoveryError && <div className="alert alert-danger py-2 small">{recoveryError}</div>}
+
+                            {recoveryStep === "ownership" && (
+                                <>
+                                    <h6 className="fw-bold mb-3">{t("Are these associations yours?")}</h6>
+                                    {recoveryLoading ? (
+                                        <div className="text-center py-4"><span className="spinner-border spinner-border-sm" /></div>
+                                    ) : (
+                                        <div>
+                                            <label className="form-label small fw-bold text-muted">{t("Select Association")}</label>
+                                            <select
+                                                className="form-select bg-light"
+                                                value={recoverySelectedId || ""}
+                                                onChange={(e) => setRecoverySelectedId(Number(e.target.value))}
+                                            >
+                                                <option value="" disabled>{t("Select the association to recover")}</option>
+                                                {recoveryAssociations.map((assoc) => (
+                                                    <option key={assoc.id} value={assoc.id}>
+                                                        {assoc.name} - {assoc.type} - {assoc.email}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {recoveryAssociations.length === 0 && (
+                                                <div className="text-muted small mt-2">{t("No associations found in this database")}</div>
+                                            )}
+                                        </div>
+                                    )}
+                                    <div className="d-flex gap-2 justify-content-end mt-4">
+                                        <button type="button" className="btn btn-light" onClick={closeRecovery}>{t("No")}</button>
+                                        <button type="button" className="btn btn-primary" onClick={confirmRecoveryOwnership} disabled={recoveryLoading || recoveryAssociations.length === 0}>{t("Yes")}</button>
+                                    </div>
+                                </>
+                            )}
+
+                            {recoveryStep === "reset" && (
+                                <form onSubmit={handleRecoverySubmit}>
+                                    <h6 className="fw-bold mb-3">{t("Confirm the association fiscal code")}</h6>
+                                    <div className="mb-3">
+                                        <label className="form-label small fw-bold text-muted">{t("Fiscal Code (C.F.)")}</label>
+                                        <div className="input-group">
+                                            <span className="input-group-text bg-light border-end-0"><Hash size={18} className="text-muted"/></span>
+                                            <input
+                                                type="text"
+                                                className="form-control bg-light border-start-0"
+                                                value={recoveryFiscalCode}
+                                                onChange={e => setRecoveryFiscalCode(e.target.value.toUpperCase())}
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label small fw-bold text-muted">{t("New password")}</label>
+                                        <input type="password" className="form-control bg-light" minLength={6} value={recoveryPassword} onChange={e => setRecoveryPassword(e.target.value)} />
+                                    </div>
+                                    <div className="mb-4">
+                                        <label className="form-label small fw-bold text-muted">{t("Confirm new password")}</label>
+                                        <input type="password" className="form-control bg-light" minLength={6} value={recoveryPasswordConfirm} onChange={e => setRecoveryPasswordConfirm(e.target.value)} />
+                                    </div>
+                                    <div className="d-flex gap-2 justify-content-end">
+                                        <button type="button" className="btn btn-light" onClick={() => setRecoveryStep("ownership")} disabled={recoveryLoading}>{t("Back")}</button>
+                                        <button type="submit" className="btn btn-primary" disabled={recoveryLoading}>
+                                            {recoveryLoading ? <span className="spinner-border spinner-border-sm" /> : t("Reset password")}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

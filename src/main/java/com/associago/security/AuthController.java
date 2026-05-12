@@ -3,6 +3,8 @@ package com.associago.security;
 import com.associago.association.Association;
 import com.associago.association.AssociationService;
 import com.associago.association.mapper.AssociationMapper;
+import com.associago.security.dto.AuthRecoveryAssociationDTO;
+import com.associago.security.dto.PasswordResetRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +15,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,12 +28,10 @@ import java.util.Optional;
 public class AuthController {
 
     private final AssociationService associationService;
-    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public AuthController(AssociationService associationService, PasswordEncoder passwordEncoder) {
+    public AuthController(AssociationService associationService) {
         this.associationService = associationService;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
@@ -44,9 +44,10 @@ public class AuthController {
 
         Association association = associationOpt.get();
 
-        if (!passwordEncoder.matches(loginRequest.password, association.getPassword())) {
+        if (!associationService.passwordMatches(loginRequest.password, association.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid password");
         }
+        associationService.upgradePasswordHash(association.getId(), loginRequest.password);
 
         // Create Authentication Token
         // We use the Association ID as the "principal" for simplicity in this local-first context
@@ -92,6 +93,28 @@ public class AuthController {
             ));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("authenticated", false));
+    }
+
+    @GetMapping("/recovery/associations")
+    public List<AuthRecoveryAssociationDTO> getRecoverableAssociations() {
+        return associationService.findRecoverableAssociations();
+    }
+
+    @PostMapping("/recovery/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody PasswordResetRequest request) {
+        try {
+            Association association = associationService.resetPasswordWithFiscalCode(
+                    request.associationId(),
+                    request.fiscalCode(),
+                    request.newPassword()
+            );
+            return ResponseEntity.ok(Map.of(
+                    "message", "Password reset successful",
+                    "association", AssociationMapper.toDTO(association)
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", e.getMessage()));
+        }
     }
 
     // DTO

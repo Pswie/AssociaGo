@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -24,14 +23,12 @@ public class SetupController {
     private final AppConfigManager configManager;
     private final ApplicationContext context;
     private final AssociationService associationService;
-    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public SetupController(AppConfigManager configManager, ApplicationContext context, AssociationService associationService, PasswordEncoder passwordEncoder) {
+    public SetupController(AppConfigManager configManager, ApplicationContext context, AssociationService associationService) {
         this.configManager = configManager;
         this.context = context;
         this.associationService = associationService;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/status")
@@ -71,7 +68,7 @@ public class SetupController {
         association.setName(request.name);
         association.setSlug(request.slug);
         association.setEmail(request.email);
-        association.setPassword(passwordEncoder.encode(request.password));
+        association.setPassword(request.password);
         association.setType(request.type);
         association.setTaxCode(request.fiscalCode);
         

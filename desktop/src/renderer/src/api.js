@@ -511,6 +511,16 @@ export const associago = {
         return { token: result.sessionId, user: { id: "admin", role: "ADMIN" } };
     },
 
+    getRecoveryAssociations: () => apiRequest('/auth/recovery/associations'),
+
+    resetPassword: async (associationId, fiscalCode, newPassword) => {
+        const result = await apiRequest('/auth/recovery/reset-password', {
+            method: 'POST',
+            body: { associationId, fiscalCode, newPassword }
+        });
+        return result.association;
+    },
+
     setupAssociation: async (data) => {
         const result = await apiRequest('/associations/setup', { method: 'POST', body: data });
         const list = JSON.parse(localStorage.getItem(STORAGE_KEY_ASSOCIATIONS) || '[]');
@@ -521,6 +531,24 @@ export const associago = {
 
     // Local Storage Helpers
     getKnownAssociations: () => JSON.parse(localStorage.getItem(STORAGE_KEY_ASSOCIATIONS) || '[]'),
+
+    upsertKnownAssociation: (association) => {
+        const list = JSON.parse(localStorage.getItem(STORAGE_KEY_ASSOCIATIONS) || '[]');
+        const normalized = {
+            id: association.id,
+            nome: association.nome || association.name,
+            email: association.email,
+            tipo: association.tipo || association.type
+        };
+        const index = list.findIndex(a => a.id === normalized.id);
+        if (index === -1) {
+            list.push(normalized);
+        } else {
+            list[index] = { ...list[index], ...normalized };
+        }
+        localStorage.setItem(STORAGE_KEY_ASSOCIATIONS, JSON.stringify(list));
+        return normalized;
+    },
 
     updateKnownAssociation: (id, newData) => {
         const list = JSON.parse(localStorage.getItem(STORAGE_KEY_ASSOCIATIONS) || '[]');
