@@ -8,11 +8,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 
 import javax.sql.DataSource;
 import java.io.File;
 
+/**
+ * Selezione dinamica del DataSource per la modalità desktop (SQLite/MariaDB scelti a runtime).
+ * Nel profilo "cloud" questa configurazione è disattivata: il backend usa il DataSource
+ * standard di Spring Boot popolato da spring.datasource.* (variabili d'ambiente).
+ */
 @Configuration
+@Profile("!cloud")
 public class DynamicDataSourceConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(DynamicDataSourceConfig.class);

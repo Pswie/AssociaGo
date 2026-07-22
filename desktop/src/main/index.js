@@ -10,6 +10,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require("electron")
 const path = require("path");
 const fs = require("fs");
 const http = require("http");
+const https = require("https");
 const os = require("os");
 const { spawn, spawnSync } = require("child_process");
 const { electronApp, optimizer, is } = require('@electron-toolkit/utils');
@@ -187,6 +188,72 @@ function getUserDataPath() {
     return path.join(app.getPath("appData"), APP_SYSTEM_NAME);
 }
 
+// ----------------------------
+// Modalità client remoto (thin client)
+// ----------------------------
+// Se è configurato un backend remoto, l'app NON avvia un backend Java locale:
+// diventa un semplice client che parla con quell'URL. Le credenziali del database
+// restano sul server, mai nel pacchetto distribuito.
+//
+// Priorità di configurazione:
+//   1. Variabile d'ambiente ASSOCIAGO_BACKEND_URL (comoda in sviluppo / override)
+//   2. File JSON  <userData>/backend.json        -> { "baseUrl": "https://..." }
+//   3. File JSON  backend.json accanto alle risorse impacchettate (valore "di fabbrica")
+function getConfiguredBackendUrl() {
+    const envUrl = process.env.ASSOCIAGO_BACKEND_URL;
+    if (envUrl && envUrl.trim()) return envUrl.trim();
+
+    const candidates = [
+        path.join(getUserDataPath(), "backend.json"),
+        process.resourcesPath ? path.join(process.resourcesPath, "backend.json") : null,
+        path.join(__dirname, "..", "..", "backend.json"),
+    ].filter(Boolean);
+
+    for (const p of candidates) {
+        try {
+            if (fs.existsSync(p)) {
+                const raw = JSON.parse(fs.readFileSync(p, "utf-8"));
+                const url = raw && (raw.baseUrl || raw.url);
+                if (url && String(url).trim()) {
+                    console.log(`[Main] Backend remoto configurato da ${p}`);
+                    return String(url).trim();
+                }
+            }
+        } catch (e) {
+            console.warn(`[Main] Errore lettura ${p}: ${e.message}`);
+        }
+    }
+    return null;
+}
+
+function buildRemoteBackendInfo(rawUrl) {
+    let u;
+    try {
+        u = new URL(rawUrl);
+    } catch (e) {
+        console.error(`[Main] URL backend remoto non valido: ${rawUrl}`);
+        return null;
+    }
+
+    const protocol = (u.protocol || "https:").replace(":", "");
+    const host = u.hostname;
+    const explicitPort = u.port ? Number(u.port) : null;
+    const port = explicitPort || (protocol === "https" ? 443 : 80);
+    const authority = explicitPort ? `${host}:${explicitPort}` : host;
+    const baseUrl = `${protocol}://${authority}`;
+
+    return {
+        schemaVersion: 1,
+        protocol,
+        host,
+        port,
+        baseUrl,
+        apiBaseUrl: `${baseUrl}/api`,
+        healthUrl: `${baseUrl}/actuator/health`,
+        remote: true,
+    };
+}
+
 function getRuntimeAssetPath(...segments) {
     if (isDev) {
         return path.join(__dirname, "..", "..", ...segments);
@@ -360,18 +427,22 @@ function waitForBackendReady(infoOrPort, retries = 1800, delay = 1000) {
             : buildBackendInfo({ port: infoOrPort });
         const healthUrl = info?.healthUrl || `http://127.0.0.1:${backendPort}/actuator/health`;
 
+        const isRemote = !!(info && info.remote);
+        const httpClient = healthUrl.startsWith("https:") ? https : http;
+
         const check = () => {
             attempts++;
             sendSplashStatus(`Health check backend... (${attempts}s)`);
 
-            // Early-abort: se il processo Java è già morto, inutile aspettare.
-            if (!isDev && backendProcess === null) {
+            // Early-abort: se il processo Java locale è già morto, inutile aspettare.
+            // In modalità client remoto non c'è alcun processo locale: non abortire.
+            if (!isDev && !isRemote && backendProcess === null) {
                 console.error("[Main] Backend process exited before health check passed. Aborting wait.");
                 resolve(false);
                 return;
             }
 
-            const req = http.get(healthUrl, { timeout: 2000 }, (res) => {
+            const req = httpClient.get(healthUrl, { timeout: 5000 }, (res) => {
                 let body = '';
                 res.on('data', chunk => body += chunk);
                 res.on('end', () => {
@@ -524,6 +595,40 @@ function getBackendJar() {
 }
 
 async function startBackend() {
+    // Modalità client remoto: se configurato un backend remoto, non avviare nulla in locale.
+    const remoteUrl = getConfiguredBackendUrl();
+    if (remoteUrl) {
+        console.log(`[Main] Modalità client remoto: uso backend ${remoteUrl} (nessun backend locale)`);
+        sendSplashStatus('Connessione al server...');
+
+        const info = buildRemoteBackendInfo(remoteUrl);
+        if (!info) {
+            dialog.showErrorBox(
+                "AssociaGo - Configurazione backend non valida",
+                `L'indirizzo del server remoto non è valido:\n${remoteUrl}\n\n` +
+                `Correggi il file backend.json o la variabile ASSOCIAGO_BACKEND_URL.`
+            );
+            app.quit();
+            return;
+        }
+
+        backendInfo = info;
+        backendPort = info.port;
+
+        // Attesa più lunga: alcuni hosting free "dormono" e il primo risveglio è lento.
+        const ready = await waitForBackendReady(backendInfo, 60, 2000);
+        if (!ready) {
+            dialog.showErrorBox(
+                "AssociaGo - Server non raggiungibile",
+                `Impossibile contattare il server:\n${info.healthUrl}\n\n` +
+                `Verifica la connessione a Internet e che il server sia attivo, poi riavvia l'app.`
+            );
+            app.quit();
+            return;
+        }
+        return;
+    }
+
     if (isDev) {
         console.log("[Main] Dev mode: Skipping backend spawn (assume running externally)");
         backendInfo = await waitForBackendInfo(5, 500) || buildBackendInfo({ port: BACKEND_DEFAULT_PORT });
@@ -912,6 +1017,12 @@ ipcMain.handle("get-backend-port", () => {
 });
 
 ipcMain.handle("get-backend-info", () => {
+    // In modalità client remoto l'URL configurato ha precedenza assoluta: non leggere
+    // il connection.json locale, che potrebbe provenire da una vecchia installazione desktop.
+    if (backendInfo && backendInfo.remote) {
+        return backendInfo;
+    }
+
     const info = readBackendInfoFromDisk();
     if (info) {
         backendInfo = info;

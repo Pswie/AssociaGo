@@ -3,8 +3,14 @@ package com.associago.config;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
+/**
+ * Selezione dinamica del dialetto Hibernate per la modalità desktop (SQLite/MariaDB).
+ * Nel profilo "cloud" è disattivata: dialetto e ddl-auto vengono da spring.jpa.* (MySQL).
+ */
 @Configuration
+@Profile("!cloud")
 public class HibernateConfig {
 
     private final AppConfigManager configManager;

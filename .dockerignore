@@ -1,0 +1,12 @@
+# Backend Docker build context — escludi tutto ciò che non serve al jar
+desktop/
+build/
+.gradle/
+logs/
+*.log
+dist-electron/
+node_modules/
+.git/
+.idea/
+.vscode/
+*.md

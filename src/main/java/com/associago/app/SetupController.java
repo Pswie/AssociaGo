@@ -34,7 +34,12 @@ public class SetupController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Boolean>> getStatus() {
         Map<String, Boolean> status = new HashMap<>();
-        status.put("configured", configManager.loadConfig().isConfigured());
+        // Lo stato "configurato" deve derivare dai dati (esiste almeno un'associazione),
+        // non solo dal file di config locale: in modalità cloud il filesystem del backend
+        // è effimero e il file andrebbe perso a ogni riavvio, facendo ricomparire il wizard.
+        boolean configured = configManager.loadConfig().isConfigured()
+                || !associationService.findAll().isEmpty();
+        status.put("configured", configured);
         return ResponseEntity.ok(status);
     }
 

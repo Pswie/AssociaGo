@@ -63,6 +63,9 @@ dependencies {
 
     // MariaDB (AssociaGo specific)
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    // MySQL (cloud backend deployment)
+    runtimeOnly 'com.mysql:mysql-connector-j'
     
     // Flyway
     implementation 'org.flywaydb:flyway-core'
