@@ -9,6 +9,12 @@ import CouponList from './CouponList';
 
 const ActivityList = ({ associationId, shell }) => {
     const { t } = useTranslation();
+    /*
+     * Un'attività dura nel tempo: quella cominciata a ottobre e finita a marzo
+     * appartiene a due esercizi, e un corso senza data di fine è ancora in
+     * corso — quindi non si archivia.
+     */
+    const anno = shell?.anno ?? new Date().getFullYear();
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -19,12 +25,12 @@ const ActivityList = ({ associationId, shell }) => {
         if (associationId && activeTab === 'activities') {
             fetchActivities();
         }
-    }, [associationId, activeTab]);
+    }, [associationId, activeTab, anno]);
 
     const fetchActivities = async () => {
         setLoading(true);
         try {
-            const data = await associago.activities.getAll(associationId);
+            const data = await associago.activities.getAll(associationId, anno);
             setActivities(data);
         } catch (error) {
             console.error("Error fetching activities:", error);
@@ -105,7 +111,7 @@ const ActivityList = ({ associationId, shell }) => {
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex gap-2" style={{ width: '300px' }}>
+                        <div className="d-flex gap-2 jl-search" style={{ width: '300px' }}>
                             <InputGroup>
                                 <InputGroup.Text className="bg-light border-end-0">
                                     <Search size={16} className="text-muted" />
@@ -163,8 +169,8 @@ const ActivityList = ({ associationId, shell }) => {
                                                 </div>
                                             </td>
                                             <td>
-                                                <Badge bg={activity.active ? "success" : "secondary"} className="fw-normal px-2 py-1">
-                                                    {activity.active ? t('Active') : t('Archived')}
+                                                <Badge bg={activity.isActive ? "success" : "secondary"} className="fw-normal px-2 py-1">
+                                                    {activity.isActive ? t('Active') : t('Archived')}
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4" onClick={(e) => e.stopPropagation()}>

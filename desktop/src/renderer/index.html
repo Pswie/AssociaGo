@@ -2,11 +2,15 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <!-- Anche nella finestra Electron: senza viewport le media query di
+         src/assets/mobile.css misurano il viewport predefinito e non la
+         finestra vera, e stringendola il layout non reagisce. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AssociaGo</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:* http://127.0.0.1:*; connect-src 'self' http://localhost:* http://127.0.0.1:*;"
+      content="default-src 'self'; script-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:* http://127.0.0.1:* https://img.clerk.com; connect-src 'self' http://localhost:* http://127.0.0.1:* https://distinct-oryx-35.clerk.accounts.dev https://clerk-telemetry.com https://*.clerk-telemetry.com https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app; worker-src 'self' blob:; frame-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com; form-action 'self';"
     />
   </head>
 

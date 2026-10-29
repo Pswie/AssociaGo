@@ -4,7 +4,13 @@ import reactRefreshPlugin from 'eslint-plugin-react-refresh'
 
 export default [
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/dist-electron/**', '**/out/**']
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/dist-web/**',
+      '**/dist-electron/**',
+      '**/out/**'
+    ]
   },
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
@@ -54,6 +60,12 @@ export default [
       react: {
         version: 'detect'
       }
+    }
+  },
+  {
+    files: ['src/renderer/src/components/ui/index.jsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off'
     }
   }
 ]

@@ -19,12 +19,48 @@ const DEFAULT_PORT = 8080;
 const STORAGE_KEY_AUTOLOGIN = 'associago_autologin_v1';
 const STORAGE_KEY_ASSOCIATIONS = 'associago_associations_list';
 const STORAGE_KEY_LANGUAGE = 'associago_language';
+const STORAGE_KEY_THEME = 'associago_theme';
+
+/**
+ * Base URL configurata a build time. Sul web è l'unica sorgente possibile:
+ * non esiste un processo Electron che scopra la porta del backend, perché il
+ * backend sta su un altro host. Nel desktop resta vuota e vince la scoperta
+ * via `window.api`.
+ */
+const CONFIGURED_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
+/** True quando giriamo nel renderer Electron, false nel browser. */
+const IS_DESKTOP = typeof window !== 'undefined' && Boolean(window.api);
+
+/**
+ * Funzione che restituisce il token di accesso corrente, registrata dal gate
+ * Clerk sul web. È una funzione e non una stringa perché i token Clerk hanno
+ * vita breve: va chiesto quello fresco a ogni richiesta, non memorizzato.
+ * Nel desktop resta null e nessun header Authorization viene aggiunto.
+ */
+let TOKEN_PROVIDER = null;
+
+async function currentAuthToken() {
+    if (!TOKEN_PROVIDER) return null;
+    try {
+        return await TOKEN_PROVIDER();
+    } catch (error) {
+        console.warn('[API] Token non disponibile:', error);
+        return null;
+    }
+}
 
 async function initializeApi() {
     if (API_BASE_URL) return API_BASE_URL;
     if (_initInFlight) return _initInFlight;
 
     _initInFlight = (async () => {
+        // Web: l'indirizzo del backend è noto a build time e non si scopre.
+        if (CONFIGURED_BASE_URL) {
+            API_BASE_URL = CONFIGURED_BASE_URL;
+            return API_BASE_URL;
+        }
+
         try {
             if (window.api && window.api.getBackendInfo) {
                 const info = await window.api.getBackendInfo();
@@ -54,6 +90,15 @@ async function initializeApi() {
             console.warn('[API] BackendPort Electron non disponibile:', e);
         }
 
+        if (!IS_DESKTOP) {
+            // Sul web arrivare qui significa build senza VITE_API_BASE_URL: meglio
+            // un errore esplicito che centinaia di fetch verso il localhost di chi
+            // sta guardando la pagina.
+            throw new Error(
+                'VITE_API_BASE_URL non configurata: la build web non sa dove sia il backend.'
+            );
+        }
+
         API_BASE_URL = `http://127.0.0.1:${DEFAULT_PORT}/api`;
         return API_BASE_URL;
     })();
@@ -80,7 +125,12 @@ async function performFetch(endpoint, options = {}) {
     }
     if (CURRENT_ASSOCIATION_ID) headers['X-Association-Id'] = CURRENT_ASSOCIATION_ID;
 
-    const config = { ...options, headers, credentials: 'include' };
+    const token = await currentAuthToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    // Sul web l'identità viaggia nel Bearer token, non nei cookie: chiedere le
+    // credenziali costringerebbe il backend ad allargare la politica CORS.
+    const config = { ...options, headers, credentials: IS_DESKTOP && !token ? 'include' : 'omit' };
     if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
         config.body = JSON.stringify(options.body);
     }
@@ -88,17 +138,20 @@ async function performFetch(endpoint, options = {}) {
     const response = await fetch(url, config);
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        const error = new Error(errorData.message || errorData.error || (typeof errorData === 'string' ? errorData : `HTTP ${response.status}`));
+        error.status = response.status;
+        throw error;
     }
     if (response.status === 204) return null;
 
     const contentType = response.headers.get("content-type");
-    if (contentType && (contentType.includes("pdf") || contentType.includes("image") || contentType.includes("octet-stream"))) {
+    if (options.responseType === 'blob' || (contentType && (contentType.includes("pdf") || contentType.includes("image") || contentType.includes("octet-stream")))) {
         return response.blob();
     }
 
     const text = await response.text();
-    return text ? JSON.parse(text) : null;
+    if (!text) return null;
+    return contentType?.includes('json') ? JSON.parse(text) : text;
 }
 
 async function apiRequest(endpoint, options = {}) {
@@ -125,12 +178,24 @@ async function getApiUrl() {
     return API_BASE_URL;
 }
 
+function requireActorId(value) {
+    const id = Number(value);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+        throw new Error("Collega questo accesso all'anagrafica dell'associazione prima di inviare comunicazioni o approvare documenti. Chiedi al referente di verificare la tua email.");
+    }
+    return id;
+}
+
 // ========================================
 // DOMAIN MODULES
 // ========================================
 
 const activities = {
-    getAll: (assocId) => apiRequest(`/v1/activities?associationId=${assocId || CURRENT_ASSOCIATION_ID}`),
+    // Un corso senza data di fine è ancora in corso e compare anche negli
+    // anni successivi a quello in cui è cominciato.
+    getAll: (assocId, anno) => apiRequest(
+        `/v1/activities?associationId=${assocId || CURRENT_ASSOCIATION_ID}${anno ? `&anno=${anno}` : ''}`,
+    ),
     getById: (id) => apiRequest(`/v1/activities/${id}`),
     create: (data) => apiRequest('/v1/activities', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/activities/${id}`, { method: 'PUT', body: data }),
@@ -165,7 +230,9 @@ const activities = {
 };
 
 const events = {
-    getAll: () => apiRequest('/v1/events'),
+    // Un evento ha un periodo: quello a cavallo di capodanno compare in
+    // entrambi gli esercizi. Il filtro lo applica il server.
+    getAll: (anno) => apiRequest(`/v1/events${anno ? `?anno=${anno}` : ''}`),
     getById: (id) => apiRequest(`/v1/events/${id}`),
     create: (data) => apiRequest('/v1/events', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/events/${id}`, { method: 'PUT', body: data }),
@@ -182,7 +249,15 @@ const events = {
 };
 
 const assemblies = {
-    getAll: () => apiRequest('/v1/assemblies'),
+    // Un'assemblea si tiene in un giorno: appartiene a quell'esercizio. Il
+    // filtro sta sul server, non qui.
+    getAll: (assocId, anno) => {
+        const q = new URLSearchParams();
+        if (assocId ?? CURRENT_ASSOCIATION_ID) q.set('associationId', assocId ?? CURRENT_ASSOCIATION_ID);
+        if (anno) q.set('anno', anno);
+        const query = q.toString();
+        return apiRequest(`/v1/assemblies${query ? `?${query}` : ''}`);
+    },
     getById: (id) => apiRequest(`/v1/assemblies/${id}`),
     create: (data) => apiRequest('/v1/assemblies', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/assemblies/${id}`, { method: 'PUT', body: data }),
@@ -209,7 +284,9 @@ const assemblies = {
 };
 
 const inventory = {
-    getAll: () => apiRequest('/v1/inventory'),
+    // Un oggetto si possiede dall'acquisto in poi: compare in quell'anno e in
+    // tutti i successivi, non solo nell'anno in cui è stato comprato.
+    getAll: (anno) => apiRequest(`/v1/inventory${anno ? `?anno=${anno}` : ''}`),
     getById: (id) => apiRequest(`/v1/inventory/${id}`),
     create: (data) => apiRequest('/v1/inventory', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/inventory/${id}`, { method: 'PUT', body: data }),
@@ -222,7 +299,7 @@ const inventory = {
 };
 
 const volunteers = {
-    getAll: () => apiRequest('/v1/volunteers'),
+    getAll: (filters = {}) => apiRequest(`/v1/volunteers?${new URLSearchParams(filters)}`),
     getById: (id) => apiRequest(`/v1/volunteers/${id}`),
     create: (data) => apiRequest('/v1/volunteers', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/volunteers/${id}`, { method: 'PUT', body: data }),
@@ -236,7 +313,7 @@ const volunteers = {
     // Expenses
     getExpensesByVolunteer: (id) => apiRequest(`/v1/volunteers/${id}/expenses`),
     createExpense: (data) => apiRequest('/v1/volunteers/expenses', { method: 'POST', body: data }),
-    updateExpenseStatus: (id, status) => apiRequest(`/v1/volunteers/expenses/${id}/status?status=${status}`, { method: 'PUT' }),
+    updateExpenseStatus: (id, status, assocId = CURRENT_ASSOCIATION_ID) => apiRequest(`/v1/volunteers/expenses/${id}/status?status=${encodeURIComponent(status)}${assocId ? '&associationId=' + assocId : ''}`, { method: 'PUT' }),
 };
 
 const members = {
@@ -267,11 +344,18 @@ const members = {
 const users = {
     create: (data) => apiRequest('/v1/users', { method: 'POST', body: data }),
     getAll: () => apiRequest('/v1/users'),
+    update: (id, data) => apiRequest(`/v1/users/${id}`, { method: 'PUT', body: data }),
 };
 
 const memberships = {
-    getByAssociation: (assocId) => apiRequest(`/v1/memberships/association/${assocId || CURRENT_ASSOCIATION_ID}`),
+    // Una tessera aperta compare anche negli anni successivi: la regola
+    // sta nella query, non qui.
+    getByAssociation: (assocId, anno) => apiRequest(
+        `/v1/memberships/association/${assocId || CURRENT_ASSOCIATION_ID}${anno ? `?anno=${anno}` : ''}`,
+    ),
+    getById: (id) => apiRequest(`/v1/memberships/${id}`),
     create: (data) => apiRequest('/v1/memberships', { method: 'POST', body: data }),
+    update: (id, data) => apiRequest(`/v1/memberships/${id}`, { method: 'PUT', body: data }),
     delete: (id) => apiRequest(`/v1/memberships/${id}`, { method: 'DELETE' }),
     renew: (id, newExpirationDate) => apiRequest(`/v1/memberships/${id}/renew?newExpirationDate=${newExpirationDate}`, { method: 'POST' }),
 };
@@ -286,7 +370,12 @@ const reports = {
 };
 
 const dashboard = {
-    getStats: (assocId) => apiRequest(`/dashboard/stats`, { headers: { 'X-Association-Id': assocId } }),
+    // L'anno sta sul server perché qui tornano somme, non righe: un totale
+    // già calcolato non si filtra dopo.
+    getStats: (assocId, anno) => apiRequest(
+        `/dashboard/stats${anno ? `?anno=${anno}` : ''}`,
+        { headers: { 'X-Association-Id': assocId } },
+    ),
 };
 
 const finance = {
@@ -313,11 +402,118 @@ const finance = {
     },
 };
 
+// I buoni dati alle persone. Un buono da 10 euro consegnato a qualcuno è denaro
+// uscito: `issue` crea anche il movimento in uscita, `create` scrive solo la
+// riga. Sono due cose diverse e vanno tenute distinte.
 const coupons = {
-    getByAssociation: (assocId) => apiRequest(`/v1/coupons/association/${assocId || CURRENT_ASSOCIATION_ID}`),
+    // `anno` filtra sul server: un buono è un fatto puntuale e appartiene
+    // all'esercizio in cui il denaro è uscito. Omesso significa «tutti».
+    getByAssociation: (assocId, anno) => apiRequest(
+        `/v1/coupons/association/${assocId || CURRENT_ASSOCIATION_ID}${anno ? `?anno=${anno}` : ''}`,
+    ),
     create: (data) => apiRequest('/v1/coupons', { method: 'POST', body: data }),
+    issue: (data, userId) => apiRequest(
+        `/v1/coupons/issue${userId ? `?userId=${userId}` : ''}`,
+        { method: 'POST', body: data },
+    ),
     update: (id, data) => apiRequest(`/v1/coupons/${id}`, { method: 'PUT', body: data }),
+    validate: (code, assocId) => apiRequest('/v1/coupons/validate', {
+        method: 'POST',
+        body: { code, associationId: assocId || CURRENT_ASSOCIATION_ID },
+    }),
     delete: (id) => apiRequest(`/v1/coupons/${id}`, { method: 'DELETE' }),
+};
+
+// Le fatture che l'associazione RICEVE.
+//
+// Il backend esisteva già per intero — elenco, scadute, importazione della
+// fattura elettronica XML — e non era esposto al client da nessuna parte: la
+// funzione c'era e nessuno poteva usarla.
+const expenseDocuments = {
+    // Una fattura appartiene all'anno della sua data: il filtro è del server.
+    list: (assocId, anno) => apiRequest(
+        `/v1/expense-documents?associationId=${assocId || CURRENT_ASSOCIATION_ID}${anno ? `&anno=${anno}` : ''}`,
+    ),
+    overdue: (assocId) => apiRequest(`/v1/expense-documents/overdue?associationId=${assocId || CURRENT_ASSOCIATION_ID}`),
+    getById: (id) => apiRequest(`/v1/expense-documents/${id}`),
+    create: (data) => apiRequest('/v1/expense-documents', { method: 'POST', body: data }),
+    update: (id, data) => apiRequest(`/v1/expense-documents/${id}`, { method: 'PUT', body: data }),
+    delete: (id) => apiRequest(`/v1/expense-documents/${id}`, { method: 'DELETE' }),
+    // L'XML della fattura elettronica: il server lo legge e ne ricava
+    // fornitore, numero, imponibile e IVA. Se il file era già stato importato
+    // risponde `alreadyPresent` invece di creare un doppione in prima nota.
+    importXml: (file, assocId) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiRequest(
+            `/v1/expense-documents/import-xml?associationId=${assocId || CURRENT_ASSOCIATION_ID}`,
+            { method: 'POST', body: formData },
+        );
+    },
+};
+
+// Le aggiunte su un movimento: IVA, commissione, spese, altro. L'importo si
+// dichiara, il totale del movimento lo ricalcola il server — mai il client.
+const transactionAdditions = {
+    list: (transactionId) => apiRequest(`/v1/transactions/${transactionId}/additions`),
+    add: (transactionId, data) => apiRequest(`/v1/transactions/${transactionId}/additions`, {
+        method: 'POST',
+        body: data,
+    }),
+    remove: (transactionId, additionId) => apiRequest(
+        `/v1/transactions/${transactionId}/additions/${additionId}`,
+        { method: 'DELETE' },
+    ),
+};
+
+// Le polizze dei volontari — art. 18 CTS.
+const volunteerInsurance = {
+    getByAssociation: (assocId) => apiRequest(`/v1/volunteer-insurance/association/${assocId || CURRENT_ASSOCIATION_ID}`),
+    save: (data) => apiRequest('/v1/volunteer-insurance', { method: 'POST', body: data }),
+    // Il giorno è un parametro: dopo un infortunio la domanda riguarda sempre
+    // una data passata.
+    coverage: (volunteerId, giorno, assocId) => apiRequest(
+        `/v1/volunteer-insurance/coverage?associationId=${assocId || CURRENT_ASSOCIATION_ID}`
+        + `&volunteerId=${volunteerId}${giorno ? `&giorno=${giorno}` : ''}`,
+    ),
+    uncovered: (assocId, giorno) => apiRequest(
+        `/v1/volunteer-insurance/uncovered?associationId=${assocId || CURRENT_ASSOCIATION_ID}`
+        + `${giorno ? `&giorno=${giorno}` : ''}`,
+    ),
+    expiring: (assocId, giorni = 60) => apiRequest(
+        `/v1/volunteer-insurance/expiring?associationId=${assocId || CURRENT_ASSOCIATION_ID}&giorni=${giorni}`,
+    ),
+    addCovered: (policyId, volunteerId) => apiRequest(
+        `/v1/volunteer-insurance/${policyId}/covered/${volunteerId}`, { method: 'POST' },
+    ),
+    removeCovered: (policyId, volunteerId) => apiRequest(
+        `/v1/volunteer-insurance/${policyId}/covered/${volunteerId}`, { method: 'DELETE' },
+    ),
+};
+
+// Gli allegati, per qualunque cosa li abbia. Un solo meccanismo al posto delle
+// ventiquattro colonne `*_path` che puntavano a un disco che si azzera.
+const attachments = {
+    list: (ownerType, ownerId) => apiRequest(`/v1/attachments/${ownerType}/${ownerId}`),
+    download: (ownerType, ownerId, kind) => apiRequest(`/v1/attachments/${ownerType}/${ownerId}/${kind}/content`, { responseType: 'blob' }),
+    upload: (ownerType, ownerId, kind, file, userId) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return apiRequest(
+            `/v1/attachments/${ownerType}/${ownerId}/${kind}${userId ? `?userId=${userId}` : ''}`,
+            { method: 'POST', body: formData },
+        );
+    },
+    // Non passa da apiRequest perché serve l'URL grezzo per un <a download>.
+    // È asincrona perché l'indirizzo del backend si scopre all'avvio — la porta
+    // la sceglie il sistema — e prima di allora API_BASE_URL è nulla.
+    downloadUrl: async (ownerType, ownerId, kind) => {
+        const base = await initializeApi();
+        return `${base}/v1/attachments/${ownerType}/${ownerId}/${kind}/content`;
+    },
+    delete: (ownerType, ownerId, kind) => apiRequest(
+        `/v1/attachments/${ownerType}/${ownerId}/${kind}`, { method: 'DELETE' },
+    ),
 };
 
 const paymentMethods = {
@@ -348,7 +544,7 @@ const budgets = {
     create: (data) => apiRequest('/v1/budgets', { method: 'POST', body: data }),
     update: (id, data) => apiRequest(`/v1/budgets/${id}`, { method: 'PUT', body: data }),
     delete: (id) => apiRequest(`/v1/budgets/${id}`, { method: 'DELETE' }),
-    approve: (id, approvedBy) => apiRequest(`/v1/budgets/${id}/approve?approvedBy=${approvedBy}`, { method: 'POST' }),
+    approve: (id, approvedBy) => apiRequest(`/v1/budgets/${id}/approve?approvedBy=${requireActorId(approvedBy)}`, { method: 'POST' }),
     syncActuals: (id) => apiRequest(`/v1/budgets/${id}/sync-actuals`, { method: 'POST' }),
     getLines: (budgetId) => apiRequest(`/v1/budgets/${budgetId}/lines`),
     addLine: (budgetId, data) => apiRequest(`/v1/budgets/${budgetId}/lines`, { method: 'POST', body: data }),
@@ -361,7 +557,7 @@ const balances = {
     getById: (id) => apiRequest(`/v1/balances/${id}`),
     getLines: (id) => apiRequest(`/v1/balances/${id}/lines`),
     compute: (assocId, year) => apiRequest(`/v1/balances/compute?associationId=${assocId}&year=${year}`, { method: 'POST' }),
-    approve: (id, approvedBy, signatories) => apiRequest(`/v1/balances/${id}/approve?approvedBy=${approvedBy}`, { method: 'POST', body: signatories }),
+    approve: (id, approvedBy, signatories) => apiRequest(`/v1/balances/${id}/approve?approvedBy=${requireActorId(approvedBy)}`, { method: 'POST', body: signatories }),
     delete: (id) => apiRequest(`/v1/balances/${id}`, { method: 'DELETE' }),
     downloadPdf: (id) => apiRequest(`/v1/balances/${id}/pdf`),
     checkSigners: (id) => apiRequest(`/v1/balances/${id}/check-signers`),
@@ -441,7 +637,7 @@ const communications = {
     delete: (id) => apiRequest(`/v1/communications/${id}`, { method: 'DELETE' }),
     resolveRecipients: (id) => apiRequest(`/v1/communications/${id}/resolve-recipients`, { method: 'POST' }),
     getRecipients: (id) => apiRequest(`/v1/communications/${id}/recipients`),
-    send: (id, sentBy) => apiRequest(`/v1/communications/${id}/send?sentBy=${sentBy}`, { method: 'POST' }),
+    send: (id, sentBy) => apiRequest(`/v1/communications/${id}/send?sentBy=${requireActorId(sentBy)}`, { method: 'POST' }),
 };
 
 const csvImport = {
@@ -466,7 +662,11 @@ const csvImport = {
         formData.append('file', file);
         return apiRequest(`/v1/members/import-csv?associationId=${assocId}`, { method: 'POST', body: formData });
     },
-    confirmImport: (id) => apiRequest(`/v1/imports/${id}/confirm`, { method: 'POST' }),
+    confirmImport: (id, file) => {
+        const body = new FormData();
+        if (file) body.append('file', file);
+        return apiRequest(`/v1/imports/${id}/confirm`, { method: 'POST', body });
+    },
 };
 
 const fiscal = {
@@ -481,20 +681,17 @@ const medicalCertificates = {
     getByAssociation: (assocId) => apiRequest(`/v1/medical-certificates/by-association?associationId=${assocId}`),
     getExpiring: (assocId, days = 30) => apiRequest(`/v1/medical-certificates/expiring?associationId=${assocId}&days=${days}`),
     getExpired: (assocId) => apiRequest(`/v1/medical-certificates/expired?associationId=${assocId}`),
+    // Solo tipo e scadenza: medico, struttura sanitaria, note libere e il file
+    // del certificato sono stati tolti. Erano dati sulla salute (art. 9 GDPR)
+    // accanto a nome, codice fiscale e indirizzo, e il file non esisteva
+    // davvero — puntava a un disco che al riavvio si azzera.
     save: (data) => apiRequest('/v1/medical-certificates', { method: 'POST', body: data }),
-    upload: (id, file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        return apiRequest(`/v1/medical-certificates/${id}/upload`, { method: 'POST', body: formData });
-    },
     delete: (id) => apiRequest(`/v1/medical-certificates/${id}`, { method: 'DELETE' }),
 };
 
-const federation = {
-    getProviders: () => apiRequest('/v1/federation/providers'),
-    register: (data, providerCode = 'CONI_IT') => apiRequest(`/v1/federation/register?providerCode=${providerCode}`, { method: 'POST', body: data }),
-    verify: (number, checksum, providerCode = 'CONI_IT') => apiRequest(`/v1/federation/verify?number=${number}&checksum=${checksum}&providerCode=${providerCode}`),
-};
+// Il modulo `federation` (affiliazione CONI / EOC) è stato tolto: serviva a
+// un'associazione sportiva dilettantistica. Un'APS non si affilia a una
+// federazione, si iscrive al RUNTS — vedi i campi `runts*` su Association.
 
 // ========================================
 // EXPORT
@@ -504,6 +701,10 @@ export const associago = {
     init: async () => { await initializeApi(); return { baseUrl: API_BASE_URL }; },
     setCurrentAssociation: (id) => { CURRENT_ASSOCIATION_ID = id; },
     getApiUrl,
+    getCurrentProfile: () => apiRequest('/v1/me'),
+    createBackup: () => apiRequest('/v1/backup/create', { method: 'POST' }),
+    checkSession: () => apiRequest('/auth/check'),
+    logout: () => apiRequest('/auth/logout', { method: 'POST' }),
 
     // Auth & Setup (Legacy/Basic)
     login: async (associationId, password) => {
@@ -572,7 +773,8 @@ export const associago = {
         const autologin = localStorage.getItem(STORAGE_KEY_AUTOLOGIN);
         return {
             autologin: autologin ? JSON.parse(autologin) : null,
-            language: localStorage.getItem(STORAGE_KEY_LANGUAGE) || 'it'
+            language: localStorage.getItem(STORAGE_KEY_LANGUAGE) || 'it',
+            theme: localStorage.getItem(STORAGE_KEY_THEME) === 'dark' ? 'dark' : 'light'
         };
     },
     setPreferences: (prefs) => {
@@ -584,8 +786,19 @@ export const associago = {
             }
         }
         if (prefs.language) localStorage.setItem(STORAGE_KEY_LANGUAGE, prefs.language);
+        if (prefs.theme === 'light' || prefs.theme === 'dark') localStorage.setItem(STORAGE_KEY_THEME, prefs.theme);
     },
-    setAuthToken: (token) => { /* Token management if needed */ },
+    /**
+     * Registra la sorgente del token di accesso (sul web: Clerk).
+     * Passare null la rimuove, ad esempio al logout.
+     */
+    setTokenProvider: (provider) => { TOKEN_PROVIDER = provider; },
+
+    setAuthToken: (token) => {
+        // Compatibilità con il flusso desktop, che chiama setAuthToken(null) al
+        // logout: senza provider non c'è nulla da azzerare.
+        if (token === null) TOKEN_PROVIDER = null;
+    },
 
     validateAssociation: async (id) => {
         try {
@@ -595,6 +808,23 @@ export const associago = {
             if (e.message && e.message.includes('404')) return false;
             throw e;
         }
+    },
+
+    /**
+     * Elenco delle associazioni configurate sul backend.
+     * Sul web serve al gate Clerk per risolvere l'associazione corrente, che
+     * nel desktop veniva scelta nella schermata di login.
+     */
+    listAssociations: () => apiRequest('/v1/associations'),
+
+    /**
+     * Area personale. Nessuno di questi endpoint accetta un identificativo:
+     * il soggetto lo decide il token, non il chiamante.
+     */
+    me: {
+        profile: () => apiRequest('/v1/me'),
+        shifts: () => apiRequest('/v1/me/presenze'),
+        expenses: () => apiRequest('/v1/me/rimborsi')
     },
 
     getAssociationProfile: (id) => apiRequest(`/associations/${id}`),
@@ -661,7 +891,10 @@ export const associago = {
     csvImport,
     fiscal,
     medicalCertificates,
-    federation,
+    expenseDocuments,
+    transactionAdditions,
+    volunteerInsurance,
+    attachments,
 
     // App metadata
     getBackendInfo: () => apiRequest('/v1/app/info'),

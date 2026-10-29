@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Banco di prova mobile — Gestionale</title>
+  </head>
+
+  <body>
+    <!--
+      Pagina di sola verifica: monta il guscio del gestionale senza backend né
+      accesso, perché scripts/mobile-smoke.mjs possa misurarlo.
+      Non entra nella build di produzione — vite.web.config.mjs dichiara come
+      unico ingresso index.web.html.
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/mobile-harness.jsx"></script>
+  </body>
+</html>

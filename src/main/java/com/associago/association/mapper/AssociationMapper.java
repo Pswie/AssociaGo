@@ -28,10 +28,6 @@ public class AssociationMapper {
                 entity.getVicePresident(),
                 entity.getSecretary(),
                 entity.getTreasurer(),
-                entity.getStatutePath(),
-                entity.getRegulationPath(),
-                entity.getSecondaryLogoPath(),
-                entity.getPartnerLogoPath(),
                 entity.getFoundationDate(),
                 entity.isActive(),
                 entity.getMembershipNumberFormat(),
@@ -68,10 +64,8 @@ public class AssociationMapper {
         if (dto.vicePresident() != null) entity.setVicePresident(dto.vicePresident());
         if (dto.secretary() != null) entity.setSecretary(dto.secretary());
         if (dto.treasurer() != null) entity.setTreasurer(dto.treasurer());
-        if (dto.statutePath() != null) entity.setStatutePath(dto.statutePath());
-        if (dto.regulationPath() != null) entity.setRegulationPath(dto.regulationPath());
-        if (dto.secondaryLogoPath() != null) entity.setSecondaryLogoPath(dto.secondaryLogoPath());
-        if (dto.partnerLogoPath() != null) entity.setPartnerLogoPath(dto.partnerLogoPath());
+        // Statuto, regolamento e loghi secondari ora sono allegati
+        // (AttachmentOwner.ASSOCIATION), non percorsi su disco.
         if (dto.foundationDate() != null) entity.setFoundationDate(dto.foundationDate());
         if (dto.membershipNumberFormat() != null) entity.setMembershipNumberFormat(dto.membershipNumberFormat());
         if (dto.baseMembershipFee() != null) entity.setBaseMembershipFee(dto.baseMembershipFee());

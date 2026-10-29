@@ -25,7 +25,6 @@ public final class AssemblyMapper {
                 assembly.getFirstCallQuorum(),
                 assembly.getSecondCallQuorum(),
                 assembly.isQuorumReached(),
-                assembly.getMinutesPath(),
                 assembly.getNotes(),
                 assembly.getCreatedAt(),
                 assembly.getUpdatedAt()

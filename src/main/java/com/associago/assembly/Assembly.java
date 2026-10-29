@@ -12,42 +12,39 @@ public class Assembly {
 
     @Column(name = "association_id", nullable = false)
     private Long associationId;
-    
+
     private String title;
     private String description;
     private LocalDateTime date;
-    
+
     @Column(name = "start_time")
     private String startTime; // HH:mm
-    
+
     @Column(name = "end_time")
     private String endTime; // HH:mm
-    
+
     private String location;
     private String type; // ORDINARY, EXTRAORDINARY
     private String status; // DRAFT, CALLED, IN_PROGRESS, CLOSED, CANCELLED
-    
+
     private String president;
     private String secretary;
 
     @Column(name = "first_call_quorum")
     private Double firstCallQuorum;
-    
+
     @Column(name = "second_call_quorum")
     private Double secondCallQuorum;
-    
+
     @Column(name = "is_quorum_reached")
     private boolean isQuorumReached = false;
 
-    @Column(name = "minutes_path")
-    private String minutesPath;
-    
-    @Column(columnDefinition = "TEXT")
+@Column(columnDefinition = "TEXT")
     private String notes;
-    
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
@@ -82,8 +79,6 @@ public class Assembly {
     public void setSecondCallQuorum(Double secondCallQuorum) { this.secondCallQuorum = secondCallQuorum; }
     public boolean isQuorumReached() { return isQuorumReached; }
     public void setQuorumReached(boolean quorumReached) { isQuorumReached = quorumReached; }
-    public String getMinutesPath() { return minutesPath; }
-    public void setMinutesPath(String minutesPath) { this.minutesPath = minutesPath; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }

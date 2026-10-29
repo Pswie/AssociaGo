@@ -1,6 +1,9 @@
 package com.associago.coupon;
 
 import com.associago.coupon.repository.CouponRepository;
+import com.associago.finance.Transaction;
+import com.associago.finance.TransactionType;
+import com.associago.finance.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,18 +13,36 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * I buoni dati alle persone.
+ *
+ * <p>La verifica di validità di uno sconto e il calcolo dell'importo scontato
+ * sono stati tolti insieme alle colonne che li reggevano: qui un coupon è un
+ * buono, cioè un'uscita, non una riduzione di un'entrata. Quella macchina non
+ * era mai stata collegata a nulla — nessun servizio chiamava
+ * {@code calculateDiscount} — e tenerla avrebbe significato conservare due
+ * significati opposti sotto lo stesso nome.
+ */
 @Service
 public class CouponService {
 
     private final CouponRepository couponRepository;
+    private final TransactionRepository transactionRepository;
 
     @Autowired
-    public CouponService(CouponRepository couponRepository) {
+    public CouponService(CouponRepository couponRepository,
+                         TransactionRepository transactionRepository) {
         this.couponRepository = couponRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     public List<Coupon> findByAssociationId(Long associationId) {
         return couponRepository.findByAssociationId(associationId);
+    }
+
+    /** I buoni di un esercizio: vedi la nota sul repository per la regola. */
+    public List<Coupon> findByAssociationIdAndAnno(Long associationId, int anno) {
+        return couponRepository.findByAssociationIdAndAnno(associationId, anno);
     }
 
     public Optional<Coupon> findById(Long id) {
@@ -42,61 +63,49 @@ public class CouponService {
         couponRepository.deleteById(id);
     }
 
-    public boolean isValid(Coupon coupon, BigDecimal amount, Long activityId) {
-        return isValid(coupon, amount, activityId, null);
-    }
-
-    public boolean isValid(Coupon coupon, BigDecimal amount, Long activityId, Long eventId) {
-        if (!coupon.isActive()) return false;
-
-        LocalDate now = LocalDate.now();
-        if (coupon.getStartDate() != null && now.isBefore(coupon.getStartDate())) return false;
-        if (coupon.getEndDate() != null && now.isAfter(coupon.getEndDate())) return false;
-
-        if (coupon.getMaxUses() != null && coupon.getCurrentUses() >= coupon.getMaxUses()) return false;
-
-        if (amount != null && coupon.getMinAmount() != null && amount.compareTo(coupon.getMinAmount()) < 0) return false;
-
-        if (activityId != null && !coupon.getApplicableActivities().isEmpty()) {
-            boolean isApplicable = coupon.getApplicableActivities().stream()
-                    .anyMatch(a -> a.getId().equals(activityId));
-            if (!isApplicable) return false;
-        }
-
-        if (eventId != null && !coupon.getApplicableEvents().isEmpty()) {
-            boolean isApplicable = coupon.getApplicableEvents().stream()
-                    .anyMatch(e -> e.getId().equals(eventId));
-            if (!isApplicable) return false;
-        }
-
-        return true;
-    }
-    
+    /**
+     * Emette un buono e registra l'uscita corrispondente.
+     *
+     * <p>Un buono da 10 euro dato a qualcuno è denaro uscito: le due scritture
+     * nascono insieme, dentro la stessa transazione, perché un buono senza il
+     * suo movimento sarebbe denaro sparito dai conti e un movimento senza il suo
+     * buono sarebbe un'uscita senza causale.
+     *
+     * <p>Se poi arrivano IVA, commissioni o spese, non si tocca questo importo:
+     * si aggiungono righe sul movimento e il totale si ricalcola da sé — vedi
+     * {@code TransactionAdditionService}.
+     *
+     * @param userId chi sta emettendo, per la tracciabilità del movimento.
+     */
     @Transactional
-    public void incrementUsage(Long couponId) {
-        couponRepository.findById(couponId).ifPresent(coupon -> {
-            coupon.setCurrentUses(coupon.getCurrentUses() + 1);
-            couponRepository.save(coupon);
-        });
-    }
-
-    public BigDecimal calculateDiscount(Coupon coupon, BigDecimal originalAmount) {
-        if (originalAmount == null || originalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            return BigDecimal.ZERO;
+    public Coupon issue(Coupon coupon, Long userId) {
+        BigDecimal valore = coupon.getNominalValue();
+        if (valore == null || valore.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Il valore del buono deve essere maggiore di zero.");
         }
-
-        BigDecimal discount = BigDecimal.ZERO;
-        if ("PERCENTAGE".equalsIgnoreCase(coupon.getDiscountType())) {
-            discount = originalAmount.multiply(coupon.getDiscountValue()).divide(BigDecimal.valueOf(100));
-        } else if ("FIXED_AMOUNT".equalsIgnoreCase(coupon.getDiscountType())) {
-            discount = coupon.getDiscountValue();
+        if (coupon.getBeneficiaryMemberId() == null
+                && (coupon.getBeneficiaryRef() == null || coupon.getBeneficiaryRef().isBlank())) {
+            throw new IllegalArgumentException(
+                    "Indicare a chi va il buono: un socio, oppure il codice della persona in anagrafica.");
         }
+        if (coupon.getIssuedDate() == null) coupon.setIssuedDate(LocalDate.now());
 
-        // Ensure discount doesn't exceed original amount
-        if (discount.compareTo(originalAmount) > 0) {
-            discount = originalAmount;
-        }
-        
-        return discount;
+        Transaction uscita = new Transaction();
+        uscita.setAssociationId(coupon.getAssociationId());
+        uscita.setDate(coupon.getIssuedDate());
+        uscita.setType(TransactionType.EXPENSE);
+        uscita.setAmount(valore);
+        // La base è il nominale: le aggiunte partiranno da qui.
+        uscita.setBaseAmount(valore);
+        uscita.setCategory("Buoni");
+        uscita.setDescription("Buono " + coupon.getCode()
+                + (coupon.getDescription() == null ? "" : " — " + coupon.getDescription()));
+        uscita.setReferenceId(coupon.getCode());
+        uscita.setCreatedBy(userId);
+        Transaction registrata = transactionRepository.save(uscita);
+
+        coupon.setTransactionId(registrata.getId());
+        coupon.setStatus(Coupon.EMESSO);
+        return couponRepository.save(coupon);
     }
 }

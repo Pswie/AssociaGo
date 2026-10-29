@@ -43,19 +43,22 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // Added for OAuth2 support
+    // Profilo cloud: il backend e' un resource server e valida i JWT emessi da
+    // Clerk tramite JWKS. Nessuna sessione, nessuna password gestita da noi.
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    
+
     // Config metadata
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // Database
     implementation 'com.h2database:h2'
-    
+
     // SQLite (Updated to match JinnLog)
     runtimeOnly 'org.xerial:sqlite-jdbc:3.46.1.3'
-    
+
     // Hibernate Community Dialects
     // In JinnLog this works without version because Spring Boot 3.4.0 manages it correctly
     // or it's pulled transitively. Let's try without version first as in JinnLog.
@@ -66,7 +69,7 @@ dependencies {
 
     // MySQL (cloud backend deployment)
     runtimeOnly 'com.mysql:mysql-connector-j'
-    
+
     // Flyway
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql' // For MariaDB
@@ -88,10 +91,38 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mariadb'
+    // Il profilo cloud gira su MySQL, non su MariaDB: lo schema va collaudato
+    // sul motore che useremo davvero.
+    testImplementation 'org.testcontainers:mysql'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    // In esercizio la imposta AssociaGoApplication.main(), che nei test non
+    // viene eseguito. Serve come system property e non come property Spring:
+    // logging.file.name la risolve prima che esista l'Environment del test, e
+    // senza si ottiene "Circular placeholder reference".
+    def testDataDir = layout.buildDirectory.dir('test-data').get().asFile
+    systemProperty 'associago.data.path', testDataDir.absolutePath
+
+    // I test che passano dal SetupController lasciano un config.json con
+    // configured=true e dbType=null: alla esecuzione successiva
+    // DynamicDataSourceConfig lo rilegge e fallisce con "Unknown DB Type: null".
+    // Ripartire da una cartella pulita rende la suite ripetibile.
+    doFirst {
+        delete testDataDir
+    }
+
+    // Su Windows con Docker Desktop, Testcontainers non individua da solo
+    // l'endpoint del daemon: il context attivo e' "desktop-linux", mentre la
+    // libreria cerca il named pipe classico. Senza questa riga i test di
+    // integrazione falliscono con "Could not find a valid Docker environment".
+    if (System.getProperty('os.name').toLowerCase().contains('windows')
+            && System.getenv('DOCKER_HOST') == null) {
+        environment 'DOCKER_HOST', 'npipe:////./pipe/docker_engine'
+    }
+
     finalizedBy jacocoTestReport
 }
 

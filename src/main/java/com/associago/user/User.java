@@ -21,6 +21,13 @@ public class User {
     @Column(name = "tax_code", unique = true)
     private String taxCode;
 
+    /**
+     * Identificativo dell'utente su Clerk (claim {@code sub} del JWT).
+     * Nullo per le anagrafiche create dal desktop, che non hanno un accesso web.
+     */
+    @Column(name = "clerk_user_id", unique = true)
+    private String clerkUserId;
+
     private String email;
     private String phone;
 
@@ -53,6 +60,8 @@ public class User {
     public void setLastName(String lastName) { this.lastName = lastName; }
     public String getTaxCode() { return taxCode; }
     public void setTaxCode(String taxCode) { this.taxCode = taxCode; }
+    public String getClerkUserId() { return clerkUserId; }
+    public void setClerkUserId(String clerkUserId) { this.clerkUserId = clerkUserId; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }

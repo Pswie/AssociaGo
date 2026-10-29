@@ -25,10 +25,16 @@ public class ActivityController {
 
     // --- Basic Activity CRUD ---
 
+    /**
+     * @param anno l'esercizio da guardare; assente significa «tutte». Un corso
+     *             senza data di fine è ancora in corso e compare anche negli
+     *             anni successivi a quello in cui è cominciato.
+     */
     @GetMapping
-    public List<ActivityDTO> getActivities(@RequestParam(required = false) Long associationId) {
+    public List<ActivityDTO> getActivities(@RequestParam(required = false) Long associationId,
+                                           @RequestParam(required = false) Integer anno) {
         if (associationId != null) {
-            return activityService.findByAssociationId(associationId).stream()
+            return activityService.findNellEsercizio(associationId, anno).stream()
                     .map(ActivityMapper::toDTO)
                     .toList();
         }

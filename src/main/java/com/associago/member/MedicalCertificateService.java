@@ -3,28 +3,30 @@ package com.associago.member;
 import com.associago.member.dto.MedicalCertificateDTO;
 import com.associago.member.dto.MedicalCertificateUpsertDTO;
 import com.associago.member.repository.MedicalCertificateRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
+/**
+ * I certificati di idoneità dei soci.
+ *
+ * <p>Il caricamento del file non c'è più. Scriveva su
+ * {@code storagePath/medical-certificates/}, cioè sul disco locale del
+ * contenitore: su Cloud Run quel disco è effimero e al riavvio dell'istanza il
+ * PDF non c'era più, mentre {@code file_path} continuava a dire il contrario.
+ * Non esisteva nemmeno un endpoint per riscaricarlo. Era una funzione che
+ * prometteva una conservazione che non avveniva, per giunta su un documento
+ * sanitario: toglierla riduce l'esposizione e non perde nulla che ci fosse
+ * davvero.
+ */
 @Service
 @Transactional
 public class MedicalCertificateService {
 
     private final MedicalCertificateRepository repository;
-
-    @Value("${associago.assets.storage-path}")
-    private String storagePath;
 
     public MedicalCertificateService(MedicalCertificateRepository repository) {
         this.repository = repository;
@@ -65,43 +67,14 @@ public class MedicalCertificateService {
         if (dto.certificateType() != null) cert.setCertificateType(dto.certificateType());
         if (dto.issueDate() != null) cert.setIssueDate(dto.issueDate());
         if (dto.expiryDate() != null) cert.setExpiryDate(dto.expiryDate());
-        if (dto.issuedBy() != null) cert.setIssuedBy(dto.issuedBy());
-        if (dto.medicalFacility() != null) cert.setMedicalFacility(dto.medicalFacility());
-        if (dto.notes() != null) cert.setNotes(dto.notes());
 
         cert.setStatus(computeStatus(cert.getExpiryDate()));
 
         return toDTO(repository.save(cert));
     }
 
-    public MedicalCertificateDTO uploadFile(Long id, MultipartFile file) throws IOException {
-        MedicalCertificate cert = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medical certificate not found: " + id));
-
-        Path dir = Paths.get(storagePath, "medical-certificates");
-        Files.createDirectories(dir);
-
-        String ext = getExtension(file.getOriginalFilename());
-        String filename = UUID.randomUUID() + ext;
-        Path filePath = dir.resolve(filename);
-        file.transferTo(filePath.toFile());
-
-        // Remove old file if exists
-        if (cert.getFilePath() != null) {
-            try { Files.deleteIfExists(Paths.get(cert.getFilePath())); } catch (IOException ignored) {}
-        }
-
-        cert.setFilePath(filePath.toString());
-        return toDTO(repository.save(cert));
-    }
-
     public void delete(Long id) {
-        repository.findById(id).ifPresent(cert -> {
-            if (cert.getFilePath() != null) {
-                try { Files.deleteIfExists(Paths.get(cert.getFilePath())); } catch (IOException ignored) {}
-            }
-            repository.delete(cert);
-        });
+        repository.findById(id).ifPresent(repository::delete);
     }
 
     private String computeStatus(LocalDate expiryDate) {
@@ -116,14 +89,7 @@ public class MedicalCertificateService {
         return new MedicalCertificateDTO(
                 c.getId(), c.getMemberId(), c.getAssociationId(),
                 c.getCertificateType(), c.getIssueDate(), c.getExpiryDate(),
-                c.getIssuedBy(), c.getMedicalFacility(), c.getFilePath(),
-                c.getStatus(), c.getNotes(), c.getCreatedAt(), c.getUpdatedAt()
+                c.getStatus(), c.getCreatedAt(), c.getUpdatedAt()
         );
-    }
-
-    private String getExtension(String filename) {
-        if (filename == null) return ".pdf";
-        int dot = filename.lastIndexOf('.');
-        return dot >= 0 ? filename.substring(dot) : ".pdf";
     }
 }

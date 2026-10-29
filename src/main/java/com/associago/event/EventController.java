@@ -24,9 +24,15 @@ public class EventController {
 
     // --- CRUD ---
 
+    /**
+     * @param anno l'esercizio da guardare; assente significa «tutti». Un evento
+     *             a cavallo di capodanno compare in entrambi gli anni.
+     */
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getAllEvents() {
-        List<EventDTO> events = StreamSupport.stream(eventService.getAllEvents().spliterator(), false)
+    public ResponseEntity<List<EventDTO>> getAllEvents(
+            @RequestParam(required = false) Integer anno) {
+        List<EventDTO> events = StreamSupport.stream(
+                        eventService.getEventiDellEsercizio(anno).spliterator(), false)
                 .map(EventMapper::toDTO)
                 .toList();
         return ResponseEntity.ok(events);

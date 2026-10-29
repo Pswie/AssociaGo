@@ -62,9 +62,12 @@ const SetupWizard = ({ onConfigured }) => {
     };
 
     return (
-        <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
-            <Card className="border-0 shadow-lg" style={{ width: '500px' }}>
-                <Card.Body className="p-5">
+        <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light p-3">
+            {/* width fissa a 500px: su un telefono da 390 la scheda sfondava il
+                viewport. Con maxWidth resta identica su desktop e si adatta
+                sotto. */}
+            <Card className="border-0 shadow-lg w-100" style={{ maxWidth: '500px' }}>
+                <Card.Body className="p-4 p-sm-5">
                     <div className="text-center mb-5">
                         <div className="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style={{ width: '64px', height: '64px' }}>
                             <Database size={32} />

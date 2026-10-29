@@ -4,6 +4,23 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Il certificato di idoneità di un socio, ridotto a quel che serve.
+ *
+ * <p>Resta il tipo e la scadenza: bastano a sapere se una persona può fare un
+ * turno, ed è l'unica domanda a cui l'associazione deve rispondere.
+ *
+ * <p>Sono stati tolti il nome del medico, la struttura sanitaria, una nota
+ * libera e il file del certificato. Erano dati sulla salute — art. 9 GDPR —
+ * appoggiati accanto a nome, cognome, codice fiscale e indirizzo in
+ * {@code members}, raggiungibili con un {@code JOIN} banale. Il file, poi, non
+ * esisteva davvero: veniva scritto sul disco locale del contenitore e spariva
+ * al riavvio dell'istanza, mentre la colonna continuava a sostenere che ci
+ * fosse. Nessun endpoint lo rileggeva.
+ *
+ * <p>Che il certificato esista resta un dato art. 9 e va nel registro dei
+ * trattamenti: la potatura riduce l'esposizione, non toglie l'adempimento.
+ */
 @Entity
 @Table(name = "medical_certificates")
 public class MedicalCertificate {
@@ -27,19 +44,8 @@ public class MedicalCertificate {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-    @Column(name = "issued_by")
-    private String issuedBy;
-
-    @Column(name = "medical_facility")
-    private String medicalFacility;
-
-    @Column(name = "file_path")
-    private String filePath;
-
     @Column(nullable = false)
     private String status = "MISSING"; // VALID, EXPIRED, EXPIRING_SOON, MISSING
-
-    private String notes;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -77,20 +83,8 @@ public class MedicalCertificate {
     public LocalDate getExpiryDate() { return expiryDate; }
     public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
 
-    public String getIssuedBy() { return issuedBy; }
-    public void setIssuedBy(String issuedBy) { this.issuedBy = issuedBy; }
-
-    public String getMedicalFacility() { return medicalFacility; }
-    public void setMedicalFacility(String medicalFacility) { this.medicalFacility = medicalFacility; }
-
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
-
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

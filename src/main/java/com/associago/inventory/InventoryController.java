@@ -22,9 +22,16 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
+    /**
+     * @param anno l'esercizio da guardare. Un oggetto si possiede dall'acquisto
+     *             in poi: compare in quell'anno e in tutti i successivi, non
+     *             solo nell'anno in cui è stato comprato.
+     */
     @GetMapping
-    public ResponseEntity<List<InventoryItemDTO>> getAllItems() {
-        List<InventoryItemDTO> items = StreamSupport.stream(inventoryService.getAllItems().spliterator(), false)
+    public ResponseEntity<List<InventoryItemDTO>> getAllItems(
+            @RequestParam(required = false) Integer anno) {
+        List<InventoryItemDTO> items = StreamSupport.stream(
+                        inventoryService.getItemsDellEsercizio(anno).spliterator(), false)
                 .map(InventoryItemMapper::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(items);
@@ -77,7 +84,7 @@ public class InventoryController {
     public ResponseEntity<InventoryLoan> returnLoan(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(inventoryService.returnLoan(id, LocalDateTime.now()));
-        } catch (RuntimeException e) {
+        } catch (jakarta.persistence.EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
     }

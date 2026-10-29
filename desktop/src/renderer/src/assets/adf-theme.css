@@ -1,0 +1,526 @@
+/* ============================================================================
+   Angeli del Futuro — tema del gestionale
+   ============================================================================
+
+   Porta AssociaGo sull'aspetto del sito: carta calda, verde bosco, terracotta,
+   Plus Jakarta Sans con crenatura stretta. Gli stessi valori di
+   sito/src/styles/global.css e di AdminLayout.astro, e gli stessi del tema della
+   sezione bandi (LibrePM, desktop/src/styles/adf-theme.css): le tre aree devono
+   sembrare un solo programma, perché per chi le usa lo sono.
+
+   Questo file **non tocca il markup**. AssociaGo è già guidato da variabili CSS
+   (`--primary-color`, `--body-bg`, …) e da Bootstrap (`--bs-*`): basta
+   ridefinirle. È una scelta deliberata — nel luglio 2026 la migrazione a HeroUI
+   di questo frontend è stata annullata proprio perché riscrivere le schermate
+   una per una era troppo rischioso (vedi docs/13). Un tema che agisce sui token
+   ottiene la coerenza visiva senza riaprire quel cantiere.
+
+   Viene caricato **solo dalla build web** (src/main.web.jsx). L'applicazione
+   Electron mantiene il suo aspetto originale.
+
+   Gli override di `--bs-*` sono su `:root:root` e non su `:root`: raddoppiare il
+   selettore alza la specificità, così vincono su Bootstrap qualunque sia
+   l'ordine in cui i fogli finiscono nel bundle. Dipendere dall'ordine significa
+   che una riorganizzazione degli import cambia i colori senza che nessuno
+   capisca perché.
+   ========================================================================== */
+
+:root {
+  /* ---- Palette del sito ---- */
+  --adf-paper: #fdfbf7;
+  --adf-paper-deep: #f4f2ed;
+  --adf-surface: #fffefb;
+  --adf-ink: #1d211c;
+  --adf-ink-soft: #4c544c;
+  --adf-ink-faint: #7d857c;
+  --adf-forest: #17231c;
+  --adf-forest-2: #21382a;
+  --adf-forest-3: #2c4835;
+  --adf-sage: #9db4a4;
+  --adf-sage-soft: #e7ede7;
+  --adf-clay: #c05a2e;
+  --adf-clay-deep: #a34a24;
+  --adf-gold: #c99a3f;
+  --adf-gold-soft: #d4b36d;
+  --adf-hairline: rgba(29, 33, 28, 0.1);
+  --adf-hairline-strong: rgba(29, 33, 28, 0.16);
+
+  --adf-font: "Plus Jakarta Sans Variable", "Segoe UI", system-ui, sans-serif;
+  --adf-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  --adf-r-control: 0.8rem;
+  --adf-r-card: 1.2rem;
+  --adf-r-shell: 2rem;
+  --adf-shadow-card: 0 24px 60px -30px rgba(22, 40, 30, 0.25);
+
+  /* ---- Binario laterale ----
+     Questi valori li legge direttamente `components/LeftNav.jsx`, che tiene i
+     propri stili in un blocco <style> dentro il componente. Un blocco così sta
+     nel body e quindi vince, nella cascata, su questo foglio: non si può
+     ridipingere da fuori a pari specificità. Per questo il componente è stato
+     reso sensibile a queste variabili, con il valore storico come ripiego — sul
+     desktop restano indefinite e non cambia nulla.
+
+     Sono gli stessi toni del binario di AdminLayout.astro nel sito e dello
+     stesso file nella sezione bandi: le tre aree hanno la barra identica. */
+  --adf-rail-bg: var(--adf-forest);
+  --adf-rail-border: rgba(255, 255, 255, 0.11);
+  --adf-rail-text: #aebbb2;
+  --adf-rail-text-strong: #f7f8f4;
+  --adf-rail-hover: rgba(255, 255, 255, 0.06);
+  --adf-rail-active-bg: #243129;
+  --adf-rail-active-bar: inset 3px 0 0 var(--adf-gold-soft);
+
+  /* Il nome dell'associazione era scritto con un gradiente ritagliato sul testo.
+     `none` annulla il gradiente e `currentColor` restituisce al testo il proprio
+     colore: servono entrambi, perché con il solo gradiente rimosso il testo
+     resterebbe trasparente. */
+  --adf-rail-logo-bg: none;
+  --adf-rail-logo-fill: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+   Token propri di AssociaGo
+   ------------------------------------------------------------------------- */
+
+:root {
+  --primary-color: var(--adf-forest-2);
+  /* Il gradiente blu-viola era l'elemento più riconoscibile del tema
+     precedente: diventa una transizione dentro il verde, che non stona con la
+     barra laterale. */
+  --primary-gradient: linear-gradient(135deg, var(--adf-forest-2) 0%, var(--adf-forest) 100%);
+  --secondary-color: var(--adf-ink-soft);
+  --success-color: #2f6b45;
+  --info-color: #3f6870;
+  --warning-color: var(--adf-gold);
+  --danger-color: #9b3227;
+
+  --body-bg: var(--adf-paper-deep);
+  --card-bg: var(--adf-surface);
+  --text-color: var(--adf-ink);
+  --text-muted: var(--adf-ink-faint);
+  --border-color: var(--adf-hairline);
+  --input-bg: var(--adf-paper);
+
+  --card-shadow: none;
+  --card-border-radius: var(--adf-r-card);
+  --btn-border-radius: var(--adf-r-control);
+}
+
+/* Tema scuro: i toni della barra laterale del sito, non un grigio ardesia
+   neutro — un'applicazione che di giorno è verde bosco e di notte diventa
+   blu-grigio sembra un'altra applicazione. */
+[data-theme="dark"],
+[data-bs-theme="dark"] {
+  --body-bg: #14201a;
+  --card-bg: #1b2a22;
+  --text-color: #eef2ed;
+  --text-muted: #8fa095;
+  --border-color: rgba(255, 255, 255, 0.11);
+  --input-bg: #16241d;
+  --primary-color: var(--adf-sage);
+
+  --adf-surface: #1b2a22;
+  --adf-paper-deep: #14201a;
+  --adf-paper: #16241d;
+  --adf-ink: #eef2ed;
+  --adf-ink-soft: #b5c4b9;
+  --adf-ink-faint: #8fa095;
+  --adf-hairline: rgba(255, 255, 255, 0.11);
+  --adf-hairline-strong: rgba(255, 255, 255, 0.18);
+  --adf-gold: var(--adf-gold-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   Bootstrap
+   ------------------------------------------------------------------------- */
+
+:root:root {
+  --bs-body-bg: var(--adf-paper-deep);
+  --bs-body-color: var(--adf-ink);
+  --bs-secondary-color: var(--adf-ink-soft);
+  --bs-tertiary-color: var(--adf-ink-faint);
+  --bs-body-font-family: var(--adf-font);
+  --bs-font-monospace: var(--adf-mono);
+  --bs-border-color: var(--adf-hairline);
+  --bs-border-radius: var(--adf-r-control);
+  --bs-border-radius-sm: 0.55rem;
+  --bs-border-radius-lg: var(--adf-r-card);
+  --bs-border-radius-xl: var(--adf-r-shell);
+
+  --bs-primary: var(--adf-forest-2);
+  --bs-primary-rgb: 33, 56, 42;
+  --bs-secondary: var(--adf-ink-soft);
+  --bs-success: #2f6b45;
+  --bs-info: #3f6870;
+  --bs-warning: var(--adf-gold);
+  --bs-danger: #9b3227;
+  --bs-light: var(--adf-paper);
+  --bs-dark: var(--adf-forest);
+
+  --bs-link-color: var(--adf-clay-deep);
+  --bs-link-hover-color: var(--adf-clay);
+  --bs-emphasis-color: var(--adf-ink);
+}
+
+body {
+  background: var(--adf-paper-deep);
+  color: var(--adf-ink);
+  font-family: var(--adf-font);
+}
+
+/* Nell'area amministrativa del sito i titoli usano il font del corpo con
+   crenatura stretta: il serif editoriale è per le pagine pubbliche. */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--adf-font);
+  letter-spacing: -0.035em;
+  color: var(--adf-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Superfici
+   ------------------------------------------------------------------------- */
+
+.card,
+.modal-content,
+.dropdown-menu,
+.list-group,
+.offcanvas,
+.accordion-item {
+  border: 1px solid var(--adf-hairline);
+  border-radius: var(--adf-r-card);
+  background: var(--adf-surface);
+  box-shadow: none;
+}
+
+.card:hover {
+  border-color: var(--adf-hairline-strong);
+}
+
+.card-header,
+.card-footer,
+.modal-header,
+.modal-footer,
+.list-group-item {
+  border-color: var(--adf-hairline);
+  background: transparent;
+  color: var(--adf-ink);
+}
+
+.card-header {
+  padding-block: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.modal-content {
+  box-shadow: var(--adf-shadow-card);
+}
+
+.bg-light,
+.bg-white {
+  background: var(--adf-surface) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Controlli
+   ------------------------------------------------------------------------- */
+
+.btn {
+  --bs-btn-border-radius: var(--adf-r-control);
+  border-radius: var(--adf-r-control);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+/* I `--bs-btn-*` da soli non bastavano, e il pulsante primario era invisibile
+   su tutto il gestionale web: testo bianco su fondo trasparente.
+
+   La catena era questa. Bootstrap scrive `background-color: var(--bs-btn-bg)`.
+   Poi `main.css` scrive `.btn-primary { background: var(--primary-gradient) }`:
+   è la forma abbreviata, che oltre all'immagine reimposta anche
+   `background-color`, azzerandolo. Infine qui si annullava il gradiente con
+   `background-image: none` — restava il trasparente lasciato dalla forma
+   abbreviata, e nessuno rimetteva il colore.
+
+   Da qui in poi il colore di fondo è dichiarato per esteso, che è l'unico modo
+   di non dipendere da quale foglio arriva per ultimo. */
+.btn-primary {
+  --bs-btn-bg: var(--adf-forest-2);
+  --bs-btn-border-color: var(--adf-forest-2);
+  --bs-btn-hover-bg: var(--adf-forest);
+  --bs-btn-hover-border-color: var(--adf-forest);
+  --bs-btn-active-bg: var(--adf-forest);
+  --bs-btn-active-border-color: var(--adf-forest);
+  --bs-btn-disabled-bg: var(--adf-forest-3);
+  --bs-btn-disabled-border-color: var(--adf-forest-3);
+  background-image: none;
+  background-color: var(--adf-forest-2);
+  border-color: var(--adf-forest-2);
+  color: #fff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-color: var(--adf-forest);
+  border-color: var(--adf-forest);
+  /* main.css alza il pulsante di 2px e gli mette sotto un alone blu, rimasto
+     dal tema precedente: su un pulsante verde bosco era una macchia azzurra. */
+  transform: none;
+  box-shadow: 0 6px 18px -8px rgba(23, 35, 28, 0.55);
+}
+
+.btn-primary:active,
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-image: none;
+}
+
+.btn-primary:active {
+  background-color: var(--adf-forest);
+  border-color: var(--adf-forest);
+}
+
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background-color: var(--adf-forest-3);
+  border-color: var(--adf-forest-3);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--adf-forest-2);
+  --bs-btn-border-color: var(--adf-forest-2);
+  --bs-btn-hover-bg: var(--adf-forest-2);
+  --bs-btn-hover-border-color: var(--adf-forest-2);
+  --bs-btn-active-bg: var(--adf-forest);
+}
+
+.btn-light {
+  --bs-btn-bg: var(--adf-paper);
+  --bs-btn-border-color: var(--adf-hairline-strong);
+  --bs-btn-color: var(--adf-ink);
+  --bs-btn-hover-bg: var(--adf-sage-soft);
+  --bs-btn-hover-border-color: var(--adf-hairline-strong);
+}
+
+.btn-link {
+  --bs-btn-color: var(--adf-clay-deep);
+  --bs-btn-hover-color: var(--adf-clay);
+  font-weight: 750;
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  border-radius: var(--adf-r-control);
+  border-color: var(--adf-hairline-strong);
+  background-color: var(--adf-paper);
+  color: var(--adf-ink);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--adf-forest-3);
+  box-shadow: 0 0 0 3px rgba(33, 56, 42, 0.12);
+}
+
+.form-label {
+  color: var(--adf-ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.nav-tabs .nav-link.active {
+  border-color: var(--adf-hairline) var(--adf-hairline) var(--adf-surface);
+  color: var(--adf-forest-2);
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------------------------
+   Etichette e tabelle
+   ------------------------------------------------------------------------- */
+
+.badge {
+  border-radius: 999px;
+  padding: 0.36em 0.7em;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--adf-hairline);
+  --bs-table-color: var(--adf-ink);
+  --bs-table-striped-bg: rgba(29, 33, 28, 0.025);
+}
+
+.table > thead {
+  color: var(--adf-ink-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Guscio dell'applicazione
+   -------------------------------------------------------------------------
+   La barra laterale è quella del sito: verde pieno, testo salvia, voce attiva
+   con la barretta interna dorata. */
+
+/* Il binario scuro è quello laterale, gestito dalle variabili --adf-rail-*.
+   La barra in alto invece resta chiara sulla carta, come la `workspace-topbar`
+   del sito: due elementi scuri sovrapposti chiuderebbero lo spazio. */
+.navbar {
+  background: var(--adf-surface) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--adf-hairline);
+  color: var(--adf-ink);
+}
+
+.navbar .navbar-brand {
+  color: var(--adf-ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.navbar .nav-link {
+  border-radius: var(--adf-r-control);
+  color: var(--adf-ink-soft);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+  color: var(--adf-forest-2);
+}
+
+/* Barre laterali che non passano da LeftNav (offcanvas su schermo stretto). */
+.sidebar,
+aside.sidebar,
+.offcanvas.sidebar {
+  background: var(--adf-rail-bg) !important;
+  background-image: none !important;
+  color: var(--adf-rail-text);
+  border-color: var(--adf-rail-border);
+}
+
+.sidebar .nav-link,
+.sidebar a {
+  border-radius: var(--adf-r-control);
+  color: var(--adf-rail-text);
+  font-weight: 700;
+}
+
+.sidebar .nav-link:hover,
+.sidebar a:hover {
+  color: var(--adf-rail-text-strong);
+  background: var(--adf-rail-hover);
+}
+
+.sidebar .nav-link.active,
+.sidebar a[aria-current="page"] {
+  color: var(--adf-rail-text-strong);
+  background: var(--adf-rail-active-bg);
+  box-shadow: var(--adf-rail-active-bar);
+}
+
+/* La firma in fondo al binario è su fondo scuro: il `text-muted` di Bootstrap
+   la renderebbe illeggibile. */
+.jl-sidebar-branding .text-muted {
+  color: var(--adf-rail-text) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Schermata di accesso
+   -------------------------------------------------------------------------
+   È la prima cosa che si vede arrivando dalla scelta delle sezioni: se qui
+   l'aspetto cambia, tutto il resto sembra un'altra applicazione. */
+
+.cl-rootBox,
+.cl-card {
+  border-radius: var(--adf-r-card) !important;
+  border: 1px solid var(--adf-hairline) !important;
+  box-shadow: var(--adf-shadow-card) !important;
+  background: var(--adf-surface) !important;
+  font-family: var(--adf-font) !important;
+}
+
+.cl-headerTitle,
+.cl-headerSubtitle {
+  font-family: var(--adf-font) !important;
+  letter-spacing: -0.035em;
+  color: var(--adf-ink) !important;
+}
+
+.cl-formButtonPrimary {
+  border-radius: var(--adf-r-control) !important;
+  background: var(--adf-forest-2) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-weight: 800 !important;
+  text-transform: none !important;
+  letter-spacing: -0.01em !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background: var(--adf-forest) !important;
+}
+
+.cl-formFieldInput {
+  border-radius: var(--adf-r-control) !important;
+  border-color: var(--adf-hairline-strong) !important;
+  background: var(--adf-paper) !important;
+}
+
+.cl-footerActionLink {
+  color: var(--adf-clay-deep) !important;
+  font-weight: 750 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Dettagli
+   ------------------------------------------------------------------------- */
+
+::selection {
+  background: rgba(192, 90, 46, 0.22);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--adf-sage) transparent;
+}
+
+/* Chrome e derivati ignorano scrollbar-color e vogliono gli pseudo-elementi. */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--adf-sage);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--adf-ink-faint);
+}
+
+:focus-visible {
+  outline: 2px solid var(--adf-forest-3);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--adf-clay-deep);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--adf-clay);
+}

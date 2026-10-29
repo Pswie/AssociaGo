@@ -17,19 +17,19 @@ public class InventoryItem {
 
     @Column(name = "inventory_code")
     private String inventoryCode;
-    
+
     private String name;
     private String description;
     private String category;
     private Integer quantity;
     private String location;
-    
+
     @Column(name = "acquisition_method")
     private String acquisitionMethod; // PURCHASE, DONATION, LOAN, UNKNOWN
 
     @Column(name = "purchase_date")
     private LocalDate purchaseDate;
-    
+
     @Column(name = "purchase_price")
     private BigDecimal purchasePrice;
 
@@ -38,24 +38,21 @@ public class InventoryItem {
 
     @Column(name = "depreciation_years")
     private Integer depreciationYears;
-    
+
     @Column(name = "condition_status")
     private String condition; // NEW, GOOD, FAIR, POOR, BROKEN
-    
+
     private String status; // AVAILABLE, IN_USE, LOANED, LOST, DISPOSED
 
     @Column(name = "assigned_to")
     private Long assignedTo; // User ID responsible
 
-    @Column(name = "photo_path")
-    private String photoPath;
-
-    @Column(columnDefinition = "TEXT")
+@Column(columnDefinition = "TEXT")
     private String notes;
-    
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-    
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
@@ -92,8 +89,6 @@ public class InventoryItem {
     public void setStatus(String status) { this.status = status; }
     public Long getAssignedTo() { return assignedTo; }
     public void setAssignedTo(Long assignedTo) { this.assignedTo = assignedTo; }
-    public String getPhotoPath() { return photoPath; }
-    public void setPhotoPath(String photoPath) { this.photoPath = photoPath; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -5,7 +5,9 @@ import com.associago.budget.dto.BudgetLineDTO;
 import com.associago.budget.dto.BudgetLineUpsertDTO;
 import com.associago.budget.dto.BudgetUpsertDTO;
 import com.associago.budget.mapper.BudgetMapper;
+import com.associago.security.ActorResolver;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,9 +17,11 @@ import java.util.List;
 public class BudgetController {
 
     private final BudgetService budgetService;
+    private final ActorResolver actorResolver;
 
-    public BudgetController(BudgetService budgetService) {
+    public BudgetController(BudgetService budgetService, ActorResolver actorResolver) {
         this.budgetService = budgetService;
+        this.actorResolver = actorResolver;
     }
 
     @GetMapping
@@ -52,8 +56,9 @@ public class BudgetController {
     }
 
     @PostMapping("/{id}/approve")
-    public BudgetDTO approve(@PathVariable Long id, @RequestParam Long approvedBy) {
-        return BudgetMapper.toDTO(budgetService.approve(id, approvedBy));
+    public BudgetDTO approve(@PathVariable Long id, @RequestParam(required = false) Long approvedBy,
+                             Authentication authentication) {
+        return BudgetMapper.toDTO(budgetService.approve(id, actorResolver.requireActor(authentication, approvedBy)));
     }
 
     @PostMapping("/{id}/sync-actuals")

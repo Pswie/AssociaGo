@@ -16,12 +16,15 @@ const AssemblyDocumentForm = ({ assemblyId, onSuccess, onCancel }) => {
 
   const onSubmit = async (data) => {
     try {
+      // `filePath: 'pending-upload'` non c'è più: era un segnaposto che finiva
+      // nella colonna del percorso e restava lì per sempre, perché nessun
+      // caricamento lo sostituiva mai. Il file si allega dopo, dalla scheda
+      // del documento, e finisce nella tabella `attachments`.
       await associago.assemblies.addDocument(assemblyId, {
         name: data.name,
         type: data.type,
         description: data.description,
         isMandatory: data.isMandatory,
-        filePath: 'pending-upload'
       });
       onSuccess();
     } catch (error) {

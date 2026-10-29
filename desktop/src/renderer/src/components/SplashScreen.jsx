@@ -18,11 +18,19 @@ export default function SplashScreen({ message }) {
     return (
         <div className="logout-screen">
             <div className="logout-content text-center">
+                {/* 500px fissi erano più larghi di qualsiasi telefono: il logo
+                    usciva dallo schermo e si portava dietro la pagina. clamp
+                    lo fa scendere fino a 180px sui più stretti senza mai
+                    superare il 60% dell'altezza disponibile. */}
                 <img
                     src={LoadingIcon}
                     alt="AssociaGo Loading"
                     className="logout-logo mb-4"
-                    style={{ width: "500px", height: "500px" }}
+                    style={{
+                        width: "min(clamp(180px, 60vw, 500px), 60dvh)",
+                        height: "auto",
+                        aspectRatio: "1 / 1"
+                    }}
                 />
                 <h4 className="fw-bold mb-3">AssociaGo</h4>
                 <div className="d-flex align-items-center justify-content-center gap-2 text-muted">
@@ -34,10 +42,12 @@ export default function SplashScreen({ message }) {
             <style>{`
                 .logout-screen {
                     position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
+                    /* inset invece di top/left + 100vw/100vh: vw conta la barra
+                       di scorrimento e vh non segue la barra degli indirizzi
+                       mobile, e la schermata risultava più grande del viewport
+                       in entrambe le direzioni. */
+                    inset: 0;
+                    padding: 1.5rem;
                     background: #f5f7fa; /* Colore neutro */
                     display: flex;
                     align-items: center;

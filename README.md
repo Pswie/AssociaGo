@@ -4,6 +4,10 @@
 
 AssociaGo is a comprehensive management software designed for associations, non-profit organizations, and clubs. It provides a robust platform for managing members, finances, events, activities, inventory, and volunteers. The application is built using a modern technology stack, featuring a Spring Boot backend and a React-based frontend wrapped in Electron for a seamless desktop experience.
 
+The repository also includes the web application currently used by Angeli del Futuro: Clerk authentication, role permissions, annual views, projects, expense documents and database-backed attachments. The cloud backend was recovered from its deployed Google Cloud Build source, and the web frontend from the exact deployed `Pswie/terzo-settore` commit. See [AUDIT-TODO.md](AUDIT-TODO.md) for the review and completed fixes, and [CLOUD-DEPLOYMENT.md](CLOUD-DEPLOYMENT.md) for provenance, deployment and rollback.
+
+The October 2026 update has not been published: the existing Aiven database hostname returns NXDOMAIN and the Cloud Run service cannot start. Restore that database before deploying the candidate or changing traffic. Existing cloud migrations are preserved; older desktop databases are backed up automatically before the V41 upgrade removes legacy sports metadata.
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0 (AGPLv3). See the LICENSE file for details.
@@ -18,7 +22,7 @@ Copyright © 2026 Lorenzo De Marco (Lorenzo DM). All rights reserved.
 AssociaGo follows a monolithic architecture with a clear separation between the backend and frontend, packaged together as a desktop application.
 
 ### Backend
-The backend is built with Java 21 and Spring Boot 3.3.x. It exposes a RESTful API consumed by the frontend.
+The backend is built with Java 21 and Spring Boot 3.4.0. It exposes a RESTful API consumed by the frontend.
 - **Framework:** Spring Boot (Web, Data JPA, Security, Validation, Actuator)
 - **Database:** SQLite (for local deployment) with support for MariaDB/MySQL.
 - **Migration:** Flyway is used for database schema version control.
@@ -77,7 +81,7 @@ Tracks participation in activities and events.
 
 ### Prerequisites
 - Java Development Kit (JDK) 21
-- Node.js (v18 or later)
+- Node.js 22 or later (the mobile smoke test uses its built-in WebSocket support)
 - Gradle
 
 ### Build Instructions
@@ -91,7 +95,7 @@ Tracks participation in activities and events.
 2.  **Frontend Build:**
     Navigate to the `desktop` directory and run:
     ```bash
-    npm install
+    npm ci
     npm run build
     ```
 
@@ -105,6 +109,29 @@ Tracks participation in activities and events.
       cd desktop
       npm run dev
       ```
+
+4. **Web application:**
+   Copy `desktop/.env.example` to `desktop/.env.local` and set the public API URL and Clerk publishable key. Keep server secrets in Google Secret Manager; do not put them in Vite variables.
+   ```bash
+   cd desktop
+   npm run dev:web
+   npm run build:web
+   ```
+   The web build is written to `desktop/dist-web`. Preserve the deployed Clerk satellite and primary-domain settings when publishing.
+
+5. **Verification:**
+   ```bash
+   ./gradlew build
+   cd desktop
+   npm run lint
+   npm run test:unit
+   npm run build
+   npm run build:web
+   npm run verify:packaging
+   ```
+   With the web development server running, `npm run test:mobile` checks the real layout harness at multiple viewport sizes. MySQL integration tests require Docker or a dedicated disposable database configured through `MYSQL_TEST_URL`, `MYSQL_TEST_USER` and `MYSQL_TEST_PASSWORD`; never point them at production.
+
+macOS installers bundle the Java runtime for the build machine's architecture. Build Intel and Apple Silicon installers on matching runners; do not package one runtime into both architectures.
 
 ## Logging
 

@@ -33,17 +33,11 @@ public class ActivityParticipant {
     @Column(name = "amount_paid")
     private BigDecimal amountPaid = BigDecimal.ZERO;
 
-    @Column(name = "original_amount")
-    private BigDecimal originalAmount = BigDecimal.ZERO;
-
-    @Column(name = "coupon_code")
-    private String couponCode;
-
-    @Column(name = "discount_amount")
-    private BigDecimal discountAmount = BigDecimal.ZERO;
-
-    @Column(name = "discount_type")
-    private String discountType; // '%', 'EUR'
+    // Qui c'erano original_amount, coupon_code, discount_amount e
+    // discount_type: le colonne dello sconto, che nessun servizio ha mai
+    // scritto — né ActivityService né EventService le toccavano. Il coupon in
+    // questo programma è un buono, cioè un'uscita, non uno sconto su una quota.
+    // Tolte in V11.
 
     @Column(name = "invoice_id")
     private Long invoiceId;
@@ -87,14 +81,6 @@ public class ActivityParticipant {
     public void setPaid(boolean paid) { isPaid = paid; }
     public BigDecimal getAmountPaid() { return amountPaid; }
     public void setAmountPaid(BigDecimal amountPaid) { this.amountPaid = amountPaid; }
-    public BigDecimal getOriginalAmount() { return originalAmount; }
-    public void setOriginalAmount(BigDecimal originalAmount) { this.originalAmount = originalAmount; }
-    public String getCouponCode() { return couponCode; }
-    public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
-    public BigDecimal getDiscountAmount() { return discountAmount; }
-    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
-    public String getDiscountType() { return discountType; }
-    public void setDiscountType(String discountType) { this.discountType = discountType; }
     public Long getInvoiceId() { return invoiceId; }
     public void setInvoiceId(Long invoiceId) { this.invoiceId = invoiceId; }
     public String getPaymentMethod() { return paymentMethod; }

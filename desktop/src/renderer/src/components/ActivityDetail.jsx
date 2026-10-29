@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Nav, Spinner, Dropdown } from 'react-bootstrap';
-import { ArrowLeft, Plus, Trash2, Edit, MoreVertical, DollarSign, Users, Clock, User, Download, Award, Upload } from 'lucide-react';
+import { Card, Button, Table, Badge, Nav, Spinner, Dropdown , Modal} from 'react-bootstrap';
+import { ArrowLeft, Plus, Trash2, Edit, MoreVertical, DollarSign, Users, Clock, User, Download, Award, Upload , Paperclip} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import AttachmentPanel from './AttachmentPanel';
 import CsvImporter from './CsvImporter';
 import { translateActivityCategory, translateCompensationType, translateCostCategory, translateCertificateType } from '../utils/enumTranslations';
 
@@ -11,6 +12,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('participants');
+    const [ricevutaCosto, setRicevutaCosto] = useState(null);
 
     // Sub-resources data
     const [participants, setParticipants] = useState([]);
@@ -264,6 +266,9 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                                             <td><Badge bg="light" text="dark" className="border">{translateCostCategory(c.category, t)}</Badge></td>
                                             <td className="text-danger">-€ {c.amount}</td>
                                             <td className="text-end pe-4">
+                                                {/* La ricevuta del costo: stava in
+                                                    `activity_costs.receipt_path`. */}
+                                                <Button variant="link" className="text-secondary p-0 me-2" onClick={() => setRicevutaCosto(c)} title={t('Ricevuta')}><Paperclip size={16}/></Button>
                                                 <Button variant="link" className="text-muted p-0 me-2" onClick={() => shell.openModal('activity-cost-form', { activityId, cost: c, onSuccess: loadData })}><Edit size={16}/></Button>
                                                 <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteSubResource('cost', c.id)}><Trash2 size={16}/></Button>
                                             </td>
@@ -313,6 +318,36 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                     )}
                 </Card.Body>
             </Card>
+
+            {/* Stavano in `activities.image_path` e `document_path`. */}
+            <Card className="border-0 shadow-sm mt-4">
+                <Card.Body>
+                    <AttachmentPanel
+                        ownerType="ACTIVITY"
+                        ownerId={activityId}
+                        titolo={t('Materiali dell\'attività')}
+                        kinds={[
+                            { id: 'immagine', label: t('Immagine') },
+                            { id: 'documento', label: t('Programma o scheda') },
+                        ]}
+                    />
+                </Card.Body>
+            </Card>
+            <Modal show={Boolean(ricevutaCosto)} onHide={() => setRicevutaCosto(null)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">{t('Ricevuta del costo')}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {ricevutaCosto && (
+                        <AttachmentPanel
+                            ownerType="ACTIVITY_COST"
+                            ownerId={ricevutaCosto.id}
+                            titolo=""
+                            kinds={[{ id: 'ricevuta', label: t('Ricevuta o fattura') }]}
+                        />
+                    )}
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };

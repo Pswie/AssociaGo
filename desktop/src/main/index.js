@@ -14,6 +14,7 @@ const https = require("https");
 const os = require("os");
 const { spawn, spawnSync } = require("child_process");
 const { electronApp, optimizer, is } = require('@electron-toolkit/utils');
+import { remoteBackendInfo, isSafeExternalUrl, isSqliteHeader } from './runtime-policy.mjs';
 
 const APP_SYSTEM_NAME = "associago-desktop";
 const APP_DISPLAY_NAME = "AssociaGo";
@@ -207,6 +208,7 @@ function getConfiguredBackendUrl() {
         path.join(getUserDataPath(), "backend.json"),
         process.resourcesPath ? path.join(process.resourcesPath, "backend.json") : null,
         path.join(__dirname, "..", "..", "backend.json"),
+        path.join(__dirname, "..", "..", "resources", "backend.json"),
     ].filter(Boolean);
 
     for (const p of candidates) {
@@ -227,31 +229,7 @@ function getConfiguredBackendUrl() {
 }
 
 function buildRemoteBackendInfo(rawUrl) {
-    let u;
-    try {
-        u = new URL(rawUrl);
-    } catch (e) {
-        console.error(`[Main] URL backend remoto non valido: ${rawUrl}`);
-        return null;
-    }
-
-    const protocol = (u.protocol || "https:").replace(":", "");
-    const host = u.hostname;
-    const explicitPort = u.port ? Number(u.port) : null;
-    const port = explicitPort || (protocol === "https" ? 443 : 80);
-    const authority = explicitPort ? `${host}:${explicitPort}` : host;
-    const baseUrl = `${protocol}://${authority}`;
-
-    return {
-        schemaVersion: 1,
-        protocol,
-        host,
-        port,
-        baseUrl,
-        apiBaseUrl: `${baseUrl}/api`,
-        healthUrl: `${baseUrl}/actuator/health`,
-        remote: true,
-    };
+    return remoteBackendInfo(rawUrl);
 }
 
 function getRuntimeAssetPath(...segments) {
@@ -598,14 +576,13 @@ async function startBackend() {
     // Modalità client remoto: se configurato un backend remoto, non avviare nulla in locale.
     const remoteUrl = getConfiguredBackendUrl();
     if (remoteUrl) {
-        console.log(`[Main] Modalità client remoto: uso backend ${remoteUrl} (nessun backend locale)`);
         sendSplashStatus('Connessione al server...');
 
         const info = buildRemoteBackendInfo(remoteUrl);
         if (!info) {
             dialog.showErrorBox(
                 "AssociaGo - Configurazione backend non valida",
-                `L'indirizzo del server remoto non è valido:\n${remoteUrl}\n\n` +
+                `Usa un indirizzo HTTP o HTTPS senza credenziali, query o frammenti.\n\n` +
                 `Correggi il file backend.json o la variabile ASSOCIAGO_BACKEND_URL.`
             );
             app.quit();
@@ -614,6 +591,7 @@ async function startBackend() {
 
         backendInfo = info;
         backendPort = info.port;
+        console.log(`[Main] Backend remoto: ${info.baseUrl}`);
 
         // Attesa più lunga: alcuni hosting free "dormono" e il primo risveglio è lento.
         const ready = await waitForBackendReady(backendInfo, 60, 2000);
@@ -863,8 +841,15 @@ function createWindow() {
     });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+        if (isSafeExternalUrl(url)) shell.openExternal(url).catch(console.error);
         return { action: "deny" };
+    });
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const current = mainWindow.webContents.getURL().split('#')[0];
+        if (url.split('#')[0] !== current) {
+            event.preventDefault();
+            if (isSafeExternalUrl(url)) shell.openExternal(url).catch(console.error);
+        }
     });
     mainWindow.webContents.on("did-fail-load", (_e, code, desc, url) => {
         console.error("[Main] did-fail-load", { code, desc, url });
@@ -1063,7 +1048,10 @@ ipcMain.handle("app:openLogsFolder", async () => {
 
 ipcMain.handle("shell:openPath", async (_, filePath) => shell.openPath(filePath));
 ipcMain.handle("shell:showItemInFolder", (_, filePath) => shell.showItemInFolder(filePath));
-ipcMain.handle("shell:openExternal", async (_, url) => shell.openExternal(url));
+ipcMain.handle("shell:openExternal", async (_, url) => {
+    if (!isSafeExternalUrl(url)) throw new Error('Collegamento esterno non consentito.');
+    return shell.openExternal(url);
+});
 
 ipcMain.on("window:minimize", () => mainWindow?.minimize());
 ipcMain.on("window:maximize", () => {
@@ -1098,7 +1086,8 @@ async function callBackend(method, apiPath, body = null, extraHeaders = {}) {
             }
         };
 
-        const req = http.request(options, (res) => {
+        const transport = info.protocol === 'https' ? https : http;
+        const req = transport.request(options, (res) => {
             let data = "";
             res.on("data", (chunk) => (data += chunk));
             res.on("end", () => {
@@ -1130,62 +1119,17 @@ async function callBackend(method, apiPath, body = null, extraHeaders = {}) {
 // ----------------------------
 
 ipcMain.handle("data:exportJsonDialog", async () => {
-    const defaultPath = path.join(
-        app.getPath("documents"),
-        `AssociaGo-export-${nowStamp()}.json`
-    );
-
-    const res = await dialog.showSaveDialog({
-        title: "AssociaGo - Esporta dati (JSON)",
-        defaultPath,
-        buttonLabel: "Esporta",
-        filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-
-    if (res.canceled || !res.filePath) {
-        return { ok: false, canceled: true };
-    }
-
-    try {
-        // TODO: Implement backend export endpoint
-        // const data = await callBackend("GET", "/export");
-        const exportData = {
-            version: app.getVersion(),
-            exportedAt: new Date().toISOString(),
-            data: {},
-        };
-
-        fs.writeFileSync(res.filePath, JSON.stringify(exportData, null, 2), "utf-8");
-        return { ok: true, filePath: res.filePath };
-    } catch (e) {
-        return { ok: false, error: e.message };
-    }
+    return { ok: false, error: "L'esportazione JSON completa non è disponibile. Usa il backup SQLite locale o il backup del servizio database remoto." };
 });
 
 ipcMain.handle("data:importJsonDialog", async () => {
-    const res = await dialog.showOpenDialog({
-        title: "AssociaGo - Importa dati (JSON)",
-        buttonLabel: "Importa",
-        filters: [{ name: "JSON", extensions: ["json"] }],
-        properties: ["openFile"],
-    });
-
-    if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
-        return { ok: false, canceled: true };
-    }
-
-    const importPath = res.filePaths[0];
-
-    try {
-        const raw = fs.readFileSync(importPath, "utf-8");
-        const data = JSON.parse(raw);
-        return { ok: true, importPath, data };
-    } catch (e) {
-        return { ok: false, error: e.message };
-    }
+    return { ok: false, error: "Il ripristino JSON completo non è disponibile. Nessun dato è stato importato." };
 });
 
 ipcMain.handle("data:exportDbDialog", async () => {
+    if (backendInfo?.remote) {
+        return { ok: false, error: "Il backup del server remoto va eseguito dal servizio database. Un file SQLite locale non contiene i dati del server." };
+    }
     const defaultPath = path.join(
         app.getPath("documents"),
         `AssociaGo-db-${nowStamp()}.db`
@@ -1203,11 +1147,11 @@ ipcMain.handle("data:exportDbDialog", async () => {
     }
 
     try {
-        // Trova il file database nella nuova posizione
-        const dbPath = path.join(getAssociaGoHome(), "associago.db");
+        const snapshot = await callBackend('POST', '/v1/backup/create');
+        const dbPath = snapshot?.path;
 
-        if (!fs.existsSync(dbPath)) {
-            return { ok: false, error: "Database non trovato in " + dbPath };
+        if (!dbPath || !fs.existsSync(dbPath)) {
+            return { ok: false, error: "Il backend non ha creato un backup locale valido." };
         }
 
         fs.copyFileSync(dbPath, res.filePath);
@@ -1218,6 +1162,12 @@ ipcMain.handle("data:exportDbDialog", async () => {
 });
 
 ipcMain.handle("data:importDbDialog", async () => {
+    if (backendInfo?.remote) {
+        return { ok: false, error: "Il ripristino del database remoto va eseguito dal servizio database." };
+    }
+    if (backendProcess || isDev) {
+        return { ok: false, error: "Il ripristino richiede il backend arrestato. Chiudi l'app e ripristina il backup SQLite nella cartella dati prima di riavviare." };
+    }
     const res = await dialog.showOpenDialog({
         title: "AssociaGo - Importa Database",
         buttonLabel: "Importa",
@@ -1232,6 +1182,13 @@ ipcMain.handle("data:importDbDialog", async () => {
     const importPath = res.filePaths[0];
 
     try {
+        const header = Buffer.alloc(16);
+        const descriptor = fs.openSync(importPath, 'r');
+        try { fs.readSync(descriptor, header, 0, header.length, 0); }
+        finally { fs.closeSync(descriptor); }
+        if (!isSqliteHeader(header)) {
+            return { ok: false, error: "Il file selezionato non è un database SQLite valido." };
+        }
         const destDb = path.join(getAssociaGoHome(), "associago.db");
 
         // Backup del database esistente

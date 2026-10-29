@@ -32,7 +32,6 @@ public final class TransactionMapper {
                 entity.getCostCenter(),
                 entity.getMembershipId(),
                 entity.getInventoryItemId(),
-                entity.getReceiptPath(),
                 entity.isVerified(),
                 entity.getVerifiedBy() != null ? entity.getVerifiedBy().getId() : null,
                 entity.getVerifiedAt(),

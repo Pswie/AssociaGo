@@ -54,10 +54,7 @@ public class InvoiceCheck {
     @Column(name = "overdue_amount")
     private BigDecimal overdueAmount = BigDecimal.ZERO;
 
-    @Column(name = "pdf_path")
-    private String pdfPath;
-
-    @Column(name = "created_at", updatable = false)
+@Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // Getters and Setters
@@ -91,7 +88,5 @@ public class InvoiceCheck {
     public void setOverdueCount(Integer overdueCount) { this.overdueCount = overdueCount; }
     public BigDecimal getOverdueAmount() { return overdueAmount; }
     public void setOverdueAmount(BigDecimal overdueAmount) { this.overdueAmount = overdueAmount; }
-    public String getPdfPath() { return pdfPath; }
-    public void setPdfPath(String pdfPath) { this.pdfPath = pdfPath; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

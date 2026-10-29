@@ -4,6 +4,7 @@ import { CalendarClock, FileText, MapPin, Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { associago } from '../api'
 import { translateLocationType, translateDocumentType, translateDeadlineCategory, translateDeadlineStatus } from '../utils/enumTranslations'
+import AttachmentPanel from './AttachmentPanel'
 
 const emptyLocation = {
   locationType: 'legal',
@@ -133,7 +134,18 @@ const AssociationRegistryPanel = ({ associationId }) => {
                 <tr key={document.id}>
                   <td>{translateDocumentType(document.documentType, t)}</td>
                   <td>{document.title}</td>
-                  <td className="text-break">{document.filePath}</td>
+                  {/* Prima qui compariva il percorso del file su disco: una
+                      stringa che non diceva se il documento ci fosse davvero, e
+                      che dopo un riavvio del contenitore puntava al nulla. Ora
+                      il file si carica e si scarica dal pannello allegati. */}
+                  <td style={{ minWidth: '18rem' }}>
+                    <AttachmentPanel
+                      ownerType="ASSOCIATION_DOCUMENT"
+                      ownerId={document.id}
+                      titolo=""
+                      kinds={[{ id: document.documentType || 'documento', label: t('File') }]}
+                    />
+                  </td>
                   <td className="text-end"><Button variant="link" className="text-danger p-0" onClick={() => associago.deleteDocument(associationId, document.id).then(loadData)}><Trash2 size={14} /></Button></td>
                 </tr>
               ))}

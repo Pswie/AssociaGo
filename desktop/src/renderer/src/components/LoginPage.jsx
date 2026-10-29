@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { associago } from "../api.js";
 import { Globe, Lock, Building, Mail, ArrowRight, Plus, Trash2, Hash, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import icon6 from '../assets/6.svg';
+import { SOURCE_CODE_URL } from '../branding';
 
 // Per-language fiscal code / VAT rules used by the entity registration form.
 // Country prefix (DE/FR/ES) is optional where the user might enter only the
@@ -121,31 +122,19 @@ export default function LoginPage({ onLogin }) {
 
         setAssociations(list);
 
-        // Validate autologin association before auto-logging in
+        // A cached association is a preference, not proof of an authenticated session.
         if (prefs.autologin && list.some(a => a.id === prefs.autologin.associationId)) {
-            if (backendReachable) {
-                try {
-                    const autologinValid = await associago.validateAssociation(prefs.autologin.associationId);
-                    if (autologinValid) {
-                        const target = list.find(a => a.id === prefs.autologin.associationId);
-                        handleLoginSuccess(target, prefs.autologin.token);
-                        return;
-                    }
-                    // Autologin association was deleted, clear autologin pref
-                    associago.removeKnownAssociation(prefs.autologin.associationId);
-                    list = associago.getKnownAssociations();
-                    setAssociations(list);
-                } catch (e) {
-                    // Backend unreachable, proceed with autologin using cache
+            try {
+                const session = await associago.checkSession();
+                if (session.authenticated && String(session.principal) === String(prefs.autologin.associationId)) {
                     const target = list.find(a => a.id === prefs.autologin.associationId);
-                    handleLoginSuccess(target, prefs.autologin.token);
+                    handleLoginSuccess(target);
                     return;
                 }
-            } else {
-                const target = list.find(a => a.id === prefs.autologin.associationId);
-                handleLoginSuccess(target, prefs.autologin.token);
-                return;
+            } catch {
+                // Expired sessions and network errors both require an explicit login.
             }
+            associago.setPreferences({ autologin: null });
         }
 
         setView(list.length === 0 ? "create" : "list");
@@ -165,7 +154,7 @@ export default function LoginPage({ onLogin }) {
         try {
             const result = await associago.login(selectedAssoc.id, passwordInput);
             if (rememberMe) {
-                associago.setPreferences({ autologin: { associationId: selectedAssoc.id, token: result.token } });
+                associago.setPreferences({ autologin: { associationId: selectedAssoc.id } });
             } else {
                 associago.setPreferences({ autologin: null });
             }
@@ -210,7 +199,7 @@ export default function LoginPage({ onLogin }) {
             const newAssoc = await associago.setupAssociation(payload);
             const result = await associago.login(newAssoc.id, formData.password);
             if (rememberMe) {
-                associago.setPreferences({ autologin: { associationId: newAssoc.id, token: result.token } });
+                associago.setPreferences({ autologin: { associationId: newAssoc.id } });
             } else {
                 associago.setPreferences({ autologin: null });
             }
@@ -575,6 +564,17 @@ export default function LoginPage({ onLogin }) {
                     </div>
                 </div>
             )}
+            {/* Offerta del sorgente richiesta dall'art. 13 AGPLv3. Sta qui, prima del
+                login, perché chi si ferma a questa schermata sta già interagendo col
+                programma attraverso la rete: l'offerta deve raggiungere anche lui. */}
+            <a
+                href={SOURCE_CODE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="position-absolute bottom-0 mb-3 text-muted small text-decoration-none"
+            >
+                {t('Source code')} · AGPLv3
+            </a>
         </div>
     );
 }

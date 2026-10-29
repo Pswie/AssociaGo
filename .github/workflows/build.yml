@@ -61,7 +61,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: desktop/package-lock.json
 
@@ -71,18 +71,9 @@ jobs:
           name: backend-jar
           path: build/libs
 
-      - name: Install Frontend Dependencies (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Frontend Dependencies
         working-directory: ./desktop
         run: npm ci
-
-      - name: Install Frontend Dependencies (Windows/Mac)
-        if: matrix.os != 'ubuntu-latest'
-        working-directory: ./desktop
-        run: |
-          rm -f package-lock.json
-          rm -rf node_modules
-          npm install
 
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'

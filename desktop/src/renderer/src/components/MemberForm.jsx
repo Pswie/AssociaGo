@@ -1,37 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import { Calculator, FileHeart, Upload } from 'lucide-react';
+import { MEMBER_ROLES } from './memberRoles';
 
-// Tipologie/cariche selezionabili per il socio. Sono tutte memorizzate
-// come CSV nel campo UserAssociation.role (es. "FOUNDER,TREASURER").
-export const MEMBER_ROLES = [
-  { value: 'MEMBER',         label: 'Socio Ordinario' },
-  { value: 'FOUNDER',        label: 'Socio Fondatore' },
-  { value: 'HONORARY',       label: 'Socio Onorario' },
-  { value: 'PRESIDENT',      label: 'Presidente' },
-  { value: 'VICE_PRESIDENT', label: 'Vice Presidente' },
-  { value: 'SECRETARY',      label: 'Segretario' },
-  { value: 'TREASURER',      label: 'Tesoriere' },
-  { value: 'COUNCILLOR',     label: 'Consigliere' },
-];
-
-const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => {
+const MemberForm = ({ associationId, associationType, memberId, onSuccess, onCancel }) => {
   const isASD = associationType === 'ASD';
   const today = new Date().toISOString().split('T')[0];
-  const { register, handleSubmit, setValue, getValues, watch, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, reset, setValue, getValues, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       registrationDate: today,
       roles: ['MEMBER'],
     },
   });
   const [calculatingCF, setCalculatingCF] = useState(false);
+  const [membership, setMembership] = useState(null);
+  const [loading, setLoading] = useState(Boolean(memberId));
+  const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!memberId) return;
+    associago.memberships.getById(memberId).then(existing => {
+      if (cancelled) return;
+      setMembership(existing);
+      reset({
+        ...existing.user,
+        cardNumber: existing.membershipCardNumber || '',
+        registrationDate: existing.joinDate || today,
+        roles: (existing.role || 'MEMBER').split(',').map(role => role.trim()),
+        registerPayment: false
+      });
+    }).catch(error => {
+      if (!cancelled) setSaveError(error.message);
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [memberId, reset]);
 
   // Watch for payment checkbox to conditionally show payment fields
   const registerPayment = watch('registerPayment', false);
 
   const onSubmit = async (data) => {
+    setSaveError('');
     try {
       // Normalizza le tipologie selezionate in CSV. Se nessuna è spuntata
       // (caso impossibile via UI ma difensivo), usa MEMBER come default.
@@ -41,6 +54,21 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
       // La data di registrazione vale come arrivo del pagamento e come
       // data di iscrizione (joinDate sulla membership).
       const registrationDate = data.registrationDate || today;
+
+      if (memberId) {
+        if (!membership?.user?.id) throw new Error(t('Unable to load member.'));
+        await associago.users.update(membership.user.id, {
+          ...membership.user,
+          ...Object.fromEntries(['firstName', 'lastName', 'taxCode', 'email', 'phone', 'birthDate', 'birthPlace', 'gender', 'address', 'city', 'zipCode'].map(key => [key, data[key] ?? membership.user[key]]))
+        });
+        await associago.memberships.update(memberId, {
+          ...membership,
+          role: rolesCsv,
+          membershipCardNumber: data.cardNumber
+        });
+        onSuccess();
+        return;
+      }
 
       // Step 1: Create User (handle duplicate taxCode by finding existing)
       let user;
@@ -84,9 +112,6 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
             certificateType: data.medicalCertType || 'NON_AGONISTIC',
             issueDate: data.medicalCertIssueDate,
             expiryDate: data.medicalCertExpiryDate,
-            issuedBy: data.medicalCertIssuedBy,
-            medicalFacility: data.medicalCertFacility,
-            notes: data.medicalCertNotes
           });
         } catch (medError) {
           console.warn('Member created but medical certificate save failed', medError);
@@ -114,7 +139,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
       onSuccess();
     } catch (error) {
       console.error('Error creating member:', error);
-      alert('Failed to create member: ' + error.message);
+      setSaveError(error.message);
     }
   };
 
@@ -143,18 +168,20 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-2">
+      {saveError && <div className="alert alert-danger" role="alert">{saveError}</div>}
+      <fieldset disabled={loading || isSubmitting || (Boolean(memberId) && !membership)}>
       <div className="row g-3">
         <div className="col-md-6">
-          <label className="form-label">Nome</label>
-          <input
+          <label htmlFor="member-firstName" className="form-label">Nome</label>
+          <input id="member-firstName"
             {...register('firstName', { required: 'Nome obbligatorio' })}
             className="form-control"
           />
           {errors.firstName && <span className="text-danger small">{errors.firstName.message}</span>}
         </div>
         <div className="col-md-6">
-          <label className="form-label">Cognome</label>
-          <input
+          <label htmlFor="member-lastName" className="form-label">Cognome</label>
+          <input id="member-lastName"
             {...register('lastName', { required: 'Cognome obbligatorio' })}
             className="form-control"
           />
@@ -164,27 +191,27 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
       <div className="row g-3 mt-1">
         <div className="col-md-4">
-          <label className="form-label">Data di Nascita</label>
-          <input type="date" {...register('birthDate', { required: true })} className="form-control" />
+          <label htmlFor="member-birthDate" className="form-label">Data di Nascita</label>
+          <input id="member-birthDate" type="date" {...register('birthDate', { required: !memberId })} className="form-control" />
         </div>
         <div className="col-md-4">
-          <label className="form-label">Sesso</label>
-          <select {...register('gender', { required: true })} className="form-select">
+          <label htmlFor="member-gender" className="form-label">Sesso</label>
+          <select id="member-gender" {...register('gender', { required: !memberId })} className="form-select">
             <option value="">Seleziona...</option>
             <option value="M">Maschio</option>
             <option value="F">Femmina</option>
           </select>
         </div>
         <div className="col-md-4">
-          <label className="form-label">Codice Catastale (es. H501)</label>
-          <input {...register('birthPlaceCode')} className="form-control" placeholder="es. H501" />
+          <label htmlFor="member-birthPlaceCode" className="form-label">Codice Catastale (es. H501)</label>
+          <input id="member-birthPlaceCode" {...register('birthPlaceCode')} className="form-control" placeholder="es. H501" />
         </div>
       </div>
 
       <div className="mt-3">
-        <label className="form-label">Codice Fiscale</label>
+        <label htmlFor="member-taxCode" className="form-label">Codice Fiscale</label>
         <div className="input-group">
-          <input
+          <input id="member-taxCode"
             {...register('taxCode', { required: 'Codice Fiscale obbligatorio' })}
             className="form-control"
           />
@@ -202,45 +229,46 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
       <div className="row g-3 mt-1">
         <div className="col-md-6">
-          <label className="form-label">Email</label>
-          <input type="email" {...register('email')} className="form-control" />
+          <label htmlFor="member-email" className="form-label">Email</label>
+          <input id="member-email" type="email" {...register('email')} className="form-control" />
         </div>
         <div className="col-md-6">
-          <label className="form-label">Telefono</label>
-          <input type="tel" {...register('phone')} className="form-control" />
+          <label htmlFor="member-phone" className="form-label">Telefono</label>
+          <input id="member-phone" type="tel" {...register('phone')} className="form-control" />
         </div>
       </div>
 
       <div className="row g-3 mt-1">
         <div className="col-md-12">
-          <label className="form-label">Indirizzo</label>
-          <input type="text" {...register('address')} className="form-control" placeholder="Via Roma 1" />
+          <label htmlFor="member-address" className="form-label">Indirizzo</label>
+          <input id="member-address" type="text" {...register('address')} className="form-control" placeholder="Via Roma 1" />
         </div>
         <div className="col-md-8">
-          <label className="form-label">Città</label>
-          <input type="text" {...register('city')} className="form-control" />
+          <label htmlFor="member-city" className="form-label">Città</label>
+          <input id="member-city" type="text" {...register('city')} className="form-control" />
         </div>
         <div className="col-md-4">
-          <label className="form-label">CAP</label>
-          <input type="text" {...register('zipCode')} className="form-control" />
+          <label htmlFor="member-zipCode" className="form-label">CAP</label>
+          <input id="member-zipCode" type="text" {...register('zipCode')} className="form-control" />
         </div>
       </div>
 
       <div className="row g-3 mt-1">
         <div className="col-md-6">
-            <label className="form-label">Numero Tessera</label>
-            <input {...register('cardNumber')} className="form-control" />
+            <label htmlFor="member-cardNumber" className="form-label">Numero Tessera</label>
+            <input id="member-cardNumber" {...register('cardNumber')} className="form-control" />
         </div>
         <div className="col-md-6">
-            <label className="form-label">
+            <label htmlFor="member-registrationDate" className="form-label">
               Data di Registrazione
               <span className="text-muted small ms-1">(arrivo del pagamento)</span>
             </label>
-            <input
+            <input id="member-registrationDate"
               type="date"
               {...register('registrationDate', { required: 'Data obbligatoria' })}
               className="form-control"
               max={today}
+              readOnly={Boolean(memberId)}
             />
             {errors.registrationDate && <span className="text-danger small">{errors.registrationDate.message}</span>}
         </div>
@@ -248,11 +276,11 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
       <div className="row g-3 mt-1">
         <div className="col-12">
-          <label className="form-label">
+          <div className="form-label" id="member-roles-label">
             Tipologia / Cariche
             <span className="text-muted small ms-1">(seleziona una o più voci)</span>
-          </label>
-          <div className="d-flex flex-wrap gap-3 p-2 border rounded">
+          </div>
+          <div className="d-flex flex-wrap gap-3 p-2 border rounded" role="group" aria-labelledby="member-roles-label">
             {MEMBER_ROLES.map((r) => (
               <div className="form-check" key={r.value}>
                 <input
@@ -271,7 +299,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
         </div>
       </div>
 
-      {isASD && (
+      {isASD && !memberId && (
         <>
           <hr className="my-4" />
           <div className="card border-primary border-opacity-25 mb-3">
@@ -280,43 +308,43 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
               <span className="fw-bold">{t('Sports Medical Certificate')}</span>
             </div>
             <div className="card-body">
-              <p className="text-muted small mb-3">{t('Required for participation in sports activities (ASD).')}</p>
+              {/*
+                Restano tipo e scadenza, e basta.
+
+                Il nome del medico, la struttura sanitaria e una nota libera
+                attaccata a un certificato sono dati sulla salute — art. 9 GDPR
+                — e stavano accanto a nome, codice fiscale e indirizzo, a un
+                JOIN di distanza. Non servivano a niente che l'associazione
+                debba fare: la domanda a cui rispondere è «questa persona può
+                fare il turno», e a quella risponde la scadenza.
+              */}
+              <p className="text-muted small mb-3">
+                {t('Serve solo a sapere se la persona può svolgere attività. Non annotare qui informazioni sanitarie.')}
+              </p>
               <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label">{t('Certificate Type')}</label>
-                  <select {...register('medicalCertType')} className="form-select">
-                    <option value="NON_AGONISTIC">{t('Non-Agonistic')}</option>
-                    <option value="AGONISTIC">{t('Agonistic')}</option>
+                  <label htmlFor="member-medicalCertType" className="form-label">{t('Tipo di certificato')}</label>
+                  <select id="member-medicalCertType" {...register('medicalCertType')} className="form-select">
+                    <option value="NON_AGONISTIC">{t('Non agonistico')}</option>
+                    <option value="AGONISTIC">{t('Agonistico')}</option>
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">{t('Status')}</label>
-                  <select {...register('medicalCertStatus')} className="form-select" disabled>
-                    <option value="MISSING">{t('Missing')}</option>
-                    <option value="VALID">{t('Valid')}</option>
-                    <option value="EXPIRING_SOON">{t('Expiring Soon')}</option>
-                    <option value="EXPIRED">{t('Expired')}</option>
+                  <label htmlFor="member-medicalCertStatus" className="form-label">{t('Stato')}</label>
+                  <select id="member-medicalCertStatus" {...register('medicalCertStatus')} className="form-select" disabled>
+                    <option value="MISSING">{t('Assente')}</option>
+                    <option value="VALID">{t('Valido')}</option>
+                    <option value="EXPIRING_SOON">{t('In scadenza')}</option>
+                    <option value="EXPIRED">{t('Scaduto')}</option>
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">{t('Issue Date')}</label>
-                  <input type="date" {...register('medicalCertIssueDate')} className="form-control" />
+                  <label htmlFor="member-medicalCertIssueDate" className="form-label">{t('Data di rilascio')}</label>
+                  <input id="member-medicalCertIssueDate" type="date" {...register('medicalCertIssueDate')} className="form-control" />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">{t('Expiry Date')}</label>
-                  <input type="date" {...register('medicalCertExpiryDate')} className="form-control" />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">{t('Certifying Doctor')}</label>
-                  <input {...register('medicalCertIssuedBy')} className="form-control" placeholder={t('Dr. ...')} />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">{t('Medical Facility')}</label>
-                  <input {...register('medicalCertFacility')} className="form-control" placeholder={t('Hospital / Clinic')} />
-                </div>
-                <div className="col-12">
-                  <label className="form-label">{t('Notes')}</label>
-                  <textarea {...register('medicalCertNotes')} className="form-control" rows={2} />
+                  <label htmlFor="member-medicalCertExpiryDate" className="form-label">{t('Scadenza')}</label>
+                  <input id="member-medicalCertExpiryDate" type="date" {...register('medicalCertExpiryDate')} className="form-control" />
                 </div>
               </div>
             </div>
@@ -326,7 +354,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
 
       <hr className="my-4" />
 
-      <div className="form-check mb-3">
+      {!memberId && <div className="form-check mb-3">
         <input
             className="form-check-input"
             type="checkbox"
@@ -336,14 +364,14 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
         <label className="form-check-label fw-bold" htmlFor="registerPayment">
             Registra Pagamento Quota Associativa
         </label>
-      </div>
+      </div>}
 
       {registerPayment && (
         <div className="card bg-light border-0 p-3 mb-3">
             <div className="row g-3">
                 <div className="col-md-6">
-                    <label className="form-label">Importo (€)</label>
-                    <input
+                    <label htmlFor="member-paymentAmount" className="form-label">Importo (€)</label>
+                    <input id="member-paymentAmount"
                         type="number"
                         step="0.01"
                         {...register('paymentAmount', { required: registerPayment })}
@@ -352,8 +380,8 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
                     />
                 </div>
                 <div className="col-md-6">
-                    <label className="form-label">Metodo di Pagamento</label>
-                    <select {...register('paymentMethod', { required: registerPayment })} className="form-select">
+                    <label htmlFor="member-paymentMethod" className="form-label">Metodo di Pagamento</label>
+                    <select id="member-paymentMethod" {...register('paymentMethod', { required: registerPayment })} className="form-select">
                         <option value="CASH">Contanti</option>
                         <option value="BANK_TRANSFER">Bonifico</option>
                         <option value="POS">POS / Carta</option>
@@ -364,6 +392,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
         </div>
       )}
 
+      </fieldset>
       <div className="d-flex justify-content-end gap-2 mt-4">
         <button
           type="button"
@@ -374,7 +403,7 @@ const MemberForm = ({ associationId, associationType, onSuccess, onCancel }) => 
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || loading || (Boolean(memberId) && !membership)}
           className="btn btn-primary"
         >
           {isSubmitting ? 'Salvataggio...' : 'Salva Socio'}

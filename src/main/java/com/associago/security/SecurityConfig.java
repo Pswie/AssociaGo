@@ -2,6 +2,7 @@ package com.associago.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,19 +19,24 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Configurazione Spring Security per AssociaGo
+ * Configurazione Spring Security per AssociaGo — desktop e sviluppo locale.
+ *
+ * <p>Esclusa dal profilo {@code cloud}, dove vale {@link CloudSecurityConfig}:
+ * questa configurazione, con {@code associago.auth.enabled=false}, apre ogni
+ * endpoint in {@code permitAll()} e disabilita CSRF. È una scelta sensata per
+ * un'applicazione desktop mono-utente su 127.0.0.1, ed è esattamente ciò che
+ * non deve mai finire su un URL pubblico.
  *
  * @author Lorenzo DM
  * @since 0.1.0
  */
 @Configuration
 @EnableWebSecurity
+@Profile("!cloud")
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // Il PasswordEncoder e' stato spostato in PasswordEncoderConfig: serve anche
+    // nel profilo cloud, dove questa configurazione non viene caricata.
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -116,7 +122,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

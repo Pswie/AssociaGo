@@ -18,9 +18,6 @@ public class CertificateMapper {
                 entity.getType(),
                 entity.getBodyHtml(),
                 entity.getMergeFields(),
-                entity.getHeaderImagePath(),
-                entity.getFooterImagePath(),
-                entity.getBackgroundImagePath(),
                 entity.getSignatoryRoles(),
                 entity.getOrientation(),
                 entity.getPaperSize(),
@@ -42,9 +39,8 @@ public class CertificateMapper {
         if (dto.type() != null) entity.setType(dto.type());
         if (dto.bodyHtml() != null) entity.setBodyHtml(dto.bodyHtml());
         if (dto.mergeFields() != null) entity.setMergeFields(dto.mergeFields());
-        if (dto.headerImagePath() != null) entity.setHeaderImagePath(dto.headerImagePath());
-        if (dto.footerImagePath() != null) entity.setFooterImagePath(dto.footerImagePath());
-        if (dto.backgroundImagePath() != null) entity.setBackgroundImagePath(dto.backgroundImagePath());
+        // Intestazione, piede e sfondo ora sono allegati
+        // (AttachmentOwner.CERTIFICATE_TEMPLATE), non percorsi su disco.
         if (dto.signatoryRoles() != null) entity.setSignatoryRoles(dto.signatoryRoles());
         if (dto.orientation() != null) entity.setOrientation(dto.orientation());
         if (dto.paperSize() != null) entity.setPaperSize(dto.paperSize());
@@ -65,7 +61,6 @@ public class CertificateMapper {
                 entity.getTitle(),
                 entity.getBodySnapshot(),
                 entity.getSignatories(),
-                entity.getPdfPath(),
                 entity.getChecksum(),
                 entity.getQrCodeData(),
                 entity.getStatus(),

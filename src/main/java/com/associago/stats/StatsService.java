@@ -1,5 +1,6 @@
 package com.associago.stats;
 
+import com.associago.esercizio.Esercizio;
 import com.associago.activity.Activity;
 import com.associago.activity.repository.ActivityCostRepository;
 import com.associago.activity.repository.ActivityParticipantRepository;
@@ -53,6 +54,26 @@ public class StatsService {
     }
 
     public Map<String, Object> getDashboardStats() {
+        return getDashboardStats(null);
+    }
+
+    /**
+     * I numeri della pagina iniziale, eventualmente di un solo esercizio.
+     *
+     * <p><strong>Perché il filtro non poteva stare nel browser.</strong> Questo
+     * metodo restituisce totali, non righe: una somma già calcolata non si
+     * filtra dopo. Per vedere l'anno scorso bisogna che sia il server a
+     * sommarne i movimenti.
+     *
+     * <p>Non tutto segue l'anno, e la differenza è la stessa di sempre. Le
+     * <em>somme</em> — entrate, uscite, saldo — sono flussi: appartengono
+     * all'esercizio. Il <em>numero di soci</em> è una giacenza: quanti ce ne
+     * sono adesso non è una domanda annuale, e restringerla all'anno
+     * risponderebbe a una domanda che nessuno ha fatto.
+     *
+     * @param anno l'esercizio, oppure {@code null} per l'intera storia.
+     */
+    public Map<String, Object> getDashboardStats(Integer anno) {
         Map<String, Object> stats = new HashMap<>();
         LocalDateTime now = LocalDateTime.now();
         LocalDate today = LocalDate.now();
@@ -68,18 +89,22 @@ public class StatsService {
 
         // --- Treasury ---
         Map<String, Object> treasury = new HashMap<>();
-        
-        LocalDate farPast = LocalDate.of(1900, 1, 1);
-        LocalDate farFuture = LocalDate.of(2100, 12, 31);
+
+        // Con un esercizio scelto le somme si fermano a quell'anno; senza,
+        // coprono tutta la storia — che è il comportamento di prima.
+        LocalDate farPast = Esercizio.valido(anno)
+                ? Esercizio.inizio(anno) : LocalDate.of(1900, 1, 1);
+        LocalDate farFuture = Esercizio.valido(anno)
+                ? Esercizio.fine(anno) : LocalDate.of(2100, 12, 31);
 
         BigDecimal totalIncome = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, farPast, farFuture);
         BigDecimal totalExpense = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, farPast, farFuture);
-        
+
         if (totalIncome == null) totalIncome = BigDecimal.ZERO;
         if (totalExpense == null) totalExpense = BigDecimal.ZERO;
-        
+
         treasury.put("balance", totalIncome.subtract(totalExpense));
-        
+
         BigDecimal incomeMonth = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startOfMonth, endOfMonth);
         BigDecimal expenseMonth = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startOfMonth, endOfMonth);
         treasury.put("incomeMonth", incomeMonth != null ? incomeMonth : BigDecimal.ZERO);
@@ -106,7 +131,7 @@ public class StatsService {
 
         return stats;
     }
-    
+
     public Map<String, Object> getGeneralStats() {
         return getDashboardStats();
     }

@@ -50,10 +50,7 @@ public class AnnualBalance {
     @Column(columnDefinition = "TEXT")
     private String signatories; // JSON
 
-    @Column(name = "pdf_path")
-    private String pdfPath;
-
-    private String checksum;
+private String checksum;
     private String notes;
 
     @Column(name = "created_at", updatable = false)
@@ -90,8 +87,6 @@ public class AnnualBalance {
     public void setApprovedAt(LocalDateTime approvedAt) { this.approvedAt = approvedAt; }
     public String getSignatories() { return signatories; }
     public void setSignatories(String signatories) { this.signatories = signatories; }
-    public String getPdfPath() { return pdfPath; }
-    public void setPdfPath(String pdfPath) { this.pdfPath = pdfPath; }
     public String getChecksum() { return checksum; }
     public void setChecksum(String checksum) { this.checksum = checksum; }
     public String getNotes() { return notes; }

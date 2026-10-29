@@ -1,14 +1,20 @@
 package com.associago.csvimport;
 
-import com.associago.member.Member;
-import com.associago.member.MemberService;
+import com.associago.association.Association;
+import com.associago.association.repository.AssociationRepository;
+import com.associago.membership.UserAssociation;
+import com.associago.membership.repository.UserAssociationRepository;
+import com.associago.user.User;
+import com.associago.user.repository.UserRepository;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,11 +25,16 @@ import java.util.*;
 public class CsvImportService {
 
     private final ImportLogRepository importLogRepository;
-    private final MemberService memberService;
+    private final UserRepository userRepository;
+    private final UserAssociationRepository membershipRepository;
+    private final AssociationRepository associationRepository;
 
-    public CsvImportService(ImportLogRepository importLogRepository, MemberService memberService) {
+    public CsvImportService(ImportLogRepository importLogRepository, UserRepository userRepository,
+                            UserAssociationRepository membershipRepository, AssociationRepository associationRepository) {
         this.importLogRepository = importLogRepository;
-        this.memberService = memberService;
+        this.userRepository = userRepository;
+        this.membershipRepository = membershipRepository;
+        this.associationRepository = associationRepository;
     }
 
     public List<ImportLog> getHistory(Long associationId) {
@@ -34,6 +45,8 @@ public class CsvImportService {
      * Preview CSV content: validates, detects duplicates, returns preview data.
      */
     public ImportLog preview(MultipartFile file, Long associationId, String entityType, Long importedBy) throws IOException {
+        requireMemberImport(entityType);
+        requireAssociation(associationId);
         ImportLog log = new ImportLog();
         log.setAssociationId(associationId);
         log.setEntityType(entityType);
@@ -61,6 +74,7 @@ public class CsvImportService {
             List<Map<String, String>> errors = new ArrayList<>();
             int valid = 0;
             int skipped = 0;
+            Set<String> seen = new HashSet<>();
 
             for (int i = 0; i < dataRows.size(); i++) {
                 String[] row = dataRows.get(i);
@@ -74,7 +88,7 @@ public class CsvImportService {
                     errors.add(err);
                 } else {
                     // Check for duplicates
-                    if (isDuplicate(rowMap, entityType, associationId)) {
+                    if (isDuplicate(rowMap, associationId) || duplicateInFile(rowMap, seen)) {
                         skipped++;
                     } else {
                         valid++;
@@ -85,6 +99,9 @@ public class CsvImportService {
             log.setImportedRows(valid);
             log.setSkippedRows(skipped);
             log.setErrorRows(errors.size());
+            if (dataRows.isEmpty() || (valid == 0 && !errors.isEmpty())) {
+                log.setStatus("FAILED");
+            }
             if (!errors.isEmpty()) {
                 log.setErrorsDetail(errors.toString());
             }
@@ -100,7 +117,7 @@ public class CsvImportService {
      * Confirm import: actually persists the data.
      */
     @Transactional
-    public ImportLog confirmImport(Long importLogId) throws IOException {
+    public ImportLog confirmImport(Long importLogId, MultipartFile file) throws IOException {
         ImportLog log = importLogRepository.findById(importLogId)
                 .orElseThrow(() -> new RuntimeException("Import log not found: " + importLogId));
 
@@ -108,12 +125,14 @@ public class CsvImportService {
             throw new IllegalStateException("Import can only be confirmed from PREVIEW status");
         }
 
-        log.setStatus("COMPLETED");
-        log.setCompletedAt(LocalDateTime.now());
-        // Actual import is done through entity-specific methods
-        // The preview already validated the data, so we trust it here
-
-        return importLogRepository.save(log);
+        requireMemberImport(log.getEntityType());
+        if (file == null || file.isEmpty()) {
+            throw new IllegalStateException("Upload the original CSV file to confirm this preview. No data has been imported.");
+        }
+        if (!Objects.equals(log.getFileChecksum(), sha256(file.getBytes()))) {
+            throw new IllegalArgumentException("The CSV file has changed since the preview. Generate a new preview first.");
+        }
+        return importMemberRows(file, requireAssociation(log.getAssociationId()), log);
     }
 
     /**
@@ -121,6 +140,7 @@ public class CsvImportService {
      */
     @Transactional
     public ImportLog importMembers(MultipartFile file, Long associationId, Long importedBy) throws IOException {
+        Association association = requireAssociation(associationId);
         ImportLog log = new ImportLog();
         log.setAssociationId(associationId);
         log.setEntityType("MEMBER");
@@ -128,6 +148,14 @@ public class CsvImportService {
         log.setImportedBy(importedBy);
         log.setStatus("COMPLETED");
         log.setStartedAt(LocalDateTime.now());
+
+        return importMemberRows(file, association, log);
+    }
+
+    private ImportLog importMemberRows(MultipartFile file, Association association, ImportLog log) throws IOException {
+        Long associationId = association.getId();
+        log.setStatus("COMPLETED");
+        log.setErrorsDetail(null);
 
         byte[] bytes = file.getBytes();
         log.setFileChecksum(sha256(bytes));
@@ -148,42 +176,47 @@ public class CsvImportService {
         int errors = 0;
         List<String> errorDetails = new ArrayList<>();
 
+        Set<String> seen = new HashSet<>();
         for (int i = 0; i < dataRows.size(); i++) {
             String[] row = dataRows.get(i);
             Map<String, String> rowMap = mapRow(header, row);
 
-            try {
-                List<String> rowErrors = validateRow(rowMap, "MEMBER");
-                if (!rowErrors.isEmpty()) {
-                    errors++;
-                    errorDetails.add("Riga " + (i + 2) + ": " + String.join("; ", rowErrors));
-                    continue;
-                }
+            List<String> rowErrors = validateRow(rowMap, "MEMBER");
+            if (!rowErrors.isEmpty()) {
+                errors++;
+                errorDetails.add("Riga " + (i + 2) + ": " + String.join("; ", rowErrors));
+                continue;
+            }
 
-                if (isDuplicate(rowMap, "MEMBER", associationId)) {
-                    skipped++;
-                    continue;
-                }
+            if (isDuplicate(rowMap, associationId) || duplicateInFile(rowMap, seen)) {
+                skipped++;
+                continue;
+            }
 
-                Member member = new Member();
+            User user = findUser(rowMap).orElseGet(() -> {
+                User member = new User();
                 member.setFirstName(rowMap.getOrDefault("first_name", rowMap.get("nome")));
                 member.setLastName(rowMap.getOrDefault("last_name", rowMap.get("cognome")));
-                member.setEmail(rowMap.getOrDefault("email", null));
-                member.setFiscalCode(rowMap.getOrDefault("fiscal_code", rowMap.get("codice_fiscale")));
+                member.setEmail(rowMap.get("email"));
+                member.setTaxCode(fiscalCode(rowMap));
                 member.setPhone(rowMap.getOrDefault("phone", rowMap.get("telefono")));
-                member.setMembershipStatus("ACTIVE");
-
-                memberService.createMember(member);
-                imported++;
-            } catch (Exception e) {
-                errors++;
-                errorDetails.add("Riga " + (i + 2) + ": " + e.getMessage());
-            }
+                return userRepository.save(member);
+            });
+            UserAssociation membership = new UserAssociation();
+            membership.setUser(user);
+            membership.setAssociation(association);
+            membership.setJoinDate(java.time.LocalDate.now());
+            membership.setNotes(rowMap.getOrDefault("notes", rowMap.get("note")));
+            membershipRepository.save(membership);
+            imported++;
         }
 
         log.setImportedRows(imported);
         log.setSkippedRows(skipped);
         log.setErrorRows(errors);
+        if (errors > 0 && imported == 0) {
+            log.setStatus("FAILED");
+        }
         if (!errorDetails.isEmpty()) {
             log.setErrorsDetail(String.join("\n", errorDetails));
         }
@@ -195,7 +228,14 @@ public class CsvImportService {
     // --- Helpers ---
 
     private List<String[]> parseCsv(byte[] bytes) throws IOException {
-        try (CSVReader reader = new CSVReader(new InputStreamReader(new java.io.ByteArrayInputStream(bytes), StandardCharsets.UTF_8))) {
+        String content = new String(bytes, StandardCharsets.UTF_8);
+        if (content.startsWith("\uFEFF")) {
+            content = content.substring(1);
+        }
+        String header = content.split("\\R", 2)[0];
+        char separator = header.chars().filter(c -> c == ';').count() > header.chars().filter(c -> c == ',').count() ? ';' : ',';
+        try (CSVReader reader = new CSVReaderBuilder(new StringReader(content))
+                .withCSVParser(new CSVParserBuilder().withSeparator(separator).build()).build()) {
             return reader.readAll();
         } catch (CsvException e) {
             throw new IOException("CSV parsing error: " + e.getMessage(), e);
@@ -205,7 +245,7 @@ public class CsvImportService {
     private Map<String, String> mapRow(String[] header, String[] row) {
         Map<String, String> map = new LinkedHashMap<>();
         for (int i = 0; i < header.length && i < row.length; i++) {
-            String key = header[i].trim().toLowerCase().replace(" ", "_");
+            String key = header[i].trim().toLowerCase(Locale.ROOT).replace(" ", "_");
             String value = row[i] != null ? row[i].trim() : null;
             if (value != null && !value.isEmpty()) {
                 map.put(key, value);
@@ -225,18 +265,52 @@ public class CsvImportService {
         return errors;
     }
 
-    private boolean isDuplicate(Map<String, String> row, String entityType, Long associationId) {
-        if ("MEMBER".equals(entityType)) {
-            String fiscalCode = row.getOrDefault("fiscal_code", row.get("codice_fiscale"));
-            if (fiscalCode != null && !fiscalCode.isEmpty()) {
-                return memberService.findByFiscalCode(fiscalCode).isPresent();
-            }
-            String email = row.get("email");
-            if (email != null && !email.isEmpty()) {
-                return memberService.findByEmail(email).isPresent();
+    private boolean isDuplicate(Map<String, String> row, Long associationId) {
+        return findUser(row).map(user -> membershipRepository
+                .findByUserIdAndAssociationId(user.getId(), associationId).isPresent()).orElse(false);
+    }
+
+    private Optional<User> findUser(Map<String, String> row) {
+        String fiscalCode = fiscalCode(row);
+        if (fiscalCode != null) {
+            Optional<User> byCode = userRepository.findByTaxCode(fiscalCode);
+            if (byCode.isPresent()) {
+                return byCode;
             }
         }
-        return false;
+        String email = row.get("email");
+        return email == null || email.isBlank() ? Optional.empty() : userRepository.findByEmailIgnoreCase(email);
+    }
+
+    private String fiscalCode(Map<String, String> row) {
+        String value = row.getOrDefault("fiscal_code", row.get("codice_fiscale"));
+        return value == null || value.isBlank() ? null : value.toUpperCase(Locale.ROOT);
+    }
+
+    private boolean duplicateInFile(Map<String, String> row, Set<String> seen) {
+        String fiscalCode = fiscalCode(row);
+        String email = row.get("email");
+        String codeKey = fiscalCode == null ? null : "code:" + fiscalCode;
+        String emailKey = email == null || email.isBlank() ? null : "email:" + email.toLowerCase(Locale.ROOT);
+        boolean duplicate = (codeKey != null && seen.contains(codeKey)) || (emailKey != null && seen.contains(emailKey));
+        if (codeKey != null) seen.add(codeKey);
+        if (emailKey != null) seen.add(emailKey);
+        return duplicate;
+    }
+
+    private Association requireAssociation(Long associationId) {
+        if (associationId == null) {
+            throw new IllegalArgumentException("Association is required for member imports.");
+        }
+        return associationRepository.findById(associationId)
+                .orElseThrow(() -> new IllegalArgumentException("Association not found."));
+    }
+
+    private void requireMemberImport(String entityType) {
+        if (!"MEMBER".equals(entityType)) {
+            throw new IllegalStateException("Activity and event participant CSV imports are not yet available. "
+                    + "Add participants using the participant form.");
+        }
     }
 
     private String sha256(byte[] data) {

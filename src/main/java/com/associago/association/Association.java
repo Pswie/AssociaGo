@@ -40,21 +40,21 @@ public class Association {
     private String address;
     private String city;
     private String province;
-    
+
     @Column(name = "zip_code")
     private String zipCode;
-    
+
     private String phone;
-    
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
     // --- Organization ---
     private String president;
-    
+
     @Column(name = "vice_president")
     private String vicePresident;
-    
+
     private String secretary;
     private String treasurer;
 
@@ -63,19 +63,7 @@ public class Association {
     @JdbcTypeCode(SqlTypes.VARBINARY)
     private byte[] logo;
 
-    @Column(name = "statute_path")
-    private String statutePath;
-
-    @Column(name = "regulation_path")
-    private String regulationPath;
-
-    @Column(name = "secondary_logo_path")
-    private String secondaryLogoPath;
-
-    @Column(name = "partner_logo_path")
-    private String partnerLogoPath;
-
-    // --- Configuration ---
+// --- Configuration ---
     @Column(name = "foundation_date")
     private LocalDate foundationDate;
 
@@ -113,15 +101,22 @@ public class Association {
     @Column(name = "db_ssl")
     private boolean dbSsl = false;
 
-    // --- Federation ---
-    @Column(name = "federation_registration_number")
-    private String federationRegistrationNumber;
+    // --- RUNTS ---
+    // Il Registro Unico Nazionale del Terzo Settore. Un ente è un'APS perché è
+    // iscritto qui, non perché lo dice lo statuto: senza iscrizione non ci sono
+    // né la qualifica né i benefici che ne discendono.
+    //
+    // Prima esistevano solo i campi della federazione sportiva qui sotto, che è
+    // il segno che questo programma è nato per un'ASD.
+    @Column(name = "runts_number")
+    private String runtsNumber;
 
-    @Column(name = "federation_provider")
-    private String federationProvider;
+    /** APS, ODV, ETS, impresa sociale: decide quali adempimenti si applicano. */
+    @Column(name = "runts_section")
+    private String runtsSection;
 
-    @Column(name = "federation_registered_at")
-    private LocalDateTime federationRegisteredAt;
+    @Column(name = "runts_registered_at")
+    private LocalDate runtsRegisteredAt;
 
     // --- Metadata ---
     @Column(name = "created_at", updatable = false)
@@ -194,17 +189,9 @@ public class Association {
     public byte[] getLogo() { return logo; }
     public void setLogo(byte[] logo) { this.logo = logo; }
 
-    public String getStatutePath() { return statutePath; }
-    public void setStatutePath(String statutePath) { this.statutePath = statutePath; }
 
-    public String getRegulationPath() { return regulationPath; }
-    public void setRegulationPath(String regulationPath) { this.regulationPath = regulationPath; }
 
-    public String getSecondaryLogoPath() { return secondaryLogoPath; }
-    public void setSecondaryLogoPath(String secondaryLogoPath) { this.secondaryLogoPath = secondaryLogoPath; }
 
-    public String getPartnerLogoPath() { return partnerLogoPath; }
-    public void setPartnerLogoPath(String partnerLogoPath) { this.partnerLogoPath = partnerLogoPath; }
 
     public LocalDate getFoundationDate() { return foundationDate; }
     public void setFoundationDate(LocalDate foundationDate) { this.foundationDate = foundationDate; }
@@ -242,14 +229,12 @@ public class Association {
     public boolean isDbSsl() { return dbSsl; }
     public void setDbSsl(boolean dbSsl) { this.dbSsl = dbSsl; }
 
-    public String getFederationRegistrationNumber() { return federationRegistrationNumber; }
-    public void setFederationRegistrationNumber(String federationRegistrationNumber) { this.federationRegistrationNumber = federationRegistrationNumber; }
-
-    public String getFederationProvider() { return federationProvider; }
-    public void setFederationProvider(String federationProvider) { this.federationProvider = federationProvider; }
-
-    public LocalDateTime getFederationRegisteredAt() { return federationRegisteredAt; }
-    public void setFederationRegisteredAt(LocalDateTime federationRegisteredAt) { this.federationRegisteredAt = federationRegisteredAt; }
+    public String getRuntsNumber() { return runtsNumber; }
+    public void setRuntsNumber(String runtsNumber) { this.runtsNumber = runtsNumber; }
+    public String getRuntsSection() { return runtsSection; }
+    public void setRuntsSection(String runtsSection) { this.runtsSection = runtsSection; }
+    public LocalDate getRuntsRegisteredAt() { return runtsRegisteredAt; }
+    public void setRuntsRegisteredAt(LocalDate runtsRegisteredAt) { this.runtsRegisteredAt = runtsRegisteredAt; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

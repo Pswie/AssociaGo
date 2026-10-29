@@ -20,8 +20,26 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDate date;
 
+    /**
+     * Il totale del movimento: quel che è realmente uscito o entrato.
+     *
+     * <p>Vale sempre {@code baseAmount} più la somma delle aggiunte. È questa la
+     * colonna che tutti i rapporti già leggono, e resta il totale giusto anche
+     * dopo che a un'uscita si è aggiunta l'IVA.
+     */
     @Column(nullable = false)
     private BigDecimal amount; // Gross Amount
+
+    /**
+     * L'importo di partenza, prima delle aggiunte.
+     *
+     * <p>Serve a non perdere da dove si era cominciato: un buono da 10 su cui poi
+     * si aggiungono 50 centesimi di commissione resta un buono da 10, e
+     * {@code amount} diventa 10,50. Riscrivere l'importo originale al suo posto
+     * farebbe sparire quella distinzione.
+     */
+    @Column(name = "base_amount")
+    private BigDecimal baseAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -29,7 +47,7 @@ public class Transaction {
 
     @Column(name = "category_id")
     private Long categoryId;
-    
+
     private String category; // Free text category for flexibility
 
     private String description;
@@ -64,10 +82,7 @@ public class Transaction {
     @Column(name = "inventory_item_id")
     private Long inventoryItemId;
 
-    @Column(name = "receipt_path")
-    private String receiptPath;
-
-    // --- Campi Aggiunti ---
+// --- Campi Aggiunti ---
     @Column(name = "is_verified")
     private boolean isVerified = false;
 
@@ -112,6 +127,8 @@ public class Transaction {
     public void setDate(LocalDate date) { this.date = date; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public BigDecimal getBaseAmount() { return baseAmount; }
+    public void setBaseAmount(BigDecimal baseAmount) { this.baseAmount = baseAmount; }
     public TransactionType getType() { return type; }
     public void setType(TransactionType type) { this.type = type; }
     public Long getCategoryId() { return categoryId; }
@@ -140,8 +157,6 @@ public class Transaction {
     public void setMembershipId(Long membershipId) { this.membershipId = membershipId; }
     public Long getInventoryItemId() { return inventoryItemId; }
     public void setInventoryItemId(Long inventoryItemId) { this.inventoryItemId = inventoryItemId; }
-    public String getReceiptPath() { return receiptPath; }
-    public void setReceiptPath(String receiptPath) { this.receiptPath = receiptPath; }
     public boolean isVerified() { return isVerified; }
     public void setVerified(boolean verified) { isVerified = verified; }
     public User getVerifiedBy() { return verifiedBy; }

@@ -107,7 +107,9 @@ AssociaGo_PRD*
 *FIX*.md
 PLAN*
 PLAN_TRAD*
-/docs/
+# `/docs/` era ignorato a monte (bozze interne). Qui docs/ contiene DEPLOY-CLOUD.md,
+# che ci serve versionato: regola disattivata di proposito.
+# /docs/
 /.claude
 /.claude/
 /.codex

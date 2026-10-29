@@ -25,7 +25,6 @@ public class AnnualBalanceMapper {
                 entity.getApprovedBy(),
                 entity.getApprovedAt(),
                 entity.getSignatories(),
-                entity.getPdfPath(),
                 entity.getChecksum(),
                 entity.getNotes(),
                 entity.getCreatedAt(),

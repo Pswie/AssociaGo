@@ -8,6 +8,8 @@ import CouponList from './CouponList';
 import RowActions from './common/RowActions';
 
 const EventList = ({ associationId, shell }) => {
+    // L'esercizio arriva dalla testata; il filtro lo applica il server.
+    const anno = shell?.anno ?? new Date().getFullYear();
     const { t } = useTranslation();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,12 +21,12 @@ const EventList = ({ associationId, shell }) => {
         if (associationId && activeTab === 'events') {
             fetchEvents();
         }
-    }, [associationId, activeTab]);
+    }, [associationId, activeTab, anno]);
 
     const fetchEvents = async () => {
         setLoading(true);
         try {
-            const data = await associago.events.getAll();
+            const data = await associago.events.getAll(anno);
             setEvents(data);
         } catch (error) {
             console.error("Error fetching events:", error);
@@ -105,7 +107,7 @@ const EventList = ({ associationId, shell }) => {
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex gap-2" style={{ width: '300px' }}>
+                        <div className="d-flex gap-2 jl-search" style={{ width: '300px' }}>
                             <InputGroup>
                                 <InputGroup.Text className="bg-light border-end-0">
                                     <Search size={16} className="text-muted" />

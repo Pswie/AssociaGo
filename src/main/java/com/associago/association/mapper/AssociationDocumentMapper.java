@@ -13,7 +13,6 @@ public class AssociationDocumentMapper {
                 entity.getAssociationId(),
                 entity.getDocumentType(),
                 entity.getTitle(),
-                entity.getFilePath(),
                 entity.getFileSize(),
                 entity.getMimeType(),
                 entity.getVersion(),

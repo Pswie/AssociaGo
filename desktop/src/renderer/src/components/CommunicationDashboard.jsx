@@ -3,6 +3,7 @@ import { Card, Button, Table, Badge, Spinner, Nav, Modal, Form, Row, Col, Alert 
 import { Plus, Trash2, Edit, Send, Users, Mail, FileText, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import HtmlPreview from './common/HtmlPreview';
 
 const CommunicationDashboard = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -25,6 +26,7 @@ const CommunicationDashboard = ({ associationId, shell }) => {
     const [selectedComm, setSelectedComm] = useState(null);
     const [recipients, setRecipients] = useState([]);
     const [message, setMessage] = useState(null);
+    const [sendingId, setSendingId] = useState(null);
 
     useEffect(() => {
         if (associationId) fetchData();
@@ -76,16 +78,31 @@ const CommunicationDashboard = ({ associationId, shell }) => {
     };
 
     const handleSend = async (id) => {
+        if (sendingId !== null) return;
         if (!confirm(t('Send this communication to all recipients?'))) return;
+        setSendingId(id);
+        setMessage(null);
         try {
-            await associago.communications.send(id, shell.currentUser?.id);
-            setMessage({ type: 'success', text: t('Communication sent successfully.') });
-            fetchData();
+            const result = await associago.communications.send(id, shell.currentUser?.id);
+            const delivered = Number(result.deliveredCount) || 0;
+            const failed = Number(result.failedCount) || 0;
+            setMessage(result.status === 'SENT' && failed === 0
+                ? { type: 'success', text: t('Communication sent: {{delivered}} delivered.', { delivered }) }
+                : {
+                    type: delivered > 0 ? 'warning' : 'danger',
+                    text: t('Delivery incomplete: {{delivered}} sent, {{failed}} failed. Retry to send only the failed messages.', { delivered, failed })
+                });
             if (selectedComm?.id === id) {
-                const updated = await associago.communications.getById(id);
-                setSelectedComm(updated);
+                setSelectedComm(result);
+                const updatedRecipients = await associago.communications.getRecipients(id);
+                setRecipients(updatedRecipients || []);
             }
-        } catch (e) { alert(e.message); }
+            await fetchData();
+        } catch (e) {
+            setMessage({ type: 'danger', text: e.message });
+        } finally {
+            setSendingId(null);
+        }
     };
 
     const openDetail = async (comm) => {
@@ -147,14 +164,15 @@ const CommunicationDashboard = ({ associationId, shell }) => {
                     </div>
                     <div className="d-flex gap-2">
                         {selectedComm.status === 'DRAFT' && (
-                            <>
-                                <Button variant="outline-primary" size="sm" onClick={() => handleResolveRecipients(selectedComm.id)}>
-                                    <Users size={16} className="me-1" />{t('Resolve Recipients')}
-                                </Button>
-                                <Button variant="success" size="sm" onClick={() => handleSend(selectedComm.id)} disabled={!selectedComm.totalRecipients}>
-                                    <Send size={16} className="me-1" />{t('Send')}
-                                </Button>
-                            </>
+                            <Button variant="outline-primary" size="sm" onClick={() => handleResolveRecipients(selectedComm.id)} disabled={sendingId !== null}>
+                                <Users size={16} className="me-1" />{t('Resolve Recipients')}
+                            </Button>
+                        )}
+                        {['DRAFT', 'FAILED'].includes(selectedComm.status) && (
+                            <Button variant="success" size="sm" onClick={() => handleSend(selectedComm.id)} disabled={!selectedComm.totalRecipients || sendingId !== null}>
+                                <Send size={16} className="me-1" />
+                                {t(selectedComm.status === 'FAILED' ? 'Retry failed deliveries' : 'Send')}
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -191,7 +209,11 @@ const CommunicationDashboard = ({ associationId, shell }) => {
                 <Card className="border-0 shadow-sm mb-4">
                     <Card.Header className="bg-light"><h6 className="mb-0">{t('Message Content')}</h6></Card.Header>
                     <Card.Body>
-                        <div dangerouslySetInnerHTML={{ __html: selectedComm.bodyHtml || selectedComm.bodyText || '' }} />
+                        {selectedComm.bodyHtml ? (
+                            <HtmlPreview html={selectedComm.bodyHtml} title={t('Message Content')} />
+                        ) : (
+                            <div style={{ whiteSpace: 'pre-wrap' }}>{selectedComm.bodyText || ''}</div>
+                        )}
                     </Card.Body>
                 </Card>
 

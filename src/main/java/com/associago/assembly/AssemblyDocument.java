@@ -20,10 +20,7 @@ public class AssemblyDocument {
     @Column(nullable = false)
     private String type; // 'MINUTES', 'CALL', 'ATTACHMENT', 'BUDGET'
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
-
-    @Column(name = "file_size")
+@Column(name = "file_size")
     private Long fileSize;
 
     @Column(name = "mime_type")
@@ -46,8 +43,6 @@ public class AssemblyDocument {
     public void setName(String name) { this.name = name; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
     public String getMimeType() { return mimeType; }

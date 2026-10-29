@@ -18,7 +18,6 @@ public record AssemblyDTO(
         Double firstCallQuorum,
         Double secondCallQuorum,
         boolean quorumReached,
-        String minutesPath,
         String notes,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

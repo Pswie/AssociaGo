@@ -1,7 +1,11 @@
 import { useState } from 'react'
 
 function Versions() {
-  const [versions] = useState(window.electron.process.versions)
+  // Sul web `window.electron` non esiste: senza guardia il componente
+  // esploderebbe al primo render nel browser.
+  const [versions] = useState(() => window.electron?.process?.versions ?? null)
+
+  if (!versions) return null
 
   return (
     <ul className="versions">

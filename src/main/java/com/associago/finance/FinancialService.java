@@ -29,7 +29,7 @@ public class FinancialService {
     private final JournalEntryRepository journalEntryRepository;
 
     @Autowired
-    public FinancialService(TransactionRepository transactionRepository, 
+    public FinancialService(TransactionRepository transactionRepository,
                             PaymentMethodRepository paymentMethodRepository,
                             UserAssociationRepository userAssociationRepository,
                             AccountRepository accountRepository,
@@ -46,10 +46,10 @@ public class FinancialService {
         calculateCommissions(transaction);
         processMembershipRenewal(transaction);
         Transaction savedTransaction = transactionRepository.save(transaction);
-        
+
         // Auto-generate Journal Entry for Double-Entry Bookkeeping
         createJournalEntryFromTransaction(savedTransaction);
-        
+
         return savedTransaction;
     }
 
@@ -70,8 +70,7 @@ public class FinancialService {
         transaction.setActivityId(transactionDetails.getActivityId());
         transaction.setMembershipId(transactionDetails.getMembershipId());
         transaction.setInventoryItemId(transactionDetails.getInventoryItemId());
-        transaction.setReceiptPath(transactionDetails.getReceiptPath());
-        
+
         // Update new fields
         transaction.setVerified(transactionDetails.isVerified());
         transaction.setVerifiedBy(transactionDetails.getVerifiedBy());
@@ -83,16 +82,16 @@ public class FinancialService {
         transaction.setUpdatedAt(LocalDateTime.now());
 
         calculateCommissions(transaction);
-        // Note: We typically don't re-process renewal on update to avoid double extension, 
+        // Note: We typically don't re-process renewal on update to avoid double extension,
         // unless explicitly handled. For now, we skip it on update.
-        
+
         Transaction updatedTransaction = transactionRepository.save(transaction);
-        
+
         // Update Journal Entry (Delete old and recreate new for simplicity)
         List<JournalEntry> existingEntries = journalEntryRepository.findByTransactionId(id);
         journalEntryRepository.deleteAll(existingEntries);
         createJournalEntryFromTransaction(updatedTransaction);
-        
+
         return updatedTransaction;
     }
 
@@ -107,11 +106,11 @@ public class FinancialService {
                 if (method.isHasCommission()) {
                     BigDecimal fixed = method.getFixedCommission() != null ? method.getFixedCommission() : BigDecimal.ZERO;
                     BigDecimal percentage = method.getPercentageCommission() != null ? method.getPercentageCommission() : BigDecimal.ZERO;
-                    
+
                     BigDecimal commission = fixed.add(
                         transaction.getAmount().multiply(percentage).divide(BigDecimal.valueOf(100))
                     );
-                    
+
                     transaction.setCommissionAmount(commission);
                     // Net amount = Gross - Commission
                     transaction.setNetAmount(transaction.getAmount().subtract(commission));
@@ -129,10 +128,10 @@ public class FinancialService {
             Optional<UserAssociation> membershipOpt = userAssociationRepository.findById(transaction.getMembershipId());
             if (membershipOpt.isPresent()) {
                 UserAssociation membership = membershipOpt.get();
-                
+
                 LocalDate newExpiration;
-                LocalDate baseDate = (membership.getExpirationDate() != null && membership.getExpirationDate().isAfter(LocalDate.now())) 
-                                     ? membership.getExpirationDate() 
+                LocalDate baseDate = (membership.getExpirationDate() != null && membership.getExpirationDate().isAfter(LocalDate.now()))
+                                     ? membership.getExpirationDate()
                                      : LocalDate.now();
 
                 if ("ANNUAL".equalsIgnoreCase(transaction.getQuotaPeriod())) {
@@ -148,7 +147,7 @@ public class FinancialService {
                 membership.setExpirationDate(newExpiration);
                 membership.setLastRenewalDate(transaction.getDate());
                 membership.setStatus("ACTIVE");
-                
+
                 userAssociationRepository.save(membership);
             }
         }
@@ -176,13 +175,13 @@ public class FinancialService {
     public Map<String, BigDecimal> getYearOverYearComparison(int currentYear) {
         LocalDate startCurrent = LocalDate.of(currentYear, 1, 1);
         LocalDate endCurrent = LocalDate.of(currentYear, 12, 31);
-        
+
         LocalDate startPrevious = LocalDate.of(currentYear - 1, 1, 1);
         LocalDate endPrevious = LocalDate.of(currentYear - 1, 12, 31);
 
         BigDecimal incomeCurrent = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startCurrent, endCurrent);
         BigDecimal expenseCurrent = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startCurrent, endCurrent);
-        
+
         BigDecimal incomePrevious = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startPrevious, endPrevious);
         BigDecimal expensePrevious = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startPrevious, endPrevious);
 
@@ -191,20 +190,20 @@ public class FinancialService {
         comparison.put("expenseCurrent", expenseCurrent != null ? expenseCurrent : BigDecimal.ZERO);
         comparison.put("incomePrevious", incomePrevious != null ? incomePrevious : BigDecimal.ZERO);
         comparison.put("expensePrevious", expensePrevious != null ? expensePrevious : BigDecimal.ZERO);
-        
+
         return comparison;
     }
 
     public Map<String, BigDecimal> getCustomComparison(int year1, int year2) {
         LocalDate start1 = LocalDate.of(year1, 1, 1);
         LocalDate end1 = LocalDate.of(year1, 12, 31);
-        
+
         LocalDate start2 = LocalDate.of(year2, 1, 1);
         LocalDate end2 = LocalDate.of(year2, 12, 31);
 
         BigDecimal income1 = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, start1, end1);
         BigDecimal expense1 = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, start1, end1);
-        
+
         BigDecimal income2 = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, start2, end2);
         BigDecimal expense2 = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, start2, end2);
 
@@ -213,7 +212,7 @@ public class FinancialService {
         comparison.put("expenseYear1", expense1 != null ? expense1 : BigDecimal.ZERO);
         comparison.put("incomeYear2", income2 != null ? income2 : BigDecimal.ZERO);
         comparison.put("expenseYear2", expense2 != null ? expense2 : BigDecimal.ZERO);
-        
+
         return comparison;
     }
 
@@ -229,50 +228,50 @@ public class FinancialService {
     private void createJournalEntryFromTransaction(Transaction transaction) {
         // This is a simplified logic to map simple transactions to double entry.
         // In a real system, this mapping would be configurable.
-        
+
         JournalEntry entry = new JournalEntry();
         entry.setAssociationId(transaction.getAssociationId());
         entry.setDate(transaction.getDate());
         entry.setDescription(transaction.getDescription());
         entry.setTransactionId(transaction.getId());
-        
+
         // Identify Accounts (Simplified: finding by code or creating placeholders)
         // We assume some default accounts exist: "1000" (Bank/Cash), "4000" (Revenue), "6000" (Expense)
-        
+
         Account bankAccount = findOrCreateAccount(transaction.getAssociationId(), "1000", "Cassa/Banca", AccountType.ASSET);
-        
+
         if (transaction.getType() == TransactionType.INCOME) {
             Account revenueAccount = findOrCreateAccount(transaction.getAssociationId(), "4000", "Ricavi Generici", AccountType.REVENUE);
-            
+
             // Debit Bank (Asset increases), Credit Revenue
             JournalEntryLine debitLine = new JournalEntryLine();
             debitLine.setAccount(bankAccount);
             debitLine.setDebit(transaction.getAmount());
             entry.addLine(debitLine);
-            
+
             JournalEntryLine creditLine = new JournalEntryLine();
             creditLine.setAccount(revenueAccount);
             creditLine.setCredit(transaction.getAmount());
             entry.addLine(creditLine);
-            
+
         } else if (transaction.getType() == TransactionType.EXPENSE) {
             Account expenseAccount = findOrCreateAccount(transaction.getAssociationId(), "6000", "Spese Generiche", AccountType.EXPENSE);
-            
+
             // Debit Expense, Credit Bank (Asset decreases)
             JournalEntryLine debitLine = new JournalEntryLine();
             debitLine.setAccount(expenseAccount);
             debitLine.setDebit(transaction.getAmount());
             entry.addLine(debitLine);
-            
+
             JournalEntryLine creditLine = new JournalEntryLine();
             creditLine.setAccount(bankAccount);
             creditLine.setCredit(transaction.getAmount());
             entry.addLine(creditLine);
         }
-        
+
         journalEntryRepository.save(entry);
     }
-    
+
     private Account findOrCreateAccount(Long associationId, String code, String defaultName, AccountType type) {
         return accountRepository.findByAssociationIdAndCode(associationId, code)
                 .orElseGet(() -> {

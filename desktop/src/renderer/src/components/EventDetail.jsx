@@ -195,6 +195,7 @@ const EventDetail = ({ eventId, shell, onBack }) => {
                                 title={t('Event Participants CSV Import')}
                                 onPreview={(file) => associago.csvImport.previewEventParticipants(file, shell.currentAssociationId, eventId)}
                                 onConfirm={(importId) => associago.csvImport.confirmImport(importId)}
+                                onImported={loadData}
                             />
                         </div>
                     )}

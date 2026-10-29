@@ -16,7 +16,6 @@ public record IssuedCertificateDTO(
         String title,
         String bodySnapshot,
         String signatories,
-        String pdfPath,
         String checksum,
         String qrCodeData,
         String status,

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Nav, Spinner } from 'react-bootstrap';
-import { ArrowLeft, Plus, Trash2, Edit, Users, FileText, CheckSquare, Download } from 'lucide-react';
+import { Card, Button, Table, Badge, Nav, Spinner , Modal} from 'react-bootstrap';
+import { ArrowLeft, Plus, Trash2, Edit, Users, FileText, CheckSquare, Download , Paperclip} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import AttachmentPanel from './AttachmentPanel';
 
 const AssemblyDetail = ({ assemblyId, shell, onBack }) => {
     const { t } = useTranslation();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('participants');
+    const [fileDocumento, setFileDocumento] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -119,6 +121,28 @@ const AssemblyDetail = ({ assemblyId, shell, onBack }) => {
                 </div>
             </div>
 
+            {/*
+                Il verbale firmato è un'altra cosa dal PDF che il programma
+                genera dai dati: quello è una bozza, questo è l'originale con le
+                firme, e l'associazione è tenuta a conservarlo.
+
+                Stava in `assemblies.minutes_path`, un percorso sul disco locale
+                del contenitore che a ogni riavvio si azzerava.
+            */}
+            <Card className="border-0 shadow-sm mb-4">
+                <Card.Body>
+                    <AttachmentPanel
+                        ownerType="ASSEMBLY"
+                        ownerId={assemblyId}
+                        titolo={t('Verbale firmato')}
+                        kinds={[
+                            { id: 'verbale', label: t('Verbale con le firme') },
+                            { id: 'convocazione', label: t('Avviso di convocazione') },
+                        ]}
+                    />
+                </Card.Body>
+            </Card>
+
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom-0 pt-0 px-0">
                     <Nav variant="tabs" className="px-3 pt-3" activeKey={activeTab} onSelect={k => setActiveTab(k)}>
@@ -192,6 +216,12 @@ const AssemblyDetail = ({ assemblyId, shell, onBack }) => {
                                         <tr key={d.id}>
                                             <td className="ps-4">{d.name}</td>
                                             <td className="text-end pe-4">
+                                                {/* Il file del documento: stava in
+                                                    `assembly_documents.file_path`, e il modulo di
+                                                    inserimento ci scriveva il segnaposto
+                                                    'pending-upload' che nessun caricamento
+                                                    sostituiva mai. */}
+                                                <Button variant="link" className="text-secondary p-0 me-2" onClick={() => setFileDocumento(d)} title={t('File')}><Paperclip size={16}/></Button>
                                                 <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteSubResource('document', d.id)}><Trash2 size={16}/></Button>
                                             </td>
                                         </tr>
@@ -203,6 +233,22 @@ const AssemblyDetail = ({ assemblyId, shell, onBack }) => {
                     )}
                 </Card.Body>
             </Card>
+
+            <Modal show={Boolean(fileDocumento)} onHide={() => setFileDocumento(null)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">{fileDocumento?.name || t('Documento')}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {fileDocumento && (
+                        <AttachmentPanel
+                            ownerType="ASSEMBLY_DOCUMENT"
+                            ownerId={fileDocumento.id}
+                            titolo=""
+                            kinds={[{ id: 'documento', label: t('File del documento') }]}
+                        />
+                    )}
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };

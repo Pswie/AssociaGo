@@ -27,6 +27,21 @@ public class MembershipService {
         return userAssociationRepository.findByAssociationId(associationId);
     }
 
+    /**
+     * Le tessere in essere in un esercizio, o tutte se l'anno non è indicato.
+     *
+     * <p>Una tessera ha un periodo. Quella senza scadenza è aperta e vale anche
+     * per gli anni successivi: è così che il libro soci non si svuota il primo
+     * gennaio, cosa che succederebbe filtrando per data di iscrizione.
+     */
+    public List<UserAssociation> findNellEsercizio(Long associationId, Integer anno) {
+        return com.associago.esercizio.Esercizio.valido(anno)
+                ? userAssociationRepository.findNellEsercizio(associationId,
+                        com.associago.esercizio.Esercizio.inizio(anno),
+                        com.associago.esercizio.Esercizio.fine(anno))
+                : userAssociationRepository.findByAssociationId(associationId);
+    }
+
     public Optional<UserAssociation> findById(Long id) {
         return userAssociationRepository.findById(id);
     }
@@ -47,7 +62,7 @@ public class MembershipService {
             membership.setExpirationDate(newExpirationDate);
             membership.setLastRenewalDate(LocalDate.now());
             membership.setStatus("ACTIVE");
-            
+
             // Notify user
             notificationService.createNotification(
                 membership.getUser().getId(),
@@ -57,7 +72,7 @@ public class MembershipService {
                 "MEMBERSHIP",
                 membership.getId()
             );
-            
+
             return userAssociationRepository.save(membership);
         }).orElseThrow(() -> new RuntimeException("Membership not found"));
     }
@@ -67,13 +82,13 @@ public class MembershipService {
     public void checkAndUpdateStatus() {
         List<UserAssociation> all = userAssociationRepository.findAll();
         LocalDate now = LocalDate.now();
-        
+
         for (UserAssociation ua : all) {
             // Check for expiration
             if (ua.getExpirationDate() != null && ua.getExpirationDate().isBefore(now) && "ACTIVE".equals(ua.getStatus())) {
                 ua.setStatus("EXPIRED");
                 userAssociationRepository.save(ua);
-                
+
                 // Notify user of expiration
                 notificationService.createNotification(
                     ua.getUser().getId(),
@@ -84,7 +99,7 @@ public class MembershipService {
                     ua.getId()
                 );
             }
-            
+
             // Check for upcoming expiration (e.g., in 7 days)
             if (ua.getExpirationDate() != null && "ACTIVE".equals(ua.getStatus())) {
                 LocalDate warningDate = ua.getExpirationDate().minusDays(7);

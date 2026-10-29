@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Table, Badge, Spinner, Row, Col, Modal, Form } from 'react-bootstrap';
-import { Plus, Trash2, Download, CheckCircle, FileText, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Download, CheckCircle, FileText, AlertTriangle, Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import { translateBalanceStatus } from '../utils/enumTranslations';
+import AttachmentPanel from './AttachmentPanel';
 
 const AnnualBalanceDashboard = ({ associationId, shell }) => {
     const { t } = useTranslation();
@@ -12,12 +13,33 @@ const AnnualBalanceDashboard = ({ associationId, shell }) => {
     const [selectedBalance, setSelectedBalance] = useState(null);
     const [lines, setLines] = useState([]);
     const [showComputeForm, setShowComputeForm] = useState(false);
+    const [allegatoDi, setAllegatoDi] = useState(null);
     const [computeYear, setComputeYear] = useState(new Date().getFullYear());
     const [missingSigners, setMissingSigners] = useState([]);
+
+    /*
+     * Qui l'anno della testata **seleziona**, non filtra.
+     *
+     * Un bilancio è annuale per costruzione: c'è una riga per esercizio, e
+     * l'elenco che si vede è già lo storico. Filtrarlo lascerebbe una riga
+     * sola — meno utile di quello che c'è, non di più.
+     *
+     * Quindi cambiando anno nella testata si apre quel bilancio, e gli altri
+     * restano in elenco dove servono: per confrontarli.
+     */
+    const anno = shell?.anno ?? new Date().getFullYear();
 
     useEffect(() => {
         if (associationId) fetchBalances();
     }, [associationId]);
+
+    // Quando cambia l'anno si apre il bilancio corrispondente, se esiste. Se non
+    // esiste non si fa nulla: un anno senza bilancio è il caso normale finché
+    // qualcuno non lo calcola, e svuotare la vista sembrerebbe un guasto.
+    useEffect(() => {
+        const dellAnno = balances.find((b) => b.year === anno);
+        if (dellAnno && dellAnno.id !== selectedBalance?.id) selectBalance(dellAnno);
+    }, [anno, balances]);
 
     const fetchBalances = async () => {
         setLoading(true);
@@ -224,6 +246,13 @@ const AnnualBalanceDashboard = ({ associationId, shell }) => {
                                             &euro; {(b.netResult || 0).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                                         </td>
                                         <td className="text-end pe-4" onClick={e => e.stopPropagation()}>
+                                            {/* Il bilancio depositato è un documento da conservare:
+                                                quello che il programma calcola è il conto, questo è
+                                                la copia con il protocollo del deposito. Stava in
+                                                `annual_balances.pdf_path`, su un disco effimero. */}
+                                            <Button variant="light" size="sm" className="text-secondary me-1" onClick={() => setAllegatoDi(b)} title={t('Documento depositato')}>
+                                                <Paperclip size={16} />
+                                            </Button>
                                             <Button variant="light" size="sm" className="text-danger" onClick={() => handleDelete(b.id)}>
                                                 <Trash2 size={16} />
                                             </Button>
@@ -254,6 +283,27 @@ const AnnualBalanceDashboard = ({ associationId, shell }) => {
                     <Button variant="secondary" onClick={() => setShowComputeForm(false)}>{t('Cancel')}</Button>
                     <Button variant="primary" onClick={handleCompute}>{t('Compute')}</Button>
                 </Modal.Footer>
+            </Modal>
+            <Modal show={Boolean(allegatoDi)} onHide={() => setAllegatoDi(null)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">
+                        {t('Bilancio')} {allegatoDi?.year}
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {allegatoDi && (
+                        <AttachmentPanel
+                            ownerType="ANNUAL_BALANCE"
+                            ownerId={allegatoDi.id}
+                            titolo={t('Documenti del bilancio')}
+                            kinds={[
+                                { id: 'bilancio', label: t('Bilancio depositato') },
+                                { id: 'verbale', label: t('Verbale di approvazione') },
+                                { id: 'relazione', label: t('Relazione di missione') },
+                            ]}
+                        />
+                    )}
+                </Modal.Body>
             </Modal>
         </div>
     );

@@ -1,0 +1,455 @@
+/* ============================================================================
+   AssociaGo — strato responsive
+   ============================================================================
+
+   Il gestionale è nato per una finestra desktop: binario laterale sempre
+   aperto, tabelle a sei colonne, controlli pensati per il puntatore. Questo
+   foglio lo rende usabile con il pollice senza riscrivere le schermate una
+   per una — la stessa scelta già fatta per il tema (assets/adf-theme.css) e
+   per la stessa ragione: nel luglio 2026 la migrazione a HeroUI è stata
+   annullata perché rifare le schermate a mano era troppo rischioso
+   (docs/13-deploy-e-migrazione-a-lotti.md).
+
+   A differenza del tema, questo file è caricato da `main.jsx` e vale quindi
+   **per entrambi i target**, Electron e web. È voluto: qui non c'è nulla di
+   estetico da tenere separato, solo il comportamento del layout sotto una
+   certa larghezza. L'applicazione desktop a finestra piena non incontra mai
+   queste regole; se qualcuno stringe la finestra, ne guadagna.
+
+   Soglie, una sola volta e sempre le stesse:
+
+     ≤ 991.98px  il binario laterale diventa un cassetto sovrapposto.
+                 È la soglia `lg` di Bootstrap: sopra ci sta comodamente una
+                 colonna da 260px più una tabella, sotto no.
+     ≤ 767.98px  telefono: le tabelle diventano schede impilate, le testate
+                 di pagina vanno a capo, i controlli crescono fino al touch.
+     ≤ 575.98px  telefono stretto: si recupera ogni millimetro di margine.
+
+   I 44px minimi dei bersagli touch non sono un'opinione: sono la soglia sotto
+   la quale il dito sbaglia, ed è il valore raccomandato sia dalle WCAG 2.2
+   (2.5.8 Target Size) sia dalle linee guida Apple e Google.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   1. Fondamenta
+   ------------------------------------------------------------------------- */
+
+/* Nessun elemento può allargare la pagina oltre il viewport: su un telefono
+   una sola riga troppo larga fa scorrere lateralmente tutto il resto, ed è il
+   difetto che si nota per primo. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* `100vw` include la barra di scorrimento e vale sempre qualche pixel più del
+   contenuto disponibile: su desktop genera un scroll orizzontale fantasma. */
+body {
+  width: 100%;
+}
+
+/* Le immagini senza vincolo sono la seconda causa di overflow. */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Bersagli touch e campi
+   -------------------------------------------------------------------------
+   `pointer: coarse` prende anche i tablet e i portatili con schermo tattile,
+   dove il dito è il puntatore vero anche se la finestra è larga. */
+
+@media (max-width: 767.98px), (pointer: coarse) {
+  .btn:not(.btn-close):not(.btn-link) {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* I bottoni-icona restano quadrati: un `min-height` senza larghezza li
+     renderebbe due rettangoli stretti e storti. */
+  .btn.btn-icon {
+    min-width: 44px;
+  }
+
+  .btn-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-close {
+    min-width: 44px;
+    min-height: 44px;
+    background-position: center;
+  }
+
+  /* Le voci cliccabili delle liste (notifiche, palette comandi, dropdown). */
+  .list-group-item-action,
+  .dropdown-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* 16px esatti, non 1rem: sotto questa soglia iOS ingrandisce la pagina al
+     primo tocco su un campo e non la rimpicciolisce più. Vale anche per le
+     varianti `-sm`, che sono a 0.875rem e sono il caso più frequente. */
+  .form-control,
+  .form-select,
+  .form-control-sm,
+  .form-select-sm,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  .form-control,
+  .form-select {
+    min-height: 44px;
+  }
+
+  textarea.form-control {
+    min-height: 88px;
+  }
+
+  /* La casella di spunta di Bootstrap è 1em: al dito serve il doppio. */
+  .form-check-input {
+    width: 1.35em;
+    height: 1.35em;
+    margin-top: 0.15em;
+  }
+
+  .form-check {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .form-check .form-check-label {
+    padding-left: 0.35rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   3. Testate di pagina e barre di comando
+   -------------------------------------------------------------------------
+   Ogni schermata dell'elenco apre con `d-flex justify-content-between`: a
+   sinistra titolo e sottotitolo, a destra il bottone d'azione. Su schermo
+   stretto le due parti si comprimono a vicenda finché il titolo va a capo
+   lettera per lettera. Farle andare a capo è sufficiente e non tocca il
+   markup di sedici componenti.
+
+   La regola è confinata a `.jl-page`, cioè al contenuto dell'applicazione:
+   fuori di lì (schermata di accesso, splash) il layout è un altro. */
+
+@media (max-width: 767.98px) {
+  .jl-page .d-flex.justify-content-between {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Il campo di ricerca degli elenchi: a larghezza piena, con il bottone
+     accanto che scende sotto se non ci sta. */
+  .jl-search {
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  /* Il titolo della pagina non deve competere con il bottone: prende la riga
+     intera e il bottone va sotto, largo quanto serve. */
+  .jl-page > .container-fluid > .d-flex.justify-content-between > div:first-child,
+  .jl-page > .fade-in > .d-flex.justify-content-between > div:first-child {
+    min-width: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   4. Tabelle → schede
+   -------------------------------------------------------------------------
+   Sotto i 768px una tabella a sei colonne non si legge: Bootstrap la fa
+   scorrere in orizzontale, che è un modo per non risolvere il problema. Qui
+   ogni riga diventa una scheda e ogni cella una coppia etichetta/valore.
+
+   L'etichetta arriva da `data-label`, che non è scritto nel markup: lo
+   applica `components/ResponsiveTables.jsx` copiando l'intestazione di
+   colonna. Quaranta tabelle in venti file restano così com'erano — e se quel
+   componente non gira, si ricade sullo scorrimento orizzontale di Bootstrap,
+   che è il comportamento di oggi.
+
+   La classe `jl-cards-sm` la mette lo stesso componente: senza `data-label`
+   queste regole non devono attivarsi, o resterebbero valori senza nome. */
+
+@media (max-width: 767.98px) {
+  /* Con le schede non serve più la finestra di scorrimento orizzontale. */
+  .table-responsive.jl-cards-host {
+    overflow-x: visible;
+  }
+
+  table.jl-cards-sm,
+  table.jl-cards-sm > tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* L'intestazione è ripetuta dentro ogni cella: qui sarebbe rumore. */
+  table.jl-cards-sm > thead {
+    display: none;
+  }
+
+  table.jl-cards-sm > tbody > tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 0.9rem;
+    background: var(--card-bg, transparent);
+  }
+
+  table.jl-cards-sm > tbody > tr:last-child {
+    margin-bottom: 0;
+  }
+
+  table.jl-cards-sm > tbody > tr > td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: auto !important;
+    /* `!important` contro le utility di allineamento che le tabelle usano in
+       vista desktop (`text-end`, `ps-4`, `pe-4`): lì servono a incolonnare,
+       qui disallineerebbero le coppie etichetta/valore. */
+    padding: 0.55rem 0 !important;
+    text-align: left !important;
+    border: 0;
+    border-bottom: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.07));
+  }
+
+  table.jl-cards-sm > tbody > tr > td:last-child {
+    border-bottom: 0;
+  }
+
+  table.jl-cards-sm > tbody > tr > td::before {
+    content: attr(data-label);
+    flex: 0 0 8.5rem;
+    padding-top: 0.15rem;
+    color: var(--text-muted, #6c757d);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+
+  /* Celle senza intestazione corrispondente: niente etichetta vuota. */
+  table.jl-cards-sm > tbody > tr > td:not([data-label])::before,
+  table.jl-cards-sm > tbody > tr > td[data-label=""]::before {
+    content: none;
+  }
+
+  /* La riga "nessun risultato" usa `colspan` e non è una scheda: occupa la
+     larghezza intera, centrata, senza cornice. */
+  table.jl-cards-sm > tbody > tr:has(> td[colspan]) {
+    border: 0;
+    padding: 0;
+    background: none;
+  }
+
+  table.jl-cards-sm > tbody > tr > td[colspan] {
+    display: block;
+    border-bottom: 0;
+    text-align: center !important;
+  }
+
+  table.jl-cards-sm > tbody > tr > td[colspan]::before {
+    content: none;
+  }
+
+  /* Il valore sta a destra dell'etichetta e può essere lungo: deve andare a
+     capo invece di allargare la scheda. Senza `min-width: 0` un elemento
+     flex si rifiuta di scendere sotto la larghezza del proprio contenuto, ed
+     è così che un cognome doppio o un indirizzo di posta lungo allargavano la
+     pagina intera a 320px. `anywhere` è il permesso di spezzare anche dentro
+     la parola, che per un indirizzo di posta senza spazi è l'unico modo. */
+  table.jl-cards-sm > tbody > tr > td > *,
+  table.jl-cards-sm > tbody > tr > td .d-flex {
+    min-width: 0;
+  }
+
+  table.jl-cards-sm > tbody > tr > td,
+  table.jl-cards-sm > tbody > tr > td * {
+    overflow-wrap: anywhere;
+  }
+
+  /* I bottoni d'azione della riga scendono in fondo alla scheda, allineati a
+     destra come nella vista a tabella. */
+  table.jl-cards-sm > tbody > tr > td:last-child > .d-flex.justify-content-end {
+    flex: 1;
+  }
+}
+
+/* Telefoni stretti: l'etichetta passa sopra il valore.
+   Con 8.5rem di etichetta più il divario, su 320px di schermo al valore
+   restavano un centinaio di pixel — non abbastanza per un nome e cognome, che
+   sfondavano la scheda. Impilate, etichetta e valore hanno tutta la larghezza
+   della scheda. Le schede si allungano, ma su uno schermo così si scorre
+   comunque: meglio scorrere che non leggere. */
+@media (max-width: 479.98px) {
+  table.jl-cards-sm > tbody > tr > td {
+    flex-direction: column;
+    /* flex-start e non stretch: un'etichetta di stato è larga quanto la parola
+       che contiene, e stirata su tutta la scheda diventa una fascia colorata
+       che sembra una barra di avanzamento. Il testo lungo va comunque a capo,
+       perché il limite resta la larghezza della scheda. */
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
+  table.jl-cards-sm > tbody > tr > td::before {
+    flex: none;
+  }
+
+  /* Le azioni fanno eccezione: restano in fondo e allineate a destra, dove si
+     trovano anche nella vista a tabella. */
+  table.jl-cards-sm > tbody > tr > td:last-child {
+    align-items: stretch;
+    padding-top: 0.75rem !important;
+  }
+}
+
+/* Le tabelle che restano a scorrimento (quelle senza etichette utili, e tutte
+   quante sopra i 768px) meritano almeno lo slancio del dito e un margine per
+   non finire incollate al bordo. */
+.table-responsive {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* ---------------------------------------------------------------------------
+   5. Finestre modali
+   -------------------------------------------------------------------------
+   `Modal.jsx` chiede già `fullscreen="md-down"`. Restano da sistemare le cose
+   che Bootstrap non copre: la tastiera virtuale che accorcia il viewport, e
+   il corpo che deve scorrere da solo invece di far scorrere la pagina sotto. */
+
+@media (max-width: 767.98px) {
+  .modal-fullscreen-md-down .modal-body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .modal-fullscreen-md-down .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    background: var(--card-bg, #fff);
+  }
+
+  /* I form dentro le modali sono a due colonne (`Row`/`Col md`): sotto md
+     Bootstrap le impila già, ma le coppie di bottoni in fondo no. */
+  .modal-footer > .btn,
+  .modal-body > form > .d-flex.justify-content-end > .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* Su schermo stretto il popover delle notifiche è più largo del telefono. */
+@media (max-width: 767.98px) {
+  .popover {
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   6. Griglie e schede
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+  /* 1.5rem di imbottitura su 390px di larghezza sono il 15% dello schermo
+     buttato via su ogni lato. */
+  .card-header,
+  .card-body {
+    padding: 1rem;
+  }
+
+  .card {
+    margin-bottom: 1rem;
+  }
+
+  /* I numeri grandi delle schede indicatore scendono a una misura che sta in
+     riga con la propria icona. */
+  .jl-page h2 {
+    font-size: 1.5rem;
+  }
+
+  .jl-page .h3,
+  .jl-page h3 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  /* `g-4` fra le colonne impilate diventa spazio morto verticale. */
+  .jl-page .row.g-4 {
+    --bs-gutter-y: 1rem;
+  }
+
+  /* Le griglie di bottoni a due colonne non ci stanno. */
+  .jl-page .btn-group:not(.btn-group-sm) {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   7. Grafici
+   -------------------------------------------------------------------------
+   Recharts misura il contenitore: dentro una colonna che si restringe, un
+   `ResponsiveContainer` senza altezza minima collassa a zero e il grafico
+   sparisce senza errori in console. */
+
+@media (max-width: 767.98px) {
+  .recharts-responsive-container {
+    min-height: 220px;
+  }
+
+  .recharts-wrapper,
+  .recharts-surface {
+    max-width: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   8. Movimento
+   -------------------------------------------------------------------------
+   Il cassetto laterale, le transizioni delle schede e `fade-in` si annullano
+   per chi ha chiesto meno animazioni al sistema operativo. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

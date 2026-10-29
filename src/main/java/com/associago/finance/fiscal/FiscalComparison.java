@@ -26,13 +26,7 @@ public class FiscalComparison {
     @Column(name = "generated_at")
     private LocalDateTime generatedAt = LocalDateTime.now();
 
-    @Column(name = "pdf_path")
-    private String pdfPath;
-
-    @Column(name = "csv_path")
-    private String csvPath;
-
-    private String checksum;
+private String checksum;
 
     @Column(name = "data_snapshot", columnDefinition = "TEXT")
     private String dataSnapshot;
@@ -53,10 +47,6 @@ public class FiscalComparison {
     public void setGeneratedBy(Long generatedBy) { this.generatedBy = generatedBy; }
     public LocalDateTime getGeneratedAt() { return generatedAt; }
     public void setGeneratedAt(LocalDateTime generatedAt) { this.generatedAt = generatedAt; }
-    public String getPdfPath() { return pdfPath; }
-    public void setPdfPath(String pdfPath) { this.pdfPath = pdfPath; }
-    public String getCsvPath() { return csvPath; }
-    public void setCsvPath(String csvPath) { this.csvPath = csvPath; }
     public String getChecksum() { return checksum; }
     public void setChecksum(String checksum) { this.checksum = checksum; }
     public String getDataSnapshot() { return dataSnapshot; }

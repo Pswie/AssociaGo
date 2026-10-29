@@ -41,6 +41,21 @@ public class ActivityService {
         return activityRepository.findByAssociationId(associationId);
     }
 
+    /**
+     * Le attività in essere in un esercizio, o tutte se l'anno non è indicato.
+     *
+     * <p>Un'attività ha un periodo: quella cominciata a ottobre e finita a marzo
+     * appartiene a due esercizi, e un corso senza data di fine è ancora in corso
+     * — quindi compare anche negli anni successivi.
+     */
+    public List<Activity> findNellEsercizio(Long associationId, Integer anno) {
+        return com.associago.esercizio.Esercizio.valido(anno)
+                ? activityRepository.findNellEsercizio(associationId,
+                        com.associago.esercizio.Esercizio.inizio(anno),
+                        com.associago.esercizio.Esercizio.fine(anno))
+                : activityRepository.findByAssociationId(associationId);
+    }
+
     public Optional<Activity> findById(Long id) {
         return activityRepository.findById(id);
     }
@@ -175,12 +190,12 @@ public class ActivityService {
         ActivityWithDetailsDTO dto = new ActivityWithDetailsDTO();
         dto.setActivity(activity);
         dto.setInstructors(instructors);
-        
+
         // Participants Stats
         dto.setTotalParticipants(participants.size());
         dto.setActiveParticipants((int) participants.stream().filter(ActivityParticipant::isActive).count());
         dto.setPendingParticipants((int) participants.stream().filter(p -> !p.isPaid() && p.isActive()).count());
-        dto.setWaitingListCount(0); 
+        dto.setWaitingListCount(0);
 
         // Financial Stats
         BigDecimal paidRevenue = participants.stream()
@@ -188,13 +203,13 @@ public class ActivityService {
                 .map(ActivityParticipant::getAmountPaid)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Qui si sottraeva `discountAmount` del partecipante. Quella colonna non
+        // veniva scritta da nessun percorso del programma — restava al suo
+        // valore iniziale, zero — quindi la sottrazione non ha mai cambiato un
+        // numero. È stata tolta con lo sconto sulle quote (V11).
         BigDecimal pendingRevenue = participants.stream()
                 .filter(p -> !p.isPaid())
-                .map(p -> {
-                    BigDecimal cost = activity.getCost() != null ? activity.getCost() : BigDecimal.ZERO;
-                    BigDecimal discount = p.getDiscountAmount() != null ? p.getDiscountAmount() : BigDecimal.ZERO;
-                    return cost.subtract(discount);
-                })
+                .map(p -> activity.getCost() != null ? activity.getCost() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalCostsVal = costs.stream()
@@ -238,7 +253,7 @@ public class ActivityService {
                         ActivityCost::getCategory,
                         Collectors.reducing(BigDecimal.ZERO, ActivityCost::getAmount, BigDecimal::add)
                 ));
-        
+
         List<ActivityCostSummaryDTO> costSummary = costsByCategory.entrySet().stream()
                 .map(e -> {
                     ActivityCostSummaryDTO s = new ActivityCostSummaryDTO();
@@ -273,7 +288,7 @@ public class ActivityService {
 
     public ActivityFinancialSummaryDTO getActivityFinancialSummary(Long activityId) {
         ActivityWithDetailsDTO details = getActivityWithDetails(activityId);
-        
+
         ActivityFinancialSummaryDTO summary = new ActivityFinancialSummaryDTO();
         summary.setActivityId(activityId);
         summary.setActivityName(details.getActivity().getName());
@@ -282,7 +297,7 @@ public class ActivityService {
         summary.setPendingRevenue(details.getPendingRevenue());
         summary.setTotalCosts(details.getTotalCosts());
         summary.setNetProfit(details.getNetProfit());
-        
+
         if (details.getTotalRevenue().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal margin = details.getNetProfit()
                     .divide(details.getTotalRevenue(), 4, RoundingMode.HALF_UP)
@@ -291,16 +306,16 @@ public class ActivityService {
         } else {
             summary.setProfitMargin(0.0);
         }
-        
+
         summary.setParticipantsCount(details.getTotalParticipants());
-        
+
         if (details.getTotalParticipants() > 0) {
             summary.setAverageFeePerUser(details.getTotalRevenue()
                     .divide(BigDecimal.valueOf(details.getTotalParticipants()), 2, RoundingMode.HALF_UP));
         }
 
         summary.setCostBreakdown(details.getTopCostCategories());
-        
+
         // Revenue Breakdown (Simplified)
         List<ActivityRevenueSourceDTO> revenueSources = new ArrayList<>();
         ActivityRevenueSourceDTO registrations = new ActivityRevenueSourceDTO();

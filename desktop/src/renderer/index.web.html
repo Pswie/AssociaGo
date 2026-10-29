@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      viewport-fit=cover porta la pagina sotto l'intaglio della fotocamera e la
+      barra gestuale dei telefoni recenti; le fasce riservate le recuperano le
+      regole `env(safe-area-inset-*)` in src/assets/mobile.css e nel guscio.
+      Senza `cover` restano due bande di colore fisso ai bordi.
+
+      Nessun `maximum-scale` e nessun `user-scalable=no`: impedire lo zoom è la
+      scorciatoia con cui di solito si nasconde il problema dei campi sotto i
+      16px, ed è un requisito di accessibilità mancato (WCAG 1.4.4). I campi
+      sono già a 16px, quindi iOS non ingrandisce da solo, e chi ha bisogno di
+      ingrandire può farlo.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <!-- Tinge la barra di stato del browser mobile: senza, resta grigia e
+         stacca dalla carta calda del tema. I due valori seguono il tema chiaro
+         e scuro di src/assets/adf-theme.css. -->
+    <meta name="theme-color" content="#fdfbf7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14201a" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Gestionale" />
+    <meta
+      name="description"
+      content="Gestionale associativo di Angeli del Futuro: soci, attività, bilanci e assemblee."
+    />
+    <!--
+      CSP della build web. Differisce da index.html, che resta quella del
+      desktop, per due motivi:
+
+        * non ammette localhost. Nel desktop il backend gira in locale e
+          serve; su una pagina pubblica sarebbe un modo per far parlare il
+          browser di chi visita con servizi sulla sua macchina.
+        * ammette font-src 'self', perché il tema carica Plus Jakarta Sans come
+          asset del bundle invece di prenderlo da un CDN.
+
+      `terzo-settore.vercel.app` è il dominio primario di Clerk, quello che
+      tiene la sessione: da satellite questa applicazione ci dialoga per
+      riconoscere un accesso già avvenuto. Lo scambio passa da redirect di primo
+      livello, che nessuna direttiva qui intercetta, ma `satelliteAutoSync` di
+      Clerk può anche interrogarlo direttamente: senza `connect-src` la sincronia
+      fallirebbe in silenzio e si tornerebbe a chiedere l'accesso due volte.
+      È un'origine dell'associazione, non un terzo.
+
+      Come per l'indirizzo del backend Cloud Run qui sopra, il valore è scritto
+      per esteso: una direttiva CSP deve poter essere letta e verificata guardando
+      la pagina servita, non ricostruita dalle variabili del build.
+
+      https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://img.clerk.com; connect-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://clerk-telemetry.com https://*.clerk-telemetry.com https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app https://terzo-settore.vercel.app; worker-src 'self' blob:; frame-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com https://terzo-settore.vercel.app; form-action 'self' https://terzo-settore.vercel.app;"
+    />
+    <title>Gestionale — Angeli del Futuro</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.web.jsx"></script>
+  </body>
+</html>

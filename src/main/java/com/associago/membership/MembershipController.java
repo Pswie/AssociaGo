@@ -17,9 +17,16 @@ public class MembershipController {
         this.membershipService = membershipService;
     }
 
+    /**
+     * @param anno l'esercizio da guardare; assente significa «tutte». Una
+     *             tessera aperta compare anche negli anni successivi a quello
+     *             in cui è stata sottoscritta.
+     */
     @GetMapping("/association/{associationId}")
-    public List<UserAssociation> getMembershipsByAssociation(@PathVariable Long associationId) {
-        return membershipService.findByAssociationId(associationId);
+    public List<UserAssociation> getMembershipsByAssociation(
+            @PathVariable Long associationId,
+            @RequestParam(required = false) Integer anno) {
+        return membershipService.findNellEsercizio(associationId, anno);
     }
 
     @GetMapping("/{id}")

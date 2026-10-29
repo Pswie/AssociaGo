@@ -169,6 +169,24 @@ spring:
   config:
     activate:
       on-profile: desktop
+  datasource:
+    hikari:
+      # SQLite ignora le chiavi esterne se non gliele si accende: il valore
+      # predefinito di `foreign_keys` è OFF, per compatibilità con database
+      # scritti prima che quel supporto esistesse.
+      #
+      # Lo schema le dichiara da sempre — `REFERENCES members(id) ON DELETE
+      # CASCADE` e simili — ma senza questa riga erano decorazione: si potevano
+      # cancellare soci lasciando appesi i loro certificati, i loro turni e i
+      # loro rimborsi, senza che nessuno se ne accorgesse.
+      #
+      # Va su ogni connessione e non una volta sola: il PRAGMA vale per la
+      # connessione che lo esegue, e Hikari ne tiene un gruppo.
+      #
+      # Sta qui dentro, nel profilo desktop, e non nel blocco predefinito:
+      # gli altri profili girano su MySQL o su H2, dove `PRAGMA` non è
+      # sintassi valida e impedisce l'avvio.
+      connection-init-sql: PRAGMA foreign_keys = ON
   jpa:
     properties:
       hibernate:
@@ -301,14 +319,22 @@ management:
 
 associago:
   mode: web
-  # allowed-origins sovrascrivibile via env CORS_ALLOWED_ORIGINS
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
-    allow-credentials: true
+    # Origini esatte del gestionale, separate da virgola. Nessun default
+    # permissivo: CloudSecurityConfig rifiuta di avviarsi se resta vuota o se
+    # contiene "*". Su un backend pubblico "*" espone l'API a qualsiasi sito.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+    # Autenticazione via Bearer token: nessun cookie da inviare cross-site.
+    allow-credentials: false
     max-age-seconds: 3600
-  # auth verrà abilitata (login) in una fase successiva; per ora false per il collaudo schema
   auth:
-    enabled: ${AUTH_ENABLED:false}
+    # Non configurabile da env di proposito: sul web l'unica modalità ammessa
+    # è quella autenticata. Un AUTH_ENABLED=false qui aprirebbe tutto.
+    enabled: true
+  clerk:
+    # Frontend API dell'istanza Clerk, es. https://<slug>.clerk.accounts.dev
+    issuer-uri: ${CLERK_ISSUER_URI:}
+    audience: ${CLERK_AUDIENCE:}
 
 logging:
   level:

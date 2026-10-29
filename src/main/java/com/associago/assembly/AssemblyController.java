@@ -18,9 +18,18 @@ public class AssemblyController {
 
     // --- CRUD ---
 
+    /**
+     * @param associationId di quale ente. Assente per compatibilità con chi
+     *                      chiamava questo endpoint senza indicarlo.
+     * @param anno          l'esercizio da guardare; assente significa «tutti».
+     */
     @GetMapping
-    public ResponseEntity<Iterable<Assembly>> getAllAssemblies() {
-        return ResponseEntity.ok(assemblyService.getAllAssemblies());
+    public ResponseEntity<Iterable<Assembly>> getAllAssemblies(
+            @RequestParam(required = false) Long associationId,
+            @RequestParam(required = false) Integer anno) {
+        return ResponseEntity.ok(associationId == null
+                ? assemblyService.getAllAssemblies()
+                : assemblyService.getAssemblies(associationId, anno));
     }
 
     @GetMapping("/{id}")

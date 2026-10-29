@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, Button, Table, Badge, Spinner, Row, Col, Modal, Form, Nav, Tab } from 'react-bootstrap';
-import { Plus, Trash2, Download, Award, FileText, Edit, Eye, Type, Layout, Users } from 'lucide-react';
+import { Plus, Trash2, Download, Award, FileText, Edit, Eye, Type, Layout, Users, Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import HtmlPreview from './common/HtmlPreview';
+import AttachmentPanel from './AttachmentPanel';
 import { translateCertificateType } from '../utils/enumTranslations';
 
 const MERGE_FIELDS = [
@@ -41,6 +43,7 @@ const CertificateList = ({ associationId }) => {
     const [issued, setIssued] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showTemplateForm, setShowTemplateForm] = useState(false);
+    const [copiaDi, setCopiaDi] = useState(null);
     const [showIssueForm, setShowIssueForm] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState(null);
     const [templateForm, setTemplateForm] = useState({ ...DEFAULT_TEMPLATE_FORM, associationId });
@@ -290,6 +293,12 @@ const CertificateList = ({ associationId }) => {
                                         <td>{t('certificates.recipientFallback', { id: cert.userId })}</td>
                                         <td>{cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('it-IT') : '-'}</td>
                                         <td className="text-end pe-4">
+                                            {/* Il PDF si genera al volo dai dati; qui si conserva
+                                                la copia controfirmata o consegnata, che è un'altra
+                                                cosa e non si può ricalcolare. */}
+                                            <Button variant="light" size="sm" className="me-1" onClick={() => setCopiaDi(cert)} title={t('Copia firmata')}>
+                                                <Paperclip size={14} />
+                                            </Button>
                                             <Button variant="light" size="sm" onClick={() => handleDownloadPdf(cert.id)}>
                                                 <Download size={14} />
                                             </Button>
@@ -475,7 +484,7 @@ const CertificateList = ({ associationId }) => {
                                         <strong style={{ fontSize: '1rem' }}>{templateForm.name || t('Certificate Title')}</strong>
                                     </div>
                                     <hr style={{ margin: '0.5rem 0' }} />
-                                    <div dangerouslySetInnerHTML={{ __html: getPreviewHtml() || `<span class="text-muted">${t('Certificate body will appear here...')}</span>` }} />
+                                    {getPreviewHtml() ? <HtmlPreview html={getPreviewHtml()} title={t('Preview')} /> : <span className="text-muted">{t('Certificate body will appear here...')}</span>}
                                     {getSignatoryRoles().length > 0 && (
                                         <div className="mt-3 pt-2 border-top d-flex justify-content-around">
                                             {getSignatoryRoles().map(role => (
@@ -496,6 +505,35 @@ const CertificateList = ({ associationId }) => {
                             </div>
                         </Col>
                     </Row>
+
+                    {/*
+                        Intestazione, piè di pagina e sfondo del modello.
+
+                        Stavano in `certificate_templates.header_image_path`,
+                        `footer_image_path` e `background_image_path`: tre
+                        percorsi sul disco locale del contenitore, che su Cloud
+                        Run si azzera a ogni riavvio. Un modello che perde la
+                        carta intestata non è un modello.
+
+                        Compaiono solo in modifica: l'allegato ha bisogno di un
+                        identificativo a cui attaccarsi, e un modello nuovo non
+                        ce l'ha ancora.
+                    */}
+                    {editingTemplate && (
+                        <>
+                            <hr />
+                            <AttachmentPanel
+                                ownerType="CERTIFICATE_TEMPLATE"
+                                ownerId={editingTemplate.id}
+                                titolo={t('Immagini del modello')}
+                                kinds={[
+                                    { id: 'intestazione', label: t('Intestazione') },
+                                    { id: 'piede', label: t('Piè di pagina') },
+                                    { id: 'sfondo', label: t('Sfondo') },
+                                ]}
+                            />
+                        </>
+                    )}
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowTemplateForm(false)}>{t('Cancel')}</Button>
@@ -559,6 +597,22 @@ const CertificateList = ({ associationId }) => {
                     <Button variant="secondary" onClick={() => setShowIssueForm(false)}>{t('Cancel')}</Button>
                     <Button variant="primary" onClick={handleIssue} disabled={!issueForm.templateId || !issueForm.memberId}>{t('Issue')}</Button>
                 </Modal.Footer>
+            </Modal>
+
+            <Modal show={Boolean(copiaDi)} onHide={() => setCopiaDi(null)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">{t('Copia dell\'attestato')}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {copiaDi && (
+                        <AttachmentPanel
+                            ownerType="ISSUED_CERTIFICATE"
+                            ownerId={copiaDi.id}
+                            titolo=""
+                            kinds={[{ id: 'firmato', label: t('Copia firmata o consegnata') }]}
+                        />
+                    )}
+                </Modal.Body>
             </Modal>
         </div>
     );

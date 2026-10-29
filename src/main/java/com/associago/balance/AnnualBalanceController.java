@@ -5,9 +5,11 @@ import com.associago.balance.dto.AnnualBalanceDTO;
 import com.associago.balance.dto.AnnualBalanceLineDTO;
 import com.associago.balance.mapper.AnnualBalanceMapper;
 import com.associago.shared.SignatureResolver;
+import com.associago.security.ActorResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -20,13 +22,16 @@ public class AnnualBalanceController {
     private final AnnualBalanceService balanceService;
     private final AssociationService associationService;
     private final SignatureResolver signatureResolver;
+    private final ActorResolver actorResolver;
 
     public AnnualBalanceController(AnnualBalanceService balanceService,
                                    AssociationService associationService,
-                                   SignatureResolver signatureResolver) {
+                                   SignatureResolver signatureResolver,
+                                   ActorResolver actorResolver) {
         this.balanceService = balanceService;
         this.associationService = associationService;
         this.signatureResolver = signatureResolver;
+        this.actorResolver = actorResolver;
     }
 
     @GetMapping
@@ -55,9 +60,11 @@ public class AnnualBalanceController {
 
     @PostMapping("/{id}/approve")
     public AnnualBalanceDTO approve(@PathVariable Long id,
-                                 @RequestParam Long approvedBy,
-                                 @RequestBody(required = false) String signatories) {
-        return AnnualBalanceMapper.toDTO(balanceService.approve(id, approvedBy, signatories));
+                                 @RequestParam(required = false) Long approvedBy,
+                                 @RequestBody(required = false) String signatories,
+                                 Authentication authentication) {
+        return AnnualBalanceMapper.toDTO(balanceService.approve(id,
+                actorResolver.requireActor(authentication, approvedBy), signatories));
     }
 
     @GetMapping("/{id}/check-signers")

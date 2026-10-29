@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Nav, Spinner } from 'react-bootstrap';
-import { ArrowLeft, Plus, Edit, Trash2, Clock, DollarSign, FileText } from 'lucide-react';
+import { Card, Button, Table, Badge, Nav, Spinner, Alert, Modal } from 'react-bootstrap';
+import { ArrowLeft, Plus, Edit, Trash2, Clock, DollarSign, FileText, Paperclip } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import AttachmentPanel from './AttachmentPanel';
 
-const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
+const VolunteerDetail = ({ volunteerId, volunteerName, associationId, shell, onBack }) => {
     const { t } = useTranslation();
     const [volunteer, setVolunteer] = useState(null);
     const [shifts, setShifts] = useState([]);
     const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('shifts');
+    const [error, setError] = useState('');
+    const [updatingExpenseId, setUpdatingExpenseId] = useState(null);
+    const [ricevutaDi, setRicevutaDi] = useState(null);
 
     useEffect(() => {
         loadData();
@@ -18,6 +22,7 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
 
     const loadData = async () => {
         setLoading(true);
+        setError('');
         try {
             const [v, s, e] = await Promise.all([
                 associago.volunteers.getById(volunteerId),
@@ -29,43 +34,48 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
             setExpenses(e);
         } catch (error) {
             console.error("Error loading volunteer details:", error);
+            setError(error.message);
         } finally {
             setLoading(false);
         }
     };
 
     const handleExpenseStatusChange = async (expenseId, newStatus) => {
+        setUpdatingExpenseId(expenseId);
         try {
-            await associago.volunteers.updateExpenseStatus(expenseId, newStatus);
-            loadData();
+            await associago.volunteers.updateExpenseStatus(expenseId, newStatus, associationId);
+            await loadData();
         } catch (error) {
             console.error("Error updating expense status:", error);
-            alert(t('Error updating status'));
+            setError(error.message);
+        } finally {
+            setUpdatingExpenseId(null);
         }
     };
 
     if (loading) return <div className="text-center p-5"><Spinner animation="border" variant="primary" /></div>;
-    if (!volunteer) return <div className="text-center p-5 text-muted">{t('Volunteer not found')}</div>;
+    if (!volunteer) return <div className="p-4"><Button variant="link" onClick={onBack}>{t('Back')}</Button><Alert variant="danger">{error || t('Volunteer not found')} <Button variant="link" onClick={loadData}>{t('Retry')}</Button></Alert></div>;
 
     return (
         <div className="fade-in">
             <div className="d-flex align-items-center mb-4">
-                <Button variant="link" className="p-0 me-3 text-dark" onClick={onBack}>
+                <Button variant="link" className="p-0 me-3 text-dark" onClick={onBack} aria-label={t('Back')}>
                     <ArrowLeft size={24} />
                 </Button>
                 <div>
-                    <h2 className="fw-bold text-dark mb-0">{t('Volunteer')} #{volunteer.id}</h2>
+                    <h2 className="fw-bold text-dark mb-0">{volunteerName || `${t('Volunteer')} #${volunteer.id}`}</h2>
                     <div className="text-muted small">
                         {t('Member ID')}: {volunteer.memberId}
                     </div>
                 </div>
                 <div className="ms-auto">
-                    <Button variant="outline-primary" className="me-2" onClick={() => shell.openModal('volunteer-form', { associationId: volunteer.associationId, volunteerId: volunteer.id, onSuccess: loadData })}>
+                    <Button variant="outline-primary" className="me-2" onClick={() => shell.openModal('volunteer-form', { associationId, volunteerId: volunteer.id, onSuccess: loadData })}>
                         <Edit size={18} className="me-2" /> {t('Edit')}
                     </Button>
                 </div>
             </div>
 
+            {error && <Alert variant="danger" role="alert">{error}</Alert>}
             <div className="row g-4 mb-4">
                 <div className="col-md-4">
                     <Card className="border-0 shadow-sm h-100">
@@ -106,7 +116,7 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
                     {activeTab === 'shifts' && (
                         <div>
                             <div className="p-3 text-end border-bottom">
-                                <Button size="sm" onClick={() => shell.openModal('volunteer-shift-form', { volunteerId, onSuccess: loadData })}>
+                                <Button size="sm" onClick={() => shell.openModal('volunteer-shift-form', { volunteerId, associationId, onSuccess: loadData })}>
                                     <Plus size={16} className="me-1"/> {t('Add Shift')}
                                 </Button>
                             </div>
@@ -130,7 +140,7 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
                                             <td>{s.hoursWorked}</td>
                                             <td><Badge bg="light" text="dark" className="border">{t(s.status)}</Badge></td>
                                             <td className="text-end pe-4">
-                                                <Button variant="link" className="text-muted p-0 me-2" onClick={() => shell.openModal('volunteer-shift-form', { volunteerId, shift: s, onSuccess: loadData })}><Edit size={16}/></Button>
+                                                <Button variant="link" className="text-muted p-0 me-2" aria-label={t('Edit')} onClick={() => shell.openModal('volunteer-shift-form', { volunteerId, associationId, shift: s, onSuccess: loadData })}><Edit size={16}/></Button>
                                             </td>
                                         </tr>
                                     ))}
@@ -143,7 +153,7 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
                     {activeTab === 'expenses' && (
                         <div>
                             <div className="p-3 text-end border-bottom">
-                                <Button size="sm" onClick={() => shell.openModal('volunteer-expense-form', { volunteerId, onSuccess: loadData })}>
+                                <Button size="sm" onClick={() => shell.openModal('volunteer-expense-form', { volunteerId, associationId: shell?.currentAssociationId, onSuccess: loadData })}>
                                     <Plus size={16} className="me-1"/> {t('Add Expense')}
                                 </Button>
                             </div>
@@ -173,18 +183,30 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4">
+                                                {/* La ricevuta si allega prima di approvare: il
+                                                    rimborso analitico senza giustificativo viene
+                                                    respinto dall'art. 17, comma 3. */}
+                                                <Button
+                                                    variant="link"
+                                                    size="sm"
+                                                    className="text-secondary p-0 me-3"
+                                                    title={t('Ricevuta')}
+                                                    onClick={() => setRicevutaDi(e)}
+                                                >
+                                                    <Paperclip size={15} />
+                                                </Button>
                                                 {e.status === 'PENDING' && (
                                                     <>
-                                                        <Button variant="link" size="sm" className="text-success p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'APPROVED')}>
+                                                        <Button variant="link" size="sm" disabled={updatingExpenseId !== null} className="text-success p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'APPROVED')}>
                                                             {t('Approve')}
                                                         </Button>
-                                                        <Button variant="link" size="sm" className="text-danger p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'REJECTED')}>
+                                                        <Button variant="link" size="sm" disabled={updatingExpenseId !== null} className="text-danger p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'REJECTED')}>
                                                             {t('Reject')}
                                                         </Button>
                                                     </>
                                                 )}
                                                 {e.status === 'APPROVED' && (
-                                                    <Button variant="link" size="sm" className="text-success p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'PAID')}>
+                                                    <Button variant="link" size="sm" disabled={updatingExpenseId !== null} className="text-success p-0 me-2" onClick={() => handleExpenseStatusChange(e.id, 'PAID')}>
                                                         {t('Mark Paid')}
                                                     </Button>
                                                 )}
@@ -198,6 +220,32 @@ const VolunteerDetail = ({ volunteerId, shell, onBack }) => {
                     )}
                 </Card.Body>
             </Card>
+
+            <Modal show={Boolean(ricevutaDi)} onHide={() => setRicevutaDi(null)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">{t('Giustificativo della spesa')}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {ricevutaDi && (
+                        <>
+                            <p className="text-muted small">
+                                {ricevutaDi.description} · € {ricevutaDi.amount}
+                            </p>
+                            <AttachmentPanel
+                                ownerType="VOLUNTEER_EXPENSE"
+                                ownerId={ricevutaDi.id}
+                                titolo=""
+                                kinds={[{ id: 'ricevuta', label: t('Ricevuta o fattura') }]}
+                            />
+                            {ricevutaDi.reimbursementType === 'ANALITICO' && (
+                                <div className="alert alert-info py-2 small mt-3 mb-0">
+                                    {t("Il rimborso analitico (art. 17 c. 3) non si può approvare senza questo documento.")}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </Modal.Body>
+            </Modal>
         </div>
     );
 };

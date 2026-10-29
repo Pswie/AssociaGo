@@ -46,10 +46,7 @@ public class IssuedCertificate {
     @Column(columnDefinition = "TEXT")
     private String signatories; // JSON
 
-    @Column(name = "pdf_path")
-    private String pdfPath;
-
-    private String checksum;
+private String checksum;
 
     @Column(name = "qr_code_data")
     private String qrCodeData;
@@ -89,8 +86,6 @@ public class IssuedCertificate {
     public void setBodySnapshot(String bodySnapshot) { this.bodySnapshot = bodySnapshot; }
     public String getSignatories() { return signatories; }
     public void setSignatories(String signatories) { this.signatories = signatories; }
-    public String getPdfPath() { return pdfPath; }
-    public void setPdfPath(String pdfPath) { this.pdfPath = pdfPath; }
     public String getChecksum() { return checksum; }
     public void setChecksum(String checksum) { this.checksum = checksum; }
     public String getQrCodeData() { return qrCodeData; }

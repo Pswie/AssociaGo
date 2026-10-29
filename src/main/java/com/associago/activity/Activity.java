@@ -61,13 +61,7 @@ public class Activity {
     @Column(name = "generate_invoice")
     private boolean generateInvoice = false;
 
-    @Column(name = "image_path")
-    private String imagePath;
-
-    @Column(name = "document_path")
-    private String documentPath;
-
-    @Column(name = "cancellation_date")
+@Column(name = "cancellation_date")
     private LocalDate cancellationDate;
 
     @Column(name = "cancellation_reason")
@@ -115,10 +109,6 @@ public class Activity {
     public void setRequireRegistration(boolean requireRegistration) { this.requireRegistration = requireRegistration; }
     public boolean isGenerateInvoice() { return generateInvoice; }
     public void setGenerateInvoice(boolean generateInvoice) { this.generateInvoice = generateInvoice; }
-    public String getImagePath() { return imagePath; }
-    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
-    public String getDocumentPath() { return documentPath; }
-    public void setDocumentPath(String documentPath) { this.documentPath = documentPath; }
     public LocalDate getCancellationDate() { return cancellationDate; }
     public void setCancellationDate(LocalDate cancellationDate) { this.cancellationDate = cancellationDate; }
     public String getCancellationReason() { return cancellationReason; }

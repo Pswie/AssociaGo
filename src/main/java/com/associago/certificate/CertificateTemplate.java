@@ -26,16 +26,7 @@ public class CertificateTemplate {
     @Column(name = "merge_fields", columnDefinition = "TEXT")
     private String mergeFields; // JSON
 
-    @Column(name = "header_image_path")
-    private String headerImagePath;
-
-    @Column(name = "footer_image_path")
-    private String footerImagePath;
-
-    @Column(name = "background_image_path")
-    private String backgroundImagePath;
-
-    @Column(name = "signatory_roles", columnDefinition = "TEXT")
+@Column(name = "signatory_roles", columnDefinition = "TEXT")
     private String signatoryRoles; // JSON array: ["PRESIDENT", "SECRETARY"]
 
     private String orientation = "LANDSCAPE";
@@ -64,12 +55,6 @@ public class CertificateTemplate {
     public void setBodyHtml(String bodyHtml) { this.bodyHtml = bodyHtml; }
     public String getMergeFields() { return mergeFields; }
     public void setMergeFields(String mergeFields) { this.mergeFields = mergeFields; }
-    public String getHeaderImagePath() { return headerImagePath; }
-    public void setHeaderImagePath(String headerImagePath) { this.headerImagePath = headerImagePath; }
-    public String getFooterImagePath() { return footerImagePath; }
-    public void setFooterImagePath(String footerImagePath) { this.footerImagePath = footerImagePath; }
-    public String getBackgroundImagePath() { return backgroundImagePath; }
-    public void setBackgroundImagePath(String backgroundImagePath) { this.backgroundImagePath = backgroundImagePath; }
     public String getSignatoryRoles() { return signatoryRoles; }
     public void setSignatoryRoles(String signatoryRoles) { this.signatoryRoles = signatoryRoles; }
     public String getOrientation() { return orientation; }

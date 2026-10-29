@@ -17,7 +17,7 @@ class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      const t = (key, fallback) => i18n.t(key) || fallback
+      const t = (key, fallback) => i18n.t(key, { defaultValue: fallback })
       return (
         <div className="alert alert-danger border-0 shadow-sm">
           <h5 className="mb-2">{t('errors.pageUnavailableTitle', 'Page unavailable')}</h5>

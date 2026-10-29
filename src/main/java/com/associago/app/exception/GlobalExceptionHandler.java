@@ -51,8 +51,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleConflict(IllegalStateException ex, WebRequest request) {
+        Map<String, Object> body = buildBody(HttpStatus.CONFLICT, ex.getMessage(), request);
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler({AccessDeniedException.class, org.springframework.security.access.AccessDeniedException.class})
+    public ResponseEntity<Object> handleAccessDenied(Exception ex, WebRequest request) {
         Map<String, Object> body = buildBody(HttpStatus.FORBIDDEN, "Access denied", request);
         return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }

@@ -26,7 +26,6 @@ public final class InventoryItemMapper {
                 item.getCondition(),
                 item.getStatus(),
                 item.getAssignedTo(),
-                item.getPhotoPath(),
                 item.getNotes(),
                 item.getCreatedAt(),
                 item.getUpdatedAt()
@@ -50,7 +49,6 @@ public final class InventoryItemMapper {
         item.setCondition(dto.condition());
         item.setStatus(dto.status());
         item.setAssignedTo(dto.assignedTo());
-        item.setPhotoPath(dto.photoPath());
         item.setNotes(dto.notes());
         return item;
     }
@@ -71,7 +69,6 @@ public final class InventoryItemMapper {
         item.setCondition(dto.condition());
         item.setStatus(dto.status());
         item.setAssignedTo(dto.assignedTo());
-        item.setPhotoPath(dto.photoPath());
         item.setNotes(dto.notes());
     }
 }

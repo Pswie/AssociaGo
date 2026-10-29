@@ -14,6 +14,11 @@
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
+    "dev:web": "vite --config vite.web.config.mjs",
+    "build:web": "vite build --config vite.web.config.mjs",
+    "preview:web": "vite preview --config vite.web.config.mjs",
+    "test:mobile": "node scripts/mobile-smoke.mjs",
+    "test:unit": "node --test scripts/api.test.cjs scripts/runtime-policy.test.mjs",
     "postinstall": "electron-builder install-app-deps",
     "build:jre": "node scripts/build-jre.js",
     "package:prepare": "node scripts/package-prepare.js",
@@ -28,8 +33,10 @@
     "dist:linux": "npm run build:linux"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.9",
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@tanstack/react-table": "^8.11.8",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
@@ -96,6 +103,11 @@
       },
       {
         "from": "resources",
+        "to": ".",
+        "filter": ["backend.json"]
+      },
+      {
+        "from": "resources",
         "to": "runtime-assets",
         "filter": [
           "icon.icns",
@@ -107,15 +119,7 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
+      "target": ["dmg"],
       "identity": null,
       "hardenedRuntime": false,
       "gatekeeperAssess": false
@@ -187,5 +191,8 @@
         "StartupWMClass": "associago-desktop"
       }
     }
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.0.0"
   }
 }

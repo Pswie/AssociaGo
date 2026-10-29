@@ -35,10 +35,7 @@ public class ActivityCost {
 
     private String supplier;
 
-    @Column(name = "receipt_path")
-    private String receiptPath;
-
-    @Column(columnDefinition = "TEXT")
+@Column(columnDefinition = "TEXT")
     private String notes;
 
     @Column(name = "created_at", updatable = false)
@@ -66,8 +63,6 @@ public class ActivityCost {
     public void setFrequency(String frequency) { this.frequency = frequency; }
     public String getSupplier() { return supplier; }
     public void setSupplier(String supplier) { this.supplier = supplier; }
-    public String getReceiptPath() { return receiptPath; }
-    public void setReceiptPath(String receiptPath) { this.receiptPath = receiptPath; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }

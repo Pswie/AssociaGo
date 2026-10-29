@@ -3,6 +3,12 @@ package com.associago.member.dto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Il certificato come esce dall'API.
+ *
+ * <p>Senza medico, struttura sanitaria, note e file: vedi
+ * {@code MedicalCertificate} per il perché.
+ */
 public record MedicalCertificateDTO(
     Long id,
     Long memberId,
@@ -10,11 +16,7 @@ public record MedicalCertificateDTO(
     String certificateType,
     LocalDate issueDate,
     LocalDate expiryDate,
-    String issuedBy,
-    String medicalFacility,
-    String filePath,
     String status,
-    String notes,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {}

@@ -6,13 +6,14 @@ import { useTranslation } from 'react-i18next'
 const CSV_EXAMPLE = `nome;cognome;email;telefono;codice_fiscale;note
 Mario;Rossi;mario@email.it;+393331234567;RSSMRA80A01H501Z;Import esempio`
 
-const CsvImporter = ({ title, onPreview, onImport, onConfirm }) => {
+const CsvImporter = ({ title, onPreview, onImport, onConfirm, onImported }) => {
   const { t } = useTranslation()
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [importing, setImporting] = useState(false)
   const [message, setMessage] = useState(null)
+  const [completed, setCompleted] = useState(false)
 
   const counters = useMemo(() => ({
     total: preview?.totalRows || 0,
@@ -24,6 +25,7 @@ const CsvImporter = ({ title, onPreview, onImport, onConfirm }) => {
   const handlePreview = async () => {
     if (!file) return
     setLoading(true)
+    setCompleted(false)
     setMessage(null)
     try {
       const result = await onPreview(file)
@@ -37,12 +39,14 @@ const CsvImporter = ({ title, onPreview, onImport, onConfirm }) => {
   }
 
   const handleImport = async () => {
-    if (!file) return
+    if (!file || !preview || completed || loading || importing) return
     setImporting(true)
     setMessage(null)
     try {
       const result = onImport ? await onImport(file) : await onConfirm(preview?.id)
       if (result) setPreview(result)
+      setCompleted(true)
+      onImported?.(result)
       setMessage({ type: 'success', text: t('Import completed.') })
     } catch (error) {
       setMessage({ type: 'danger', text: error.message })
@@ -69,20 +73,22 @@ const CsvImporter = ({ title, onPreview, onImport, onConfirm }) => {
           <Form.Control
             type="file"
             accept=".csv,text/csv"
+            disabled={loading || importing}
             onChange={(event) => {
               setFile(event.target.files?.[0] || null)
               setPreview(null)
               setMessage(null)
+              setCompleted(false)
             }}
           />
         </Form.Group>
 
-        <div className="d-flex gap-2 mb-4">
-          <Button variant="outline-primary" onClick={handlePreview} disabled={!file || loading}>
+        <div className="d-flex gap-2 flex-wrap mb-4">
+          <Button variant="outline-primary" onClick={handlePreview} disabled={!file || loading || importing}>
             <Upload size={16} className="me-2" />
             {loading ? t('Generating preview...') : t('Generate Preview')}
           </Button>
-          <Button variant="primary" onClick={handleImport} disabled={!file || importing || (!onImport && !preview?.id)}>
+          <Button variant="primary" onClick={handleImport} disabled={!file || !preview || completed || loading || importing || (!onImport && !preview?.id)}>
             <CheckCircle2 size={16} className="me-2" />
             {importing ? t('Importing...') : t('Confirm Import')}
           </Button>
@@ -91,7 +97,7 @@ const CsvImporter = ({ title, onPreview, onImport, onConfirm }) => {
         <Card className="bg-light border-0 mb-4">
           <Card.Body>
             <div className="small text-muted mb-2">{t('Example format')}</div>
-            <pre className="mb-0 small">{CSV_EXAMPLE}</pre>
+            <pre className="mb-0 small overflow-auto">{CSV_EXAMPLE}</pre>
           </Card.Body>
         </Card>
 

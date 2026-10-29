@@ -1,5 +1,6 @@
 package com.associago.assembly;
 
+import com.associago.esercizio.Esercizio;
 import com.associago.assembly.repository.*;
 import com.associago.member.repository.MemberRepository;
 import com.associago.stats.dto.AssemblyWithDetailsDTO;
@@ -42,6 +43,18 @@ public class AssemblyService {
         return assemblyRepository.findAll();
     }
 
+    /**
+     * Le assemblee di un'associazione, eventualmente di un solo esercizio.
+     *
+     * @param anno l'esercizio, oppure {@code null} per tutte. Un'assemblea è un
+     *             fatto puntuale: appartiene all'anno in cui si è tenuta.
+     */
+    public List<Assembly> getAssemblies(Long associationId, Integer anno) {
+        return Esercizio.valido(anno)
+                ? assemblyRepository.findByAssociationIdAndAnno(associationId, anno)
+                : assemblyRepository.findByAssociationId(associationId);
+    }
+
     public Optional<Assembly> getAssemblyById(Long id) {
         return assemblyRepository.findById(id);
     }
@@ -70,7 +83,6 @@ public class AssemblyService {
             assembly.setFirstCallQuorum(assemblyDetails.getFirstCallQuorum());
             assembly.setSecondCallQuorum(assemblyDetails.getSecondCallQuorum());
             assembly.setQuorumReached(assemblyDetails.isQuorumReached());
-            assembly.setMinutesPath(assemblyDetails.getMinutesPath());
             assembly.setNotes(assemblyDetails.getNotes());
             assembly.setUpdatedAt(LocalDateTime.now());
             return assemblyRepository.save(assembly);
@@ -160,12 +172,12 @@ public class AssemblyService {
         // Stats
         long totalActiveMembers = memberRepository.countByMembershipStatus("ACTIVE");
         dto.setTotalParticipants((int) totalActiveMembers);
-        
+
         int present = (int) participants.stream()
                 .filter(p -> "PRESENT".equals(p.getParticipationType()))
                 .count();
         dto.setPresentParticipants(present);
-        
+
         int proxy = (int) participants.stream()
                 .filter(p -> "PROXY".equals(p.getParticipationType()))
                 .count();
@@ -183,18 +195,18 @@ public class AssemblyService {
         boolean quorumReached = false;
         // Assuming firstCallQuorum and secondCallQuorum are percentages (e.g., 50.0 for 50%)
         // If they are null, we assume standard defaults (50% + 1 for first call, any for second)
-        
+
         double requiredQuorum = 0.0;
-        
+
         // Determine if we are in first or second call based on assembly type or status
         // For simplicity, we check against both thresholds if provided
-        
+
         if (assembly.getFirstCallQuorum() != null) {
              if (dto.getParticipationPercentage() >= assembly.getFirstCallQuorum()) {
                  quorumReached = true;
              }
         }
-        
+
         // If not reached in first call (or not specified), check second call logic
         // Usually second call has lower quorum
         if (!quorumReached && assembly.getSecondCallQuorum() != null) {
@@ -204,7 +216,7 @@ public class AssemblyService {
         }
 
         dto.setQuorumReached(quorumReached);
-        
+
         // Update assembly status if needed
         if (assembly.isQuorumReached() != quorumReached) {
             assembly.setQuorumReached(quorumReached);

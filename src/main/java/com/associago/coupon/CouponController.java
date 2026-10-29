@@ -1,10 +1,12 @@
 package com.associago.coupon;
 
+import com.associago.esercizio.Esercizio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -19,9 +21,17 @@ public class CouponController {
         this.couponService = couponService;
     }
 
+    /**
+     * @param anno l'esercizio da guardare. Assente significa «tutti», perché un
+     *             elenco senza filtro deve restare possibile — serve alle
+     *             verifiche e a chi cerca qualcosa di cui non ricorda l'anno.
+     */
     @GetMapping("/association/{associationId}")
-    public List<Coupon> getCouponsByAssociation(@PathVariable Long associationId) {
-        return couponService.findByAssociationId(associationId);
+    public List<Coupon> getCouponsByAssociation(@PathVariable Long associationId,
+                                                @RequestParam(required = false) Integer anno) {
+        return Esercizio.valido(anno)
+                ? couponService.findByAssociationIdAndAnno(associationId, anno)
+                : couponService.findByAssociationId(associationId);
     }
 
     @GetMapping("/{id}")
@@ -36,21 +46,39 @@ public class CouponController {
         return couponService.save(coupon);
     }
 
+    /**
+     * Emette un buono e registra l'uscita corrispondente.
+     *
+     * <p>Diverso da {@code POST /coupons}, che scrive soltanto la riga: qui
+     * nasce anche il movimento contabile, perché un buono consegnato è denaro
+     * uscito.
+     */
+    @PostMapping("/issue")
+    public ResponseEntity<Coupon> issueCoupon(@RequestBody Coupon coupon,
+                                              @RequestParam(required = false) Long userId) {
+        try {
+            return ResponseEntity.ok(couponService.issue(coupon, userId));
+        } catch (IllegalArgumentException errore) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<Coupon> updateCoupon(@PathVariable Long id, @RequestBody Coupon details) {
         return couponService.findById(id)
                 .map(existing -> {
                     existing.setCode(details.getCode());
                     existing.setDescription(details.getDescription());
-                    existing.setDiscountType(details.getDiscountType());
-                    existing.setDiscountValue(details.getDiscountValue());
+                    existing.setNominalValue(details.getNominalValue());
+                    existing.setBeneficiaryMemberId(details.getBeneficiaryMemberId());
+                    existing.setBeneficiaryRef(details.getBeneficiaryRef());
                     existing.setStartDate(details.getStartDate());
                     existing.setEndDate(details.getEndDate());
-                    existing.setMaxUses(details.getMaxUses());
                     existing.setActive(details.isActive());
-                    existing.setMinAmount(details.getMinAmount());
-                    existing.setApplicableActivities(details.getApplicableActivities());
-                    existing.setApplicableEvents(details.getApplicableEvents());
+                    existing.setStatus(details.getStatus());
+                    // `transactionId` non si tocca da qui: il legame col
+                    // movimento in uscita lo crea l'emissione, e riscriverlo da
+                    // una modifica scollegherebbe il buono dai suoi soldi.
                     return ResponseEntity.ok(couponService.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -64,29 +92,36 @@ public class CouponController {
         }
         return ResponseEntity.notFound().build();
     }
-    
+
+    /**
+     * Se un buono è spendibile oggi.
+     *
+     * <p>Ha preso il posto della vecchia {@code /validate}, che calcolava lo
+     * sconto da applicare a una quota: qui non c'è nessuno sconto da calcolare,
+     * il buono vale il suo nominale. Resta la sola domanda che ha senso —
+     * questo codice è valido? — con il motivo quando non lo è, perché «non
+     * valido» senza spiegazione manda la persona allo sportello.
+     */
     @PostMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateCoupon(@RequestBody Map<String, Object> payload) {
         Long associationId = ((Number) payload.get("associationId")).longValue();
         String code = (String) payload.get("code");
-        BigDecimal amount = payload.containsKey("amount") ? new BigDecimal(payload.get("amount").toString()) : null;
-        Long activityId = payload.containsKey("activityId") ? ((Number) payload.get("activityId")).longValue() : null;
-        Long eventId = payload.containsKey("eventId") ? ((Number) payload.get("eventId")).longValue() : null;
 
         return couponService.findByCode(associationId, code)
                 .map(coupon -> {
-                    boolean isValid = couponService.isValid(coupon, amount, activityId, eventId);
-                    if (isValid) {
-                        BigDecimal discount = couponService.calculateDiscount(coupon, amount);
-                        return ResponseEntity.ok(Map.of(
-                            "valid", true,
-                            "discount", discount,
-                            "coupon", coupon
-                        ));
-                    } else {
-                        return ResponseEntity.ok(Map.<String, Object>of("valid", false, "reason", "Conditions not met"));
+                    if (!coupon.isSpendibileIl(LocalDate.now())) {
+                        return ResponseEntity.ok(Map.<String, Object>of(
+                                "valid", false,
+                                "reason", Coupon.ANNULLATO.equals(coupon.getStatus())
+                                        ? "Buono annullato"
+                                        : "Buono scaduto o non ancora valido"));
                     }
+                    return ResponseEntity.ok(Map.<String, Object>of(
+                            "valid", true,
+                            "value", coupon.getNominalValue() == null
+                                    ? BigDecimal.ZERO : coupon.getNominalValue(),
+                            "coupon", coupon));
                 })
-                .orElse(ResponseEntity.ok(Map.of("valid", false, "reason", "Coupon not found")));
+                .orElse(ResponseEntity.ok(Map.of("valid", false, "reason", "Buono non trovato")));
     }
 }

@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface CommunicationRecipientRepository extends JpaRepository<CommunicationRecipient, Long> {
     List<CommunicationRecipient> findByCommunicationId(Long communicationId);
+    void deleteByCommunicationId(Long communicationId);
 }

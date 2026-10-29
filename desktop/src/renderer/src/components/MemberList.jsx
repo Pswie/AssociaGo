@@ -4,7 +4,7 @@ import { Search, Plus, Edit, Trash2, RefreshCw, AlertTriangle } from 'lucide-rea
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import CsvImporter from './CsvImporter';
-import { MEMBER_ROLES } from './MemberForm';
+import { MEMBER_ROLES } from './memberRoles';
 import RowActions from './common/RowActions';
 
 const ROLE_LABEL_BY_VALUE = MEMBER_ROLES.reduce((acc, r) => {
@@ -32,18 +32,26 @@ const MemberList = ({ associationId, shell }) => {
 
     const isASD = shell?.currentAssociation?.tipo === 'ASD';
 
+    /*
+     * L'esercizio guardato. Il filtro lo applica il server: una tessera ha un
+     * periodo, e quella senza scadenza è aperta — compare nell'anno scelto e in
+     * tutti i successivi. Filtrare per data di iscrizione farebbe sparire dal
+     * 2027 quasi tutto il libro soci.
+     */
+    const anno = shell?.anno ?? new Date().getFullYear();
+
     useEffect(() => {
         if (associationId) {
             fetchMembers();
             if (isASD) fetchMedicalAlerts();
         }
-    }, [associationId]);
+    }, [associationId, anno]);
 
     const fetchMembers = async () => {
         setLoading(true);
         try {
             // Use memberships endpoint to get UserAssociation data which includes User details
-            const data = await associago.memberships.getByAssociation(associationId);
+            const data = await associago.memberships.getByAssociation(associationId, anno);
             setMembers(data);
         } catch (error) {
             console.error("Error fetching members:", error);
@@ -142,6 +150,7 @@ const MemberList = ({ associationId, shell }) => {
                         title={t('Member CSV Import')}
                         onPreview={(file) => associago.csvImport.previewMembers(file, associationId)}
                         onImport={(file) => associago.csvImport.importMembers(file, associationId)}
+                        onImported={fetchMembers}
                     />
                 </div>
             )}
@@ -149,7 +158,7 @@ const MemberList = ({ associationId, shell }) => {
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex gap-2" style={{ width: '300px' }}>
+                        <div className="d-flex gap-2 jl-search" style={{ width: '300px' }}>
                             <InputGroup>
                                 <InputGroup.Text className="bg-light border-end-0">
                                     <Search size={16} className="text-muted" />
@@ -226,7 +235,7 @@ const MemberList = ({ associationId, shell }) => {
                                                         key: 'edit',
                                                         icon: <Edit size={16} />,
                                                         label: t('Edit'),
-                                                        onClick: () => shell.openModal('member-form', { associationId, memberId: member.id, onSuccess: fetchMembers }),
+                                                    onClick: () => shell.openModal('member-form', { associationId, associationType: shell?.currentAssociation?.tipo, memberId: member.id, onSuccess: fetchMembers }),
                                                     },
                                                     {
                                                         key: 'delete',

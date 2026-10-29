@@ -34,10 +34,7 @@ public class Resource {
     @Column(name = "cost_per_hour")
     private BigDecimal costPerHour = BigDecimal.ZERO;
 
-    @Column(name = "image_path")
-    private String imagePath;
-
-    private String notes;
+private String notes;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -65,8 +62,6 @@ public class Resource {
     public void setRequiresApproval(boolean requiresApproval) { this.requiresApproval = requiresApproval; }
     public BigDecimal getCostPerHour() { return costPerHour; }
     public void setCostPerHour(BigDecimal costPerHour) { this.costPerHour = costPerHour; }
-    public String getImagePath() { return imagePath; }
-    public void setImagePath(String imagePath) { this.imagePath = imagePath; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Card, Button, Row, Col, Spinner, Table, Badge, Image } from 'react-bootstrap';
 import { associago } from '../api';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, TrendingDown, DollarSign, Download, Calendar, Users, Activity, ArrowRight, Building } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Download, Calendar, Users, Activity, Building } from 'lucide-react';
 
 const Dashboard = ({ shell, associationId }) => {
+    // L'esercizio arriva dalla testata; il filtro lo applica il server.
+    const anno = shell?.anno ?? new Date().getFullYear();
   const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,14 +15,14 @@ const Dashboard = ({ shell, associationId }) => {
   useEffect(() => {
     loadDashboard();
     loadLogo();
-  }, [associationId]);
+  }, [associationId, anno]);
 
   const loadDashboard = async () => {
     if (!associationId) return;
 
     setLoading(true);
     try {
-      const data = await associago.dashboard.getStats(associationId);
+      const data = await associago.dashboard.getStats(associationId, anno);
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
@@ -163,9 +165,6 @@ const Dashboard = ({ shell, associationId }) => {
             <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 className="mb-0 fw-bold">{t('Recent Activity')}</h5>
-                    <Button variant="link" className="text-decoration-none small p-0" onClick={() => {}}>
-                        {t('View All')} <ArrowRight size={16} />
-                    </Button>
                 </Card.Header>
                 <Card.Body>
                     <div className="list-group list-group-flush">
@@ -200,11 +199,17 @@ const Dashboard = ({ shell, associationId }) => {
         </Col>
 
         <Col lg={4}>
-            <Card className="border-0 shadow-sm h-100 bg-primary text-white" style={{background: 'linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%)'}}>
+            {/* Il gradiente era blu cablato: sotto il tema di Angeli del Futuro
+                restava un riquadro blu in mezzo al verde bosco. --primary-gradient
+                è definita da entrambi i temi, quindi sul desktop il colore non
+                cambia di un pixel. */}
+            <Card className="border-0 shadow-sm h-100 bg-primary text-white" style={{background: 'var(--primary-gradient)'}}>
                 <Card.Body className="d-flex flex-column justify-content-center p-4">
                     <h4 className="fw-bold mb-3">{t('Quick Actions')}</h4>
                     <div className="d-grid gap-3">
-                        <Button variant="outline-light" className="text-white text-primary fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId })}>
+                        {/* text-white e text-primary insieme si annullavano a
+                            vicenda: sul fondo scuro serve solo il primo. */}
+                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId })}>
                             <Users size={18} className="me-2" /> {t('Register New Member')}
                         </Button>
                         <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.openModal('event-form', { associationId })}>

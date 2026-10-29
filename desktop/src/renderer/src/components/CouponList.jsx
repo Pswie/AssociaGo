@@ -7,6 +7,8 @@ import CouponForm from './CouponForm'; // Import the form component
 import RowActions from './common/RowActions';
 
 const CouponList = ({ associationId, shell }) => {
+    // L'esercizio arriva dalla testata; il filtro lo applica il server.
+    const anno = shell?.anno ?? new Date().getFullYear();
     const { t } = useTranslation();
     const [coupons, setCoupons] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,12 +19,12 @@ const CouponList = ({ associationId, shell }) => {
         if (associationId) {
             fetchCoupons();
         }
-    }, [associationId]);
+    }, [associationId, anno]);
 
     const fetchCoupons = async () => {
         setLoading(true);
         try {
-            const data = await associago.coupons.getByAssociation(associationId);
+            const data = await associago.coupons.getByAssociation(associationId, anno);
             setCoupons(data);
         } catch (error) {
             console.error("Error fetching coupons:", error);
@@ -78,8 +80,10 @@ const CouponList = ({ associationId, shell }) => {
         <div className="fade-in">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 className="fw-bold text-dark mb-1">{t('Coupons')}</h2>
-                    <p className="text-muted mb-0">{t('Manage discount coupons')}</p>
+                    <h2 className="fw-bold text-dark mb-1">{t('Buoni')}</h2>
+                    <p className="text-muted mb-0">
+                        {t("Buoni consegnati alle persone. Ogni emissione genera l'uscita corrispondente in contabilità.")}
+                    </p>
                 </div>
                 <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
                     <Plus size={18} className="me-2" />
@@ -97,12 +101,12 @@ const CouponList = ({ associationId, shell }) => {
                         <Table hover responsive className="mb-0 align-middle">
                             <thead className="bg-light">
                                 <tr>
-                                    <th className="border-0 ps-4">{t('Code')}</th>
-                                    <th className="border-0">{t('Discount')}</th>
-                                    <th className="border-0">{t('Validity')}</th>
-                                    <th className="border-0">{t('Uses')}</th>
-                                    <th className="border-0">{t('Status')}</th>
-                                    <th className="border-0 text-end pe-4">{t('Actions')}</th>
+                                    <th className="border-0 ps-4">{t('Codice')}</th>
+                                    <th className="border-0">{t('Valore')}</th>
+                                    <th className="border-0">{t('A chi')}</th>
+                                    <th className="border-0">{t('Validità')}</th>
+                                    <th className="border-0">{t('Stato')}</th>
+                                    <th className="border-0 text-end pe-4">{t('Azioni')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -113,21 +117,37 @@ const CouponList = ({ associationId, shell }) => {
                                                 <Tag size={16} className="me-2" />
                                                 {coupon.code}
                                             </td>
-                                            <td>
-                                                {coupon.discountType === 'PERCENTAGE' ? `${coupon.discountValue}%` : `€${coupon.discountValue}`}
-                                                {coupon.minAmount > 0 && <div className="small text-muted">Min: €{coupon.minAmount}</div>}
+                                            <td className="fw-semibold">
+                                                {coupon.nominalValue != null
+                                                    ? `€${Number(coupon.nominalValue).toFixed(2)}`
+                                                    : '—'}
+                                                {/* Se manca il movimento, il buono è stato scritto ma
+                                                    non emesso: i soldi non risultano usciti da nessuna
+                                                    parte, ed è una cosa da vedere subito. */}
+                                                {!coupon.transactionId && (
+                                                    <div className="small text-warning">{t('senza uscita')}</div>
+                                                )}
+                                            </td>
+                                            <td className="small">
+                                                {coupon.beneficiaryRef
+                                                    ? <span className="font-monospace">{coupon.beneficiaryRef}</span>
+                                                    : (coupon.beneficiaryMemberId
+                                                        ? `${t('socio')} #${coupon.beneficiaryMemberId}`
+                                                        : <span className="text-muted">—</span>)}
                                             </td>
                                             <td>
                                                 <div className="small text-muted">
-                                                    {coupon.startDate} - {coupon.endDate || '∞'}
+                                                    {coupon.startDate || '—'} → {coupon.endDate || '∞'}
                                                 </div>
                                             </td>
                                             <td>
-                                                {coupon.currentUses} / {coupon.maxUses > 0 ? coupon.maxUses : '∞'}
-                                            </td>
-                                            <td>
-                                                <Badge bg={coupon.isActive ? 'success' : 'secondary'} className="fw-normal px-2 py-1">
-                                                    {coupon.isActive ? t('Active') : t('Inactive')}
+                                                <Badge
+                                                    bg={coupon.status === 'annullato'
+                                                        ? 'danger'
+                                                        : (coupon.isActive ? 'success' : 'secondary')}
+                                                    className="fw-normal px-2 py-1"
+                                                >
+                                                    {coupon.status || (coupon.isActive ? t('attivo') : t('inattivo'))}
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4">

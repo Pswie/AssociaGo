@@ -21,10 +21,7 @@ public class AssociationDocument {
     @Column(nullable = false)
     private String title;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
-
-    @Column(name = "file_size")
+@Column(name = "file_size")
     private Long fileSize;
 
     @Column(name = "mime_type")
@@ -60,8 +57,6 @@ public class AssociationDocument {
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
 
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }

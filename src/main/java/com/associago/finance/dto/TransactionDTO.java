@@ -23,7 +23,6 @@ public record TransactionDTO(
         String costCenter,
         Long membershipId,
         Long inventoryItemId,
-        String receiptPath,
         boolean isVerified,
         Long verifiedById,
         LocalDateTime verifiedAt,

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Button, Table, Spinner, Badge, Form, Modal, Nav } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import { FileText, Download, PieChart, TrendingUp, TrendingDown, DollarSign, Mail, Filter, Edit, Trash2, X, Plus, Home, BookOpen, BarChart2 } from 'lucide-react';
+import { FileText, Download, PieChart, TrendingUp, TrendingDown, DollarSign, Mail, Filter, Edit, Trash2, X, Plus, Home, BookOpen, BarChart2, Paperclip } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { associago } from '../api';
+import AttachmentPanel from './AttachmentPanel';
+import TransactionAdditions from './TransactionAdditions';
+import { inizioAnno, fineAnno } from '../esercizio';
 
 const FiscalDashboard = ({ associationId, shell }) => {
     const { t } = useTranslation();
+    // L'esercizio arriva dalla testata: qui non si sceglie, si obbedisce.
+    const anno = shell?.anno ?? new Date().getFullYear();
     const [activeTab, setActiveTab] = useState('transactions');
     const [transactions, setTransactions] = useState([]);
     const [journalEntries, setJournalEntries] = useState([]);
@@ -31,10 +36,11 @@ const FiscalDashboard = ({ associationId, shell }) => {
     // Edit/Create Modal
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
+    const [giustificativoDi, setGiustificativoDi] = useState(null);
 
     useEffect(() => {
         loadData();
-    }, [associationId, activeTab]);
+    }, [associationId, activeTab, anno]);
 
     useEffect(() => {
         if (activeTab === 'comparison') {
@@ -45,16 +51,31 @@ const FiscalDashboard = ({ associationId, shell }) => {
     const loadData = async () => {
         setLoading(true);
         try {
+            /*
+             * L'esercizio scelto delimita i movimenti, e il filtro sta sul
+             * server: l'API accetta già startDate e endDate, quindi non c'è
+             * ragione di scaricare tutti gli anni per poi scartarne il grosso
+             * nel browser.
+             *
+             * Le date impostate a mano vincono su quelle dell'anno: chi
+             * restringe a un trimestre sa cosa sta facendo.
+             */
+            const perAnno = {
+                ...filters,
+                startDate: filters.startDate || inizioAnno(anno),
+                endDate: filters.endDate || fineAnno(anno),
+            };
+
             const promises = [
-                associago.finance.getYoyComparison(new Date().getFullYear()),
+                associago.finance.getYoyComparison(anno),
                 associago.paymentMethods.getActive(associationId),
                 associago.memberships.getByAssociation(associationId)
             ];
 
             if (activeTab === 'transactions') {
-                promises.push(associago.finance.getAllTransactions(filters));
+                promises.push(associago.finance.getAllTransactions(perAnno));
             } else if (activeTab === 'journal') {
-                promises.push(associago.finance.getJournalEntries(filters));
+                promises.push(associago.finance.getJournalEntries(perAnno));
             }
 
             const results = await Promise.all(promises);
@@ -462,6 +483,12 @@ const FiscalDashboard = ({ associationId, shell }) => {
                                             </td>
                                             <td className="text-end pe-3">
                                                 <div className="d-flex justify-content-end gap-2">
+                                                    {/* Il giustificativo del movimento. Stava in
+                                                        `transactions.receipt_path`, un percorso su
+                                                        un disco che a ogni riavvio si azzerava. */}
+                                                    <Button variant="link" size="sm" className="text-secondary p-0" onClick={() => setGiustificativoDi(tx)} title={t('Giustificativo')}>
+                                                        <Paperclip size={16} />
+                                                    </Button>
                                                     <Button variant="link" size="sm" className="text-muted p-0" onClick={() => handleEditClick(tx)} title={t('Edit')}>
                                                         <Edit size={16} />
                                                     </Button>
@@ -749,6 +776,32 @@ const FiscalDashboard = ({ associationId, shell }) => {
                         {t('Save Changes')}
                     </Button>
                 </Modal.Footer>
+            </Modal>
+
+            <Modal show={Boolean(giustificativoDi)} onHide={() => setGiustificativoDi(null)} centered size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title className="fs-5">{giustificativoDi?.description}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {giustificativoDi && (
+                        <>
+                            <AttachmentPanel
+                                ownerType="TRANSACTION"
+                                ownerId={giustificativoDi.id}
+                                titolo={t('Giustificativo')}
+                                kinds={[{ id: 'ricevuta', label: t('Ricevuta o fattura') }]}
+                            />
+                            <hr />
+                            {/* Le aggiunte sul movimento: IVA, commissioni, spese.
+                                Il totale lo ricalcola il server, mai questa
+                                schermata. */}
+                            <TransactionAdditions
+                                transaction={giustificativoDi}
+                                onChange={loadData}
+                            />
+                        </>
+                    )}
+                </Modal.Body>
             </Modal>
         </div>
     );

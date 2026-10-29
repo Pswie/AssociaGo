@@ -21,7 +21,6 @@ public record InventoryItemDTO(
         String condition,
         String status,
         Long assignedTo,
-        String photoPath,
         String notes,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

@@ -65,7 +65,8 @@ public class CsvImportController {
     }
 
     @PostMapping("/imports/{id}/confirm")
-    public ResponseEntity<ImportLogDTO> confirmImport(@PathVariable Long id) throws IOException {
-        return ResponseEntity.ok(ImportLogMapper.toDTO(csvImportService.confirmImport(id)));
+    public ResponseEntity<ImportLogDTO> confirmImport(@PathVariable Long id,
+            @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
+        return ResponseEntity.ok(ImportLogMapper.toDTO(csvImportService.confirmImport(id, file)));
     }
 }

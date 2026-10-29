@@ -18,7 +18,6 @@ public record AnnualBalanceDTO(
         Long approvedBy,
         LocalDateTime approvedAt,
         String signatories,
-        String pdfPath,
         String checksum,
         String notes,
         LocalDateTime createdAt,

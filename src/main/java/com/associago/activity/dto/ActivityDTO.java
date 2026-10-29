@@ -23,8 +23,6 @@ public record ActivityDTO(
         String scheduleDetails,
         boolean requireRegistration,
         boolean generateInvoice,
-        String imagePath,
-        String documentPath,
         LocalDate cancellationDate,
         String cancellationReason,
         LocalDateTime createdAt,

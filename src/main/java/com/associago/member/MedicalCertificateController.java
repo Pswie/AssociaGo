@@ -4,9 +4,7 @@ import com.associago.member.dto.MedicalCertificateDTO;
 import com.associago.member.dto.MedicalCertificateUpsertDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -48,13 +46,6 @@ public class MedicalCertificateController {
     @PostMapping
     public MedicalCertificateDTO save(@RequestBody MedicalCertificateUpsertDTO dto) {
         return service.save(dto);
-    }
-
-    @PostMapping("/{id}/upload")
-    public MedicalCertificateDTO uploadFile(
-            @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) throws IOException {
-        return service.uploadFile(id, file);
     }
 
     @DeleteMapping("/{id}")

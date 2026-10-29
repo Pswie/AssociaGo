@@ -3,6 +3,7 @@ import { Card, Button, Table, Badge, Nav, Spinner } from 'react-bootstrap';
 import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import AttachmentPanel from './AttachmentPanel';
 
 const InventoryDetail = ({ itemId, shell, onBack }) => {
     const { t } = useTranslation();
@@ -124,12 +125,12 @@ const InventoryDetail = ({ itemId, shell, onBack }) => {
                                             <td>{new Date(l.loanDate).toLocaleDateString()}</td>
                                             <td>{l.actualReturnDate ? new Date(l.actualReturnDate).toLocaleDateString() : (l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString() + ' (Exp)' : '-')}</td>
                                             <td>
-                                                <Badge bg={l.status === 'ACTIVE' ? 'warning' : 'success'} text={l.status === 'ACTIVE' ? 'dark' : 'white'}>
+                                                <Badge bg={l.status === 'OVERDUE' ? 'danger' : l.status === 'ACTIVE' ? 'warning' : l.status === 'RETURNED' ? 'success' : 'secondary'} text={l.status === 'ACTIVE' ? 'dark' : 'white'}>
                                                     {t(l.status)}
                                                 </Badge>
                                             </td>
                                             <td className="text-end pe-4">
-                                                {l.status === 'ACTIVE' && (
+                                                {['ACTIVE', 'OVERDUE'].includes(l.status) && (
                                                     <Button variant="outline-success" size="sm" onClick={() => handleReturnLoan(l.id)}>
                                                         <RefreshCw size={14} className="me-1"/> {t('Return')}
                                                     </Button>
@@ -142,6 +143,23 @@ const InventoryDetail = ({ itemId, shell, onBack }) => {
                             </Table>
                         </div>
                     )}
+                </Card.Body>
+            </Card>
+
+            {/* Stava in `inventory_items.photo_path`: un percorso su un disco
+                effimero. La foto serve a riconoscere l'oggetto al rientro di un
+                prestito, quindi vale la pena che sopravviva. */}
+            <Card className="border-0 shadow-sm mt-4">
+                <Card.Body>
+                    <AttachmentPanel
+                        ownerType="INVENTORY_ITEM"
+                        ownerId={itemId}
+                        titolo={t('Foto e documenti')}
+                        kinds={[
+                            { id: 'immagine', label: t('Foto') },
+                            { id: 'documento', label: t('Garanzia o manuale') },
+                        ]}
+                    />
                 </Card.Body>
             </Card>
         </div>

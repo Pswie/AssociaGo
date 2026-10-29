@@ -21,6 +21,5 @@ public record InventoryItemCreateDTO(
         String condition,
         String status,
         Long assignedTo,
-        String photoPath,
         String notes
 ) {}

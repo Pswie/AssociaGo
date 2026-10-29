@@ -48,10 +48,7 @@ public class Invoice {
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
-    @Column(name = "file_path")
-    private String filePath;
-
-    @Column(columnDefinition = "TEXT")
+@Column(columnDefinition = "TEXT")
     private String notes;
 
     @Column(name = "is_cancelled")
@@ -93,8 +90,6 @@ public class Invoice {
     public void setPaid(boolean paid) { isPaid = paid; }
     public LocalDate getPaymentDate() { return paymentDate; }
     public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public boolean isCancelled() { return isCancelled; }

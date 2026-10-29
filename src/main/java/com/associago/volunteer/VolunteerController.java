@@ -21,9 +21,15 @@ public class VolunteerController {
         this.volunteerService = volunteerService;
     }
 
+    /**
+     * @param anno l'esercizio da guardare. Chi ha cessato compare nel suo anno e
+     *             non in quelli dopo; chi non ha cessato compare sempre.
+     */
     @GetMapping
-    public ResponseEntity<List<VolunteerDTO>> getAllVolunteers() {
-        List<VolunteerDTO> volunteers = StreamSupport.stream(volunteerService.getAllVolunteers().spliterator(), false)
+    public ResponseEntity<List<VolunteerDTO>> getAllVolunteers(
+            @RequestParam(required = false) Integer anno) {
+        List<VolunteerDTO> volunteers = StreamSupport.stream(
+                        volunteerService.getVolontariDellEsercizio(anno).spliterator(), false)
                 .map(VolunteerMapper::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(volunteers);
@@ -92,11 +98,8 @@ public class VolunteerController {
     }
 
     @PutMapping("/expenses/{id}/status")
-    public ResponseEntity<VolunteerExpense> updateExpenseStatus(@PathVariable Long id, @RequestParam String status) {
-        try {
-            return ResponseEntity.ok(volunteerService.updateExpenseStatus(id, status));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<VolunteerExpense> updateExpenseStatus(@PathVariable Long id, @RequestParam String status,
+                                                                @RequestParam(required = false) Long associationId) {
+        return ResponseEntity.ok(volunteerService.updateExpenseStatus(id, status, associationId));
     }
 }

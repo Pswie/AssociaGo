@@ -7,6 +7,7 @@ import PaymentMethodForm from './PaymentMethodForm';
 import AssociationRegistryPanel from './AssociationRegistryPanel';
 import SignaturePanel from './SignaturePanel';
 import RowActions from './common/RowActions';
+import { SOURCE_CODE_URL } from '../branding';
 
 const SettingsDashboard = ({ shell }) => {
   const { t, i18n } = useTranslation();
@@ -182,9 +183,12 @@ const SettingsDashboard = ({ shell }) => {
 
   const handleBackup = async () => {
     setLoading(true);
+    setBackupPath('');
+    setMessage(null);
     try {
-      await new Promise(r => setTimeout(r, 1500));
-      setBackupPath("/home/user/Documents/backup_2023.sqlite");
+      const result = await associago.createBackup();
+      if (!result?.path) throw new Error(t('Il backup non ha restituito un percorso. Riprova.'));
+      setBackupPath(result.path);
       setMessage({ type: 'success', text: t('Backup created successfully.') });
     } catch (error) {
       setMessage({ type: 'error', text: error.message });
@@ -472,7 +476,7 @@ const SettingsDashboard = ({ shell }) => {
             <Card className="h-100 border-0 shadow-sm">
                 <Card.Body>
                     <h6 className="mb-3">{t('Data Management')}</h6>
-                    <p className="text-muted small">{t('Create a local backup of your data.')}</p>
+                    <p className="text-muted small">{window.api ? t('Create a local backup of your data.') : t('Il backup del database online va eseguito dal servizio database. Questa funzione crea solo backup SQLite locali.')}</p>
                     <Button variant="info" className="text-white w-100 mb-3" onClick={handleBackup} disabled={loading}>
                         <Download size={18} className="me-2" /> {t('Backup Now')}
                     </Button>
@@ -492,6 +496,13 @@ const SettingsDashboard = ({ shell }) => {
                             )}
                             <p className="mb-1 text-muted small">Copyright © Lorenzo De Marco (Lorenzo DM)</p>
                             <p className="mb-1 text-muted small">{t('License')}: AGPLv3</p>
+                            {/* Offerta del sorgente richiesta dall'art. 13 AGPLv3: deve puntare
+                                al repo pubblico della NOSTRA versione modificata, non all'originale. */}
+                            <p className="mb-1 text-muted small">
+                                <a href={SOURCE_CODE_URL} target="_blank" rel="noopener noreferrer" className="text-decoration-none">
+                                    {t('Source code')}
+                                </a>
+                            </p>
                             <p className="mb-3 text-muted small">
                                 <a href="https://www.lorenzodm.it" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
                                     www.lorenzodm.it

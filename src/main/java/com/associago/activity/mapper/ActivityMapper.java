@@ -30,8 +30,6 @@ public final class ActivityMapper {
                 entity.getScheduleDetails(),
                 entity.isRequireRegistration(),
                 entity.isGenerateInvoice(),
-                entity.getImagePath(),
-                entity.getDocumentPath(),
                 entity.getCancellationDate(),
                 entity.getCancellationReason(),
                 entity.getCreatedAt(),
@@ -58,8 +56,6 @@ public final class ActivityMapper {
         entity.setScheduleDetails(dto.scheduleDetails());
         entity.setRequireRegistration(dto.requireRegistration());
         entity.setGenerateInvoice(dto.generateInvoice());
-        entity.setImagePath(dto.imagePath());
-        entity.setDocumentPath(dto.documentPath());
         return entity;
     }
 
@@ -80,8 +76,6 @@ public final class ActivityMapper {
         entity.setScheduleDetails(dto.scheduleDetails());
         entity.setRequireRegistration(dto.requireRegistration());
         entity.setGenerateInvoice(dto.generateInvoice());
-        entity.setImagePath(dto.imagePath());
-        entity.setDocumentPath(dto.documentPath());
         entity.setUpdatedAt(LocalDateTime.now());
     }
 }

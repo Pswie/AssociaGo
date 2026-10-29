@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { associago } from './api';
+import { pagesForRole, isPersonalOnly } from './roles';
 
 // Layout Components
 import LeftNav from "./components/LeftNav";
@@ -12,8 +13,11 @@ import LoginPage from './components/LoginPage';
 import SplashScreen from './components/SplashScreen';
 import Modal from './components/Modal';
 import ErrorBoundary from './components/ErrorBoundary';
+import ResponsiveTables from './components/ResponsiveTables';
 
-// Page Components
+// Componenti originali AssociaGo: caricamento statico, senza splash col logo
+// durante il passaggio da una voce del menu all'altra.
+import PersonalArea from './components/PersonalArea';
 import MemberList from './components/MemberList';
 import Dashboard from './components/Dashboard';
 import ActivityList from './components/ActivityList';
@@ -25,16 +29,15 @@ import InventoryList from './components/InventoryList';
 import VolunteerList from './components/VolunteerList';
 import AttendanceList from './components/AttendanceList';
 import CouponList from './components/CouponList';
+import ExpenseDocumentList from './components/ExpenseDocumentList';
+import SelettoreAnno from './components/SelettoreAnno';
+import { leggiAnnoSalvato, salvaAnno } from './esercizio';
 import ManualDashboard from './components/ManualDashboard';
 import BudgetDashboard from './components/BudgetDashboard';
 import AnnualBalanceDashboard from './components/AnnualBalanceDashboard';
 import CertificateList from './components/CertificateList';
 import CommunicationDashboard from './components/CommunicationDashboard';
-//import ResourceBookingDashboard from './components/ResourceBookingDashboard';
-//import CashRegisterDashboard from './components/CashRegisterDashboard';
-//import CsvImportDashboard from './components/CsvImportDashboard';
 
-// Form Components
 import MemberForm from './components/MemberForm';
 import ActivityForm from './components/ActivityForm';
 import ActivityCostForm from './components/ActivityCostForm';
@@ -54,11 +57,18 @@ import VolunteerShiftForm from './components/VolunteerShiftForm';
 import VolunteerExpenseForm from './components/VolunteerExpenseForm';
 import CouponForm from './components/CouponForm';
 
-function App() {
+/**
+ * @param {object} [props.webSession] Presente solo sul web: associazione già
+ *   risolta e utente Clerk già autenticato da WebAuthGate. Quando c'è, la
+ *   schermata di login interna viene saltata — sul web il suo endpoint è
+ *   chiuso e resterebbe comunque una porta senza serratura.
+ */
+function App({ webSession }) {
   const { t, i18n } = useTranslation();
 
   const [appState, setAppState] = useState('LOADING');
   const [activeId, setActiveId] = useState('dashboard');
+  const [pageRevision, setPageRevision] = useState(0);
 
   const [currentAssociation, setCurrentAssociation] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -68,6 +78,22 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [modalProps, setModalProps] = useState({});
+
+  // Sotto i 992px il binario di navigazione è un cassetto sovrapposto. Lo stato
+  // sta qui e non dentro LeftNav perché il pulsante che lo apre vive nella
+  // barra in alto: due componenti sullo stesso interruttore.
+  const [navOpen, setNavOpen] = useState(false);
+
+  // L'esercizio in vista. Ricordato fra una sessione e l'altra: chi sta
+  // sistemando il 2026 non vuole ritrovarsi sul 2027 a ogni riavvio.
+  const [anno, setAnno] = useState(leggiAnnoSalvato);
+  const cambiaAnno = useCallback((nuovo) => {
+    setAnno(nuovo);
+    salvaAnno(nuovo);
+  }, []);
+
+  // Sorvegliato da ResponsiveTables per etichettare le celle delle tabelle.
+  const contentRef = useRef(null);
 
   // Toast state
   const [toast, setToast] = useState(null);
@@ -93,12 +119,38 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+
+  // Il cassetto copre la pagina: lasciarlo aperto passando da una voce
+  // all'altra nasconderebbe proprio la schermata appena scelta.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [activeId]);
 
   const initApp = async () => {
     try {
       const { baseUrl } = await associago.init();
       console.log('API Ready:', baseUrl);
+
+      if (webSession) {
+        // Sul web l'accesso è già avvenuto tramite Clerk e l'associazione è già
+        // stata risolta: si entra direttamente in dashboard.
+        const { association, user, role, localUserId } = webSession;
+        associago.setCurrentAssociation(association.id);
+        setCurrentAssociation(association);
+        setCurrentUser({
+          id: localUserId,
+          clerkId: user?.id,
+          displayName: user?.fullName || user?.primaryEmailAddress?.emailAddress || association.nome || association.name,
+          username: user?.primaryEmailAddress?.emailAddress ?? '',
+          role: role ?? user?.publicMetadata?.role ?? 'socio'
+        });
+        setAppState('DASHBOARD');
+        return;
+      }
+
       setAppState('LOGIN');
     } catch (err) {
       console.error("Init failed:", err);
@@ -112,7 +164,7 @@ function App() {
 
     setCurrentUser({
         id: association.id,
-        displayName: association.nome, // Updated from .name
+        displayName: association.nome || association.name,
         username: association.email,
         role: 'ADMIN'
     });
@@ -120,15 +172,24 @@ function App() {
     setAppState('DASHBOARD');
   };
 
-  const handleLogout = () => {
-    setAppState('LOADING');
-    associago.setCurrentAssociation(null);
-    associago.setAuthToken(null);
-    setTimeout(() => {
-        setCurrentAssociation(null);
-        setCurrentUser(null);
-        setAppState('LOGIN');
-    }, 500);
+  const handleLogout = async () => {
+    try {
+      if (webSession?.signOut) {
+        await webSession.signOut();
+        return;
+      }
+      await associago.logout();
+      associago.setPreferences({ autologin: null });
+      associago.setCurrentAssociation(null);
+      associago.setAuthToken(null);
+      setCurrentAssociation(null);
+      setCurrentUser(null);
+      setActiveId('dashboard');
+      closeModal();
+      setAppState('LOGIN');
+    } catch (error) {
+      setToast({ type: 'error', message: error.message || t('Unable to log out. Please try again.') });
+    }
   };
 
   const savePreferences = () => {
@@ -183,6 +244,10 @@ function App() {
     { id: "activities", label: t('nav.activities'), icon: "bi-calendar3", component: ActivityList },
     { id: "events", label: t('nav.events'), icon: "bi-calendar3", component: EventList },
     { id: "fiscal", label: t('nav.fiscal'), icon: "bi-credit-card", component: FiscalDashboard },
+    // Le fatture ricevute: il backend le gestiva da sempre — elenco, scadenze,
+    // importazione della fattura elettronica — e non c'era nessuna voce da cui
+    // arrivarci.
+    { id: "expense-documents", label: t('nav.expenseDocuments'), icon: "bi-receipt", component: ExpenseDocumentList },
     { id: "assemblies", label: t('nav.assemblies'), icon: "bi-file-text", component: AssemblyList },
     { id: "inventory", label: t('nav.inventory'), icon: "bi-box-seam", component: InventoryList },
     { id: "volunteers", label: t('nav.volunteers'), icon: "bi-person-check", component: VolunteerList },
@@ -199,19 +264,48 @@ function App() {
     { id: "settings", label: t('nav.settings'), icon: "bi-gear", component: SettingsDashboard },
   ], [t]);
 
-  const activePage = PAGES.find(p => p.id === activeId) || PAGES[0];
+  /**
+   * Le voci che questo ruolo può vedere.
+   *
+   * Nel desktop il ruolo è sempre ADMIN (accesso con master password su
+   * macchina locale) e resta tutto visibile. Sul web il ruolo arriva da Clerk
+   * e il menu si restringe: il presidente vede tutto, il referente volontari
+   * solo la sua parte, un socio niente — ha l'area personale.
+   *
+   * Nascondere non è proteggere: la vera barriera è il 403 del backend.
+   */
+  const visiblePages = useMemo(() => {
+    if (!webSession) return PAGES;
+    return pagesForRole(PAGES, currentUser?.role);
+  }, [PAGES, webSession, currentUser?.role]);
+
+  const activePage = visiblePages.find(p => p.id === activeId)
+      || visiblePages[0]
+      || PAGES.find(p => p.id === activeId)
+      || PAGES[0];
 
   const shell = useMemo(() => ({
     navigate: setActiveId,
+    pages: visiblePages,
+    refreshPage: () => setPageRevision(revision => revision + 1),
     openModal,
     closeModal,
     currentUser,
     currentAssociation,
     currentAssociationId: currentAssociation?.id, // Fix for SettingsDashboard
+    /*
+     * L'esercizio che si sta guardando.
+     *
+     * Sta nella shell e non in ogni schermata perché è una lente unica: le
+     * schermate lo leggono da qui e filtrano di conseguenza. La regola di cosa
+     * appartiene a un anno — e perché ciò che è ancora in corso non si archivia
+     * — sta in `esercizio.js`.
+     */
+    anno,
     theme,
     setTheme,
     savePreferences // Expose savePreferences to shell
-  }), [currentUser, currentAssociation, theme, i18n.language]);
+  }), [currentUser, currentAssociation, visiblePages, anno, theme, i18n.language]);
 
   const profileItems = [
     { id: "settings", label: t('nav.settings'), icon: "bi-gear", onClick: () => setActiveId("settings") },
@@ -221,7 +315,16 @@ function App() {
   ];
 
   if (appState === 'LOADING') return <SplashScreen message={t('app.loading')} />;
+  // Sul web la schermata di login interna non deve comparire mai: l'accesso è
+  // di Clerk e il suo endpoint lato backend è chiuso.
+  if (appState === 'LOGIN' && webSession) return <SplashScreen message={t('app.loading')} />;
   if (appState === 'LOGIN') return <LoginPage onLogin={handleLogin} />;
+
+  // Soci e volontari non entrano nel gestionale: la loro schermata è un'altra.
+  // Il backend risponderebbe comunque 403 su tutto il resto.
+  if (webSession && isPersonalOnly(currentUser?.role)) {
+    return <PersonalArea />;
+  }
 
   const PageComponent = activePage.component;
 
@@ -230,12 +333,30 @@ function App() {
       <div className="jl-appframe">
         <div className="jl-shell">
             <CommandPalette shell={shell} isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
-            <LeftNav items={PAGES} activeId={activeId} onSelect={setActiveId} />
+            <LeftNav
+                items={visiblePages}
+                activeId={activeId}
+                onSelect={setActiveId}
+                open={navOpen}
+                onClose={() => setNavOpen(false)}
+            />
             <main className="jl-main">
                 <TopHeader
                     title={activePage.label}
+                    navOpen={navOpen}
+                    onMenuToggle={() => setNavOpen((open) => !open)}
                     actions={
                         <>
+                            {/* L'anno sta nella testata perché è una lente su
+                                tutto: cambiarlo in contabilità e ritrovarsi un
+                                altro esercizio nelle assemblee sarebbe il modo
+                                più rapido di leggere i numeri sbagliati
+                                credendoli giusti. */}
+                            <SelettoreAnno
+                                anno={anno}
+                                onChange={cambiaAnno}
+                                associationId={currentAssociation?.id}
+                            />
                             <NotificationBell userId={currentUser?.id} />
                             <ProfileMenu
                                 initials={currentAssociation?.nome?.substring(0, 2)?.toUpperCase() || "AG"}
@@ -246,13 +367,19 @@ function App() {
                         </>
                     }
                 />
-                <section className="jl-content">
-                    <div className="jl-page p-4">
-                        <ErrorBoundary>
+                <section className="jl-content" ref={contentRef}>
+                    <div className="jl-page p-3 p-lg-4">
+                        {webSession && !currentUser?.id && !isPersonalOnly(webSession.role) && (
+                            <div className="alert alert-warning" role="status">
+                                Questo accesso non è collegato a un&apos;anagrafica. Chiedi al referente di verificare la tua email: invii e approvazioni richiedono il collegamento.
+                            </div>
+                        )}
+                        <ErrorBoundary key={`${activeId}-${pageRevision}`}>
                             <PageComponent shell={shell} associationId={currentAssociation?.id} />
                         </ErrorBoundary>
                     </div>
                 </section>
+                <ResponsiveTables rootRef={contentRef} />
             </main>
         </div>
       </div>
@@ -275,12 +402,56 @@ function App() {
       )}
 
       <style>{`
-        .jl-root { height: 100vh; width: 100vw; overflow: hidden; background-color: var(--bs-body-bg); color: var(--bs-body-color); }
+        /* height: 100dvh e non 100vh — su iOS e Android la barra degli indirizzi
+           si ritira scorrendo, e con vh l'altezza resta quella a barra estesa:
+           il fondo dell'applicazione finisce sotto il bordo dello schermo e la
+           pagina sobbalza a ogni scorrimento. dvh segue il viewport reale.
+           La riga con vh resta prima come ripiego per i browser che non lo
+           conoscono (nessuno di quelli in uso, ma costa una riga).
+
+           width: 100vw era un errore anche su desktop: vw conta la barra di
+           scorrimento, quindi la pagina risultava sempre più larga del suo
+           contenitore e compariva uno scorrimento orizzontale fantasma. */
+        .jl-root {
+          height: 100vh;
+          height: 100dvh;
+          width: 100%;
+          overflow: hidden;
+          background-color: var(--bs-body-bg);
+          color: var(--bs-body-color);
+        }
         .jl-appframe { height: 100%; display: flex; flex-direction: column; }
-        .jl-shell { display: flex; flex: 1; height: 100%; overflow: hidden; }
+        .jl-shell { display: flex; flex: 1; min-height: 0; overflow: hidden; }
         .jl-main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; }
-        .jl-content { flex: 1; overflow-y: auto; position: relative; }
+        .jl-content {
+          flex: 1;
+          overflow-y: auto;
+          position: relative;
+          /* Arrivato in fondo alla lista, il gesto non deve proseguire
+             trascinando la pagina che sta sotto (o l'aggiornamento a strappo
+             del browser). */
+          overscroll-behavior-y: contain;
+          -webkit-overflow-scrolling: touch;
+        }
         .jl-page { max-width: 1600px; margin: 0 auto; width: 100%; }
+
+        @media (max-width: 767.98px) {
+          /* p-4 sono 1.5rem per lato: su 390px di schermo è il 15% della
+             larghezza speso in margine. La classe resta nel markup, qui la si
+             riduce — !important perché le utility di Bootstrap la difendono. */
+          .jl-page.p-4 {
+            padding: 1rem !important;
+            padding-left: max(1rem, env(safe-area-inset-left)) !important;
+            padding-right: max(1rem, env(safe-area-inset-right)) !important;
+            padding-bottom: max(1.5rem, env(safe-area-inset-bottom)) !important;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .jl-page.p-4 {
+            padding: 0.75rem !important;
+          }
+        }
       `}</style>
     </div>
   );

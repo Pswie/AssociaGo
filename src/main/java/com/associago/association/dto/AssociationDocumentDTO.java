@@ -7,7 +7,6 @@ public record AssociationDocumentDTO(
         Long associationId,
         String documentType,
         String title,
-        String filePath,
         Long fileSize,
         String mimeType,
         Integer version,

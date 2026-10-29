@@ -1,6 +1,7 @@
 package com.associago.event;
 
 import com.associago.event.repository.EventParticipantRepository;
+import com.associago.esercizio.Esercizio;
 import com.associago.event.repository.EventRepository;
 import com.associago.notification.NotificationService;
 import com.associago.stats.dto.EventStatsDTO;
@@ -21,7 +22,7 @@ public class EventService {
     private final EventParticipantRepository participantRepository;
     private final NotificationService notificationService;
 
-    public EventService(EventRepository eventRepository, 
+    public EventService(EventRepository eventRepository,
                         EventParticipantRepository participantRepository,
                         NotificationService notificationService) {
         this.eventRepository = eventRepository;
@@ -33,6 +34,18 @@ public class EventService {
 
     public Iterable<Event> getAllEvents() {
         return eventRepository.findAll();
+    }
+
+    /**
+     * Gli eventi di un esercizio, o tutti se l'anno non è indicato.
+     *
+     * <p>Un evento ha un periodo: quello a cavallo di capodanno appartiene a due
+     * esercizi e va mostrato in entrambi. La regola sta in {@code Esercizio}.
+     */
+    public Iterable<Event> getEventiDellEsercizio(Integer anno) {
+        return Esercizio.valido(anno)
+                ? eventRepository.findNellEsercizio(Esercizio.inizioIstante(anno), Esercizio.fineIstante(anno))
+                : eventRepository.findAll();
     }
 
     public Optional<Event> getEventById(Long id) {
@@ -51,7 +64,7 @@ public class EventService {
     public Event updateEvent(Long id, Event eventDetails) {
         return eventRepository.findById(id).map(event -> {
             boolean wasCancelled = "CANCELLED".equals(event.getStatus());
-            
+
             event.setName(eventDetails.getName());
             event.setDescription(eventDetails.getDescription());
             event.setType(eventDetails.getType());
@@ -69,7 +82,7 @@ public class EventService {
             event.setCancellationDate(eventDetails.getCancellationDate());
             event.setCancellationReason(eventDetails.getCancellationReason());
             event.setUpdatedAt(LocalDateTime.now());
-            
+
             Event updatedEvent = eventRepository.save(event);
 
             // Notify participants if event is cancelled
@@ -95,7 +108,7 @@ public class EventService {
     @Transactional
     public EventParticipant addParticipant(EventParticipant participant) {
         EventParticipant saved = participantRepository.save(participant);
-        
+
         // Notify user of registration
         if (participant.getUser() != null) {
             Event event = eventRepository.findById(participant.getEvent().getId()).orElse(null);
@@ -110,7 +123,7 @@ public class EventService {
                 );
             }
         }
-        
+
         return saved;
     }
 
@@ -124,13 +137,13 @@ public class EventService {
     public EventSummaryDTO getEventSummary(Long id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
-        
+
         List<EventParticipant> participants = participantRepository.findByEventId(id);
-        
+
         EventSummaryDTO summary = new EventSummaryDTO();
         summary.setEvent(event);
         summary.setRegisteredParticipants(participants.size());
-        
+
         summary.setCheckedInParticipants((int) participants.stream()
                 .filter(p -> p.getCheckInTime() != null).count());
 
@@ -152,9 +165,9 @@ public class EventService {
         // Placeholder
         return new EventStatsDTO();
     }
-    
+
     // --- Notifications ---
-    
+
     private void notifyCancellation(Event event) {
         List<EventParticipant> participants = participantRepository.findByEventId(event.getId());
         for (EventParticipant p : participants) {

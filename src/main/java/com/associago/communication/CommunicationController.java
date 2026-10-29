@@ -1,6 +1,8 @@
 package com.associago.communication;
 
+import com.associago.security.ActorResolver;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,9 +12,11 @@ import java.util.List;
 public class CommunicationController {
 
     private final CommunicationService communicationService;
+    private final ActorResolver actorResolver;
 
-    public CommunicationController(CommunicationService communicationService) {
+    public CommunicationController(CommunicationService communicationService, ActorResolver actorResolver) {
         this.communicationService = communicationService;
+        this.actorResolver = actorResolver;
     }
 
     // --- Templates ---
@@ -78,7 +82,8 @@ public class CommunicationController {
     }
 
     @PostMapping("/{id}/send")
-    public Communication send(@PathVariable Long id, @RequestParam(required = false) Long sentBy) {
-        return communicationService.send(id, sentBy);
+    public Communication send(@PathVariable Long id, @RequestParam(required = false) Long sentBy,
+                              Authentication authentication) {
+        return communicationService.send(id, actorResolver.resolve(authentication, sentBy));
     }
 }

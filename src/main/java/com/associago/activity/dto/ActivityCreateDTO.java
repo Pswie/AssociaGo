@@ -21,7 +21,5 @@ public record ActivityCreateDTO(
         String subscriptionType,
         String scheduleDetails,
         boolean requireRegistration,
-        boolean generateInvoice,
-        String imagePath,
-        String documentPath
+        boolean generateInvoice
 ) {}

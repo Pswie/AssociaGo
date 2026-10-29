@@ -7,6 +7,8 @@ import InventoryDetail from './InventoryDetail';
 import RowActions from './common/RowActions';
 
 const InventoryList = ({ associationId, shell }) => {
+    // L'esercizio arriva dalla testata; il filtro lo applica il server.
+    const anno = shell?.anno ?? new Date().getFullYear();
     const { t } = useTranslation();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -17,12 +19,12 @@ const InventoryList = ({ associationId, shell }) => {
         if (associationId) {
             fetchInventory();
         }
-    }, [associationId]);
+    }, [associationId, anno]);
 
     const fetchInventory = async () => {
         setLoading(true);
         try {
-            const data = await associago.inventory.getAll();
+            const data = await associago.inventory.getAll(anno);
             setItems(data);
         } catch (error) {
             console.error("Error fetching inventory:", error);
@@ -76,7 +78,7 @@ const InventoryList = ({ associationId, shell }) => {
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                        <div className="d-flex gap-2" style={{ width: '300px' }}>
+                        <div className="d-flex gap-2 jl-search" style={{ width: '300px' }}>
                             <InputGroup>
                                 <InputGroup.Text className="bg-light border-end-0">
                                     <Search size={16} className="text-muted" />

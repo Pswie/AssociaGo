@@ -14,6 +14,18 @@ const missing = requiredFiles.filter((relativePath) => {
   return !fs.existsSync(path.join(desktopDir, relativePath))
 })
 
+// Local require() calls must refer to emitted files, not source-only helpers.
+const mainBundle = path.join(desktopDir, 'out/main/index.js')
+if (fs.existsSync(mainBundle)) {
+  const source = fs.readFileSync(mainBundle, 'utf8')
+  for (const match of source.matchAll(/require\(["'](\.[^"']+)["']\)/g)) {
+    const modulePath = path.resolve(path.dirname(mainBundle), match[1])
+    if (!['', '.js', '.cjs', '.json'].some(extension => fs.existsSync(modulePath + extension))) {
+      missing.push(`out/main dependency ${match[1]}`)
+    }
+  }
+}
+
 const iconPairs = [
   ['build/icon.png', 'resources/icon.png'],
   ['build/icon.ico', 'resources/icon.ico'],

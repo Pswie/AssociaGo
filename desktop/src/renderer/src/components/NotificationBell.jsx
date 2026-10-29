@@ -58,7 +58,11 @@ export default function NotificationBell({ userId }) {
     };
 
     const popover = (
-        <Popover id="notification-popover" style={{ width: '320px', maxWidth: '100%' }}>
+        // maxWidth: '100%' non bastava — il riferimento è il contenitore del
+        // popover, non lo schermo, e Popper lo posiziona comunque a 320px
+        // sforando a destra su un telefono da 320. Con calc il limite è il
+        // viewport meno i margini.
+        <Popover id="notification-popover" style={{ width: 'min(320px, calc(100vw - 1.5rem))' }}>
             <Popover.Header as="div" className="d-flex justify-content-between align-items-center bg-white border-bottom p-3">
                 <strong className="mb-0">{t('notifications.title')}</strong>
                 {unreadCount > 0 && (
