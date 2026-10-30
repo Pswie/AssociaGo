@@ -225,6 +225,7 @@ const activities = {
 
     // Sub-resources: Participants
     getParticipants: (id) => apiRequest(`/v1/activities/${id}/participants`),
+    getParticipantCandidates: (id) => apiRequest(`/v1/activities/${id}/participant-candidates`),
     addParticipant: (id, data) => apiRequest(`/v1/activities/${id}/participants`, { method: 'POST', body: data }),
     removeParticipant: (partId) => apiRequest(`/v1/activities/participants/${partId}`, { method: 'DELETE' }),
 };
@@ -894,6 +895,18 @@ export const associago = {
     },
 
     // Domains
+    attendance: {
+        getParticipants: (activityId) => apiRequest(`/v1/attendance/activity/${activityId}/participants`),
+        getSessions: (activityId) => apiRequest(`/v1/attendance/activity/${activityId}`),
+        getSession: (id) => apiRequest(`/v1/attendance/session/${id}`),
+        createSession: (data) => apiRequest('/v1/attendance/session', { method: 'POST', body: data }),
+        updateSession: (id, data) => apiRequest(`/v1/attendance/session/${id}`, { method: 'PUT', body: data }),
+        deleteSession: (id) => apiRequest(`/v1/attendance/session/${id}`, { method: 'DELETE' }),
+        getRecords: (sessionId) => apiRequest(`/v1/attendance/session/${sessionId}/records`),
+        createRecord: (data) => apiRequest('/v1/attendance/record', { method: 'POST', body: data }),
+        updateRecord: (id, data) => apiRequest(`/v1/attendance/record/${id}`, { method: 'PUT', body: data }),
+        deleteRecord: (id) => apiRequest(`/v1/attendance/record/${id}`, { method: 'DELETE' }),
+    },
     activities,
     events,
     assemblies,

@@ -6,7 +6,7 @@
 
 const enumMap = (map, t) => (value) => {
   const key = map[value] || map[value?.toLowerCase?.()]
-  return key ? t(key) : value || ''
+  return key ? t(key, { defaultValue: value || '' }) : value || ''
 }
 
 export const translateLocationType = (value, t) =>

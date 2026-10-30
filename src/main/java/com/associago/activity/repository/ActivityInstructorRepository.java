@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ActivityInstructorRepository extends JpaRepository<ActivityInstructor, Long> {
     List<ActivityInstructor> findByActivityId(Long activityId);
+    long deleteByActivityId(Long activityId);
 }

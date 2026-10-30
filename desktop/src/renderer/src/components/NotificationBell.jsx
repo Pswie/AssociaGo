@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
-import { OverlayTrigger, Popover, Badge, ListGroup, Button } from 'react-bootstrap';
+import { Alert, OverlayTrigger, Popover, ListGroup, Button } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 
@@ -8,6 +8,9 @@ export default function NotificationBell({ userId }) {
     const { t } = useTranslation();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (userId) {
@@ -19,37 +22,54 @@ export default function NotificationBell({ userId }) {
     }, [userId]);
 
     const fetchNotifications = async () => {
+        if (!userId) return;
+        setLoading(true);
         try {
             const data = await associago.notifications.getUserNotifications(userId);
-            setNotifications(data);
-            setUnreadCount(data.filter(n => !n.read).length);
+            setNotifications(data || []);
+            setUnreadCount((data || []).filter(n => !n.read).length);
+            setError('');
         } catch (error) {
             console.error("Failed to fetch notifications", error);
+            setError(error.message || t('Notifiche non disponibili.'));
+        } finally {
+            setLoading(false);
         }
     };
 
     const markAllRead = async () => {
+        if (saving) return;
+        setSaving(true);
         try {
             await associago.notifications.markAllAsRead(userId);
-            fetchNotifications();
+            await fetchNotifications();
         } catch (error) {
             console.error("Failed to mark all as read", error);
+            setError(error.message);
+        } finally {
+            setSaving(false);
         }
     };
 
     const markAsRead = async (id) => {
+        if (saving) return;
+        setSaving(true);
         try {
             await associago.notifications.markAsRead(id);
-            fetchNotifications();
+            await fetchNotifications();
         } catch (error) {
             console.error("Failed to mark as read", error);
+            setError(error.message);
+        } finally {
+            setSaving(false);
         }
     };
 
     const formatTime = (dateString) => {
         const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return '';
         const now = new Date();
-        const diff = Math.floor((now - date) / 1000); // seconds
+        const diff = Math.max(0, Math.floor((now - date) / 1000));
 
         if (diff < 60) return t('notifications.timeAgo.seconds', { count: diff });
         if (diff < 3600) return t('notifications.timeAgo.minutes', { count: Math.floor(diff / 60) });
@@ -66,17 +86,22 @@ export default function NotificationBell({ userId }) {
             <Popover.Header as="div" className="d-flex justify-content-between align-items-center bg-white border-bottom p-3">
                 <strong className="mb-0">{t('notifications.title')}</strong>
                 {unreadCount > 0 && (
-                    <Button variant="link" size="sm" className="p-0 text-decoration-none" onClick={markAllRead}>
+                    <Button variant="link" size="sm" className="p-0 text-decoration-none" disabled={saving} onClick={markAllRead}>
                         {t('notifications.markAllRead')}
                     </Button>
                 )}
             </Popover.Header>
             <Popover.Body className="p-0" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {error && <Alert variant="danger" className="m-2 small" role="alert">{error}<Button variant="link" size="sm" onClick={fetchNotifications}>{t('Retry')}</Button></Alert>}
+                {loading && !notifications.length && <p role="status" className="p-3 mb-0">{t('Loading...')}</p>}
                 {notifications.length > 0 ? (
                     <ListGroup variant="flush">
                         {notifications.map(n => (
                             <ListGroup.Item
                                 key={n.id}
+                                action
+                                as="button"
+                                disabled={saving}
                                 className={`p-3 border-bottom ${!n.read ? 'bg-light' : ''}`}
                                 onClick={() => !n.read && markAsRead(n.id)}
                                 style={{ cursor: 'pointer' }}
@@ -89,18 +114,18 @@ export default function NotificationBell({ userId }) {
                             </ListGroup.Item>
                         ))}
                     </ListGroup>
-                ) : (
+                ) : !loading && !error ? (
                     <div className="p-4 text-center text-muted small">
                         {t('notifications.empty')}
                     </div>
-                )}
+                ) : null}
             </Popover.Body>
         </Popover>
     );
 
     return (
         <OverlayTrigger trigger="click" placement="bottom-end" overlay={popover} rootClose>
-            <button className="btn btn-icon position-relative p-2 rounded-circle hover-bg-light transition-all">
+            <button type="button" className="btn btn-icon position-relative p-2 rounded-circle hover-bg-light transition-all" disabled={!userId} aria-label={unreadCount ? `${t('notifications.title')}: ${unreadCount} ${t('non lette')}` : t('notifications.title')}>
                 <Bell size={20} className="text-secondary" />
                 {unreadCount > 0 && (
                     <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">

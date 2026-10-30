@@ -15,6 +15,9 @@ public class AttendanceRecord {
     
     @Column(name = "member_id")
     private Long memberId;
+
+    @Column(name = "membership_id")
+    private Long membershipId;
     
     private String status; // PRESENT, ABSENT, LATE, EXCUSED
     
@@ -29,6 +32,8 @@ public class AttendanceRecord {
     public void setSessionId(Long sessionId) { this.sessionId = sessionId; }
     public Long getMemberId() { return memberId; }
     public void setMemberId(Long memberId) { this.memberId = memberId; }
+    public Long getMembershipId() { return membershipId; }
+    public void setMembershipId(Long membershipId) { this.membershipId = membershipId; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public LocalTime getCheckInTime() { return checkInTime; }

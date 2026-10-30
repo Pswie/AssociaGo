@@ -84,6 +84,9 @@ public class CloudSecurityConfig {
         "FACILITATORE_DIGITALE"
     };
 
+    private static final String[] ACTIVITY_READ_ROLES = java.util.stream.Stream.concat(
+            Arrays.stream(ACTIVITY_ROLES), Arrays.stream(ADMINISTRATIVE_ROLES)).distinct().toArray(String[]::new);
+
     private static final String[] VOLUNTEER_MANAGEMENT_ROLES = {
         "PRESIDENTE",
         "COORDINATORE_SERVIZI",
@@ -183,6 +186,11 @@ public class CloudSecurityConfig {
                         "/api/v1/reports/members/**")
                     .hasAnyRole(MEMBER_MANAGEMENT_ROLES)
 
+                .requestMatchers("/api/v1/activities/*/costs", "/api/v1/activities/costs/**",
+                        "/api/v1/activities/*/financial-summary")
+                    .hasAnyRole(ADMINISTRATIVE_ROLES)
+                .requestMatchers(HttpMethod.GET, "/api/v1/activities/**")
+                    .hasAnyRole(ACTIVITY_READ_ROLES)
                 .requestMatchers("/api/v1/activities/**", "/api/v1/reports/activities/**")
                     .hasAnyRole(ACTIVITY_ROLES)
                 .requestMatchers("/api/attendance/**", "/api/v1/attendance/**")

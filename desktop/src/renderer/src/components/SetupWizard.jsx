@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Form, Spinner, Alert } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
+import { ORG_NAME, MODULE_NAME } from '../branding';
 import { Database, CheckCircle, Server, ArrowRight } from 'lucide-react';
 
 const SetupWizard = ({ onConfigured }) => {
@@ -72,7 +73,8 @@ const SetupWizard = ({ onConfigured }) => {
                         <div className="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-3" style={{ width: '64px', height: '64px' }}>
                             <Database size={32} />
                         </div>
-                        <h3 className="fw-bold">{t('Welcome to AssociaGo')}</h3>
+                        <h3 className="fw-bold">{ORG_NAME}</h3>
+                        <p className="mb-2">{MODULE_NAME}</p>
                         <p className="text-muted">{t('Let\'s set up your database connection')}</p>
                     </div>
 

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Form, InputGroup, Badge, Spinner, Nav } from 'react-bootstrap';
+import { Alert, Card, Button, Table, Form, InputGroup, Badge, Spinner, Nav } from 'react-bootstrap';
 import { Search, Plus, Edit, Trash2, Calendar, Users, Eye } from 'lucide-react';
 import RowActions from './common/RowActions';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import ActivityDetail from './ActivityDetail';
 import CouponList from './CouponList';
+import { mayViewProjectFinance } from '../project-context';
 
 const ActivityList = ({ associationId, shell }) => {
     const { t } = useTranslation();
+    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api));
     /*
      * Un'attività dura nel tempo: quella cominciata a ottobre e finita a marzo
      * appartiene a due esercizi, e un corso senza data di fine è ancora in
@@ -17,6 +19,7 @@ const ActivityList = ({ associationId, shell }) => {
     const anno = shell?.anno ?? new Date().getFullYear();
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedActivityId, setSelectedActivityId] = useState(null);
     const [activeTab, setActiveTab] = useState('activities');
@@ -29,10 +32,12 @@ const ActivityList = ({ associationId, shell }) => {
 
     const fetchActivities = async () => {
         setLoading(true);
+        setError('');
         try {
             const data = await associago.activities.getAll(associationId, anno);
             setActivities(data);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error fetching activities:", error);
         } finally {
             setLoading(false);
@@ -99,10 +104,11 @@ const ActivityList = ({ associationId, shell }) => {
     // --- RENDER LIST VIEW (ACTIVITIES) ---
     return (
         <div className="fade-in">
+            {error && <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={fetchActivities}>{t('Retry')}</Button></Alert>}
             {renderHeader()}
 
             <div className="d-flex justify-content-end mb-3">
-                <Button variant="primary" className="d-flex align-items-center" onClick={() => shell.openModal('activity-form', { associationId, onSuccess: fetchActivities })}>
+                <Button variant="primary" className="d-flex align-items-center" onClick={() => shell.openModal('activity-form', { associationId, canFinance, onSuccess: fetchActivities })}>
                     <Plus size={18} className="me-2" />
                     {t('Add Activity')}
                 </Button>
@@ -186,7 +192,7 @@ const ActivityList = ({ associationId, shell }) => {
                                                         key: 'edit',
                                                         icon: <Edit size={16} />,
                                                         label: t('Edit'),
-                                                        onClick: () => shell.openModal('activity-form', { associationId, activityId: activity.id, onSuccess: fetchActivities }),
+                                                        onClick: () => shell.openModal('activity-form', { associationId, activityId: activity.id, canFinance, onSuccess: fetchActivities }),
                                                     },
                                                     {
                                                         key: 'delete',

@@ -11,6 +11,10 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
     // Use prop id if available (modal mode), otherwise route id (page mode)
     const id = itemId || routeId;
     const isEditMode = !!id;
+    const [loading, setLoading] = useState(isEditMode);
+    const [loaded, setLoaded] = useState(!isEditMode);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -31,9 +35,11 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
     });
 
     useEffect(() => {
+        let cancelled = false;
         if (isEditMode) {
             associago.inventory.getById(id)
                 .then(data => {
+                    if (cancelled) return;
                     setFormData({
                         name: data.name || '',
                         description: data.description || '',
@@ -51,9 +57,12 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                         assignedTo: data.assignedTo ?? '',
                         notes: data.notes || ''
                     });
+                    setLoaded(true);
                 })
-                .catch(err => console.error(err));
+                .catch(err => { if (!cancelled) setError(err.message); })
+                .finally(() => { if (!cancelled) setLoading(false); });
         }
+        return () => { cancelled = true; };
     }, [id, isEditMode]);
 
     const handleChange = (e) => {
@@ -63,7 +72,9 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        if (saving || !loaded) return;
+        setSaving(true);
+        setError('');
         try {
             const payload = {
                 ...formData,
@@ -84,16 +95,21 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
             else navigate('/inventory');
         } catch (err) {
             console.error(err);
-            alert(t('Error saving item'));
+            setError(err.message || t('Error saving item'));
+        } finally {
+            setSaving(false);
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-2">
+            {error && <div className="alert alert-danger" role="alert">{error}</div>}
+            {loading && <p role="status">{t('Loading...')}</p>}
+            <fieldset disabled={loading || saving || !loaded}>
             <div className="row g-3 mb-3">
                 <div className="col-md-8">
-                    <label className="form-label">{t('Item Name')}</label>
-                    <input
+                    <label htmlFor="inventory-name" className="form-label">{t('Item Name')}</label>
+                    <input id="inventory-name"
                         type="text"
                         name="name"
                         value={formData.name}
@@ -103,8 +119,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Inventory Code')}</label>
-                    <input
+                    <label htmlFor="inventory-inventoryCode" className="form-label">{t('Inventory Code')}</label>
+                    <input id="inventory-inventoryCode"
                         type="text"
                         name="inventoryCode"
                         value={formData.inventoryCode}
@@ -116,8 +132,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Description')}</label>
-                <textarea
+                <label htmlFor="inventory-description" className="form-label">{t('Description')}</label>
+                <textarea id="inventory-description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
@@ -128,8 +144,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-4">
-                    <label className="form-label">{t('Category')}</label>
-                    <input
+                    <label htmlFor="inventory-category" className="form-label">{t('Category')}</label>
+                    <input id="inventory-category"
                         type="text"
                         name="category"
                         value={formData.category}
@@ -138,8 +154,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Quantity')}</label>
-                    <input
+                    <label htmlFor="inventory-quantity" className="form-label">{t('Quantity')}</label>
+                    <input id="inventory-quantity"
                         type="number"
                         name="quantity"
                         value={formData.quantity}
@@ -148,8 +164,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Location')}</label>
-                    <input
+                    <label htmlFor="inventory-location" className="form-label">{t('Location')}</label>
+                    <input id="inventory-location"
                         type="text"
                         name="location"
                         value={formData.location}
@@ -161,8 +177,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-6">
-                    <label className="form-label">{t('Acquisition Method')}</label>
-                    <select
+                    <label htmlFor="inventory-acquisitionMethod" className="form-label">{t('Acquisition Method')}</label>
+                    <select id="inventory-acquisitionMethod"
                         name="acquisitionMethod"
                         value={formData.acquisitionMethod}
                         onChange={handleChange}
@@ -175,8 +191,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     </select>
                 </div>
                 <div className="col-md-6">
-                    <label className="form-label">{t('Assigned To (User ID)')}</label>
-                    <input
+                    <label htmlFor="inventory-assignedTo" className="form-label">{t('Assigned To (User ID)')}</label>
+                    <input id="inventory-assignedTo"
                         type="number"
                         name="assignedTo"
                         value={formData.assignedTo}
@@ -190,8 +206,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
             {formData.acquisitionMethod === 'PURCHASE' && (
                 <div className="row g-3 mb-3 bg-light p-3 rounded mx-0">
                     <div className="col-md-6">
-                        <label className="form-label">{t('Purchase Price')} (&euro;)</label>
-                        <input
+                        <label htmlFor="inventory-purchasePrice" className="form-label">{t('Purchase Price')} (&euro;)</label>
+                        <input id="inventory-purchasePrice"
                             type="number"
                             step="0.01"
                             name="purchasePrice"
@@ -206,8 +222,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                         )}
                     </div>
                     <div className="col-md-6">
-                        <label className="form-label">{t('Purchase Date')}</label>
-                        <input
+                        <label htmlFor="inventory-purchaseDate" className="form-label">{t('Purchase Date')}</label>
+                        <input id="inventory-purchaseDate"
                             type="date"
                             name="purchaseDate"
                             value={formData.purchaseDate}
@@ -220,8 +236,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-4">
-                    <label className="form-label">{t('Current Value')} (&euro;)</label>
-                    <input
+                    <label htmlFor="inventory-currentValue" className="form-label">{t('Current Value')} (&euro;)</label>
+                    <input id="inventory-currentValue"
                         type="number"
                         step="0.01"
                         name="currentValue"
@@ -232,8 +248,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Depreciation Years')}</label>
-                    <input
+                    <label htmlFor="inventory-depreciationYears" className="form-label">{t('Depreciation Years')}</label>
+                    <input id="inventory-depreciationYears"
                         type="number"
                         name="depreciationYears"
                         value={formData.depreciationYears}
@@ -243,8 +259,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Condition')}</label>
-                    <select
+                    <label htmlFor="inventory-condition" className="form-label">{t('Condition')}</label>
+                    <select id="inventory-condition"
                         name="condition"
                         value={formData.condition}
                         onChange={handleChange}
@@ -260,8 +276,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Status')}</label>
-                <select
+                <label htmlFor="inventory-status" className="form-label">{t('Status')}</label>
+                <select id="inventory-status"
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
@@ -276,8 +292,8 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Notes')}</label>
-                <textarea
+                <label htmlFor="inventory-notes" className="form-label">{t('Notes')}</label>
+                <textarea id="inventory-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
@@ -286,6 +302,7 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                 />
             </div>
 
+            </fieldset>
             <div className="d-flex justify-content-end gap-2 mt-4">
                 <button
                     type="button"
@@ -296,9 +313,10 @@ const InventoryForm = ({ associationId, itemId, onSuccess, onCancel }) => {
                 </button>
                 <button
                     type="submit"
+                    disabled={loading || saving || !loaded}
                     className="btn btn-primary"
                 >
-                    {isEditMode ? t('Update') : t('Create')}
+                    {saving ? t('Saving...') : isEditMode ? t('Update') : t('Create')}
                 </button>
             </div>
         </form>

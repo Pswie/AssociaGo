@@ -144,7 +144,7 @@ class CloudPostgresSchemaIT {
         assertThat(context.getBeansOfType(CloudSecurityConfig.class)).hasSize(1);
         assertThat(environment.getProperty("spring.datasource.driver-class-name")).isEqualTo("org.postgresql.Driver");
         assertThat(environment.getProperty("spring.jpa.properties.hibernate.default_schema")).isEqualTo("associago");
-        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("2");
+        assertThat(flyway.info().current().getVersion().getVersion()).isEqualTo("3");
         assertThat(flyway.info().pending()).isEmpty();
         try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
             try (var rows = statement.executeQuery("SELECT COUNT(*) FROM information_schema.tables "
@@ -251,6 +251,62 @@ class CloudPostgresSchemaIT {
             assertThat(rows.getBoolean(1)).isFalse();
             assertThat(rows.getBoolean(2)).isTrue();
             assertThat(rows.getBoolean(3)).isTrue();
+        }
+    }
+
+    @Test
+    @Transactional
+    void attendanceMembershipReferencesRoundTripAndLegacyDuplicatesRemainValid() {
+        AttendanceMappingProbe.verify(entityManager);
+    }
+
+    @Test
+    @org.junit.jupiter.api.Timeout(30)
+    void simultaneousAttendanceWritesLockTheSessionAndCreateExactlyOneMembershipRecord() throws Exception {
+        var transactions = new org.springframework.transaction.support.TransactionTemplate(
+                context.getBean(org.springframework.transaction.PlatformTransactionManager.class));
+        String subject = "user_attendance_" + UUID.randomUUID();
+        long[] ids = transactions.execute(status -> {
+            var association = new Association(); association.setName("Concurrent attendance fixture"); association.setSlug("concurrent-" + UUID.randomUUID()); association.setEmail("attendance-concurrent@example.invalid"); entityManager.persist(association);
+            var user = new User(); user.setFirstName("Operator"); user.setLastName("Fixture"); user.setClerkUserId(subject); entityManager.persist(user);
+            var membership = new com.associago.membership.UserAssociation(); membership.setUser(user); membership.setAssociation(association); entityManager.persist(membership);
+            var activity = new com.associago.activity.Activity(); activity.setAssociationId(association.getId()); activity.setName("Concurrent fixture"); entityManager.persist(activity);
+            var session = new com.associago.attendance.AttendanceSession(); session.setActivityId(activity.getId()); session.setDate(LocalDate.now()); entityManager.persist(session);
+            return new long[]{association.getId(), user.getId(), membership.getId(), activity.getId(), session.getId()};
+        });
+        var actor = new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                org.springframework.security.oauth2.jwt.Jwt.withTokenValue("fixture").header("alg", "none").subject(subject).build(),
+                java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_PRESIDENTE")));
+        var attendance = context.getBean(com.associago.attendance.AttendanceService.class);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        var workers = java.util.concurrent.Executors.newFixedThreadPool(2);
+        java.util.concurrent.Callable<String> write = () -> {
+            start.await();
+            try {
+                attendance.createRecord(new com.associago.attendance.dto.AttendanceRecordUpsertDTO(ids[4], null, "PRESENT", null, null, ids[2]), actor, ids[0]);
+                return "saved";
+            } catch (com.associago.suite.SuiteException conflict) {
+                if (conflict.getStatus() != 409) throw conflict;
+                return "conflict";
+            }
+        };
+        try {
+            var first = workers.submit(write); var second = workers.submit(write); start.countDown();
+            assertThat(java.util.List.of(first.get(15, java.util.concurrent.TimeUnit.SECONDS), second.get(15, java.util.concurrent.TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder("saved", "conflict");
+            Long count = transactions.execute(status -> entityManager.createQuery(
+                    "select count(record) from AttendanceRecord record where record.sessionId = :id", Long.class).setParameter("id", ids[4]).getSingleResult());
+            assertThat(count).isEqualTo(1L);
+        } finally {
+            workers.shutdownNow();
+            transactions.executeWithoutResult(status -> {
+                entityManager.createQuery("delete from AttendanceRecord record where record.sessionId=:id").setParameter("id", ids[4]).executeUpdate();
+                entityManager.createQuery("delete from AttendanceSession session where session.id=:id").setParameter("id", ids[4]).executeUpdate();
+                entityManager.createQuery("delete from Activity activity where activity.id=:id").setParameter("id", ids[3]).executeUpdate();
+                entityManager.createQuery("delete from UserAssociation membership where membership.id=:id").setParameter("id", ids[2]).executeUpdate();
+                entityManager.createQuery("delete from User user where user.id=:id").setParameter("id", ids[1]).executeUpdate();
+                entityManager.createQuery("delete from Association association where association.id=:id").setParameter("id", ids[0]).executeUpdate();
+            });
         }
     }
 

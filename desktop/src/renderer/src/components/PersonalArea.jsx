@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Alert, Badge, Card, Spinner, Table } from 'react-bootstrap'
 import { associago } from '../api'
-import { ORG_NAME } from '../branding'
+import { ORG_NAME, ORG_LOGO } from '../branding'
 import ResponsiveTables from './ResponsiveTables'
 
 /**
@@ -81,6 +81,7 @@ export default function PersonalArea() {
       <ResponsiveTables rootRef={rootRef} />
 
       <header className="mb-4">
+        <img src={ORG_LOGO} alt={ORG_NAME} width="80" height="80" className="mb-3" style={{ objectFit: 'contain', background: '#fff', padding: 6, borderRadius: 12 }} />
         <h1 className="h3">La tua posizione</h1>
         <p className="text-muted">{ORG_NAME}</p>
       </header>

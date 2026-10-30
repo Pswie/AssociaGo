@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Modal as BsModal } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Finestra modale dell'applicazione.
@@ -16,6 +17,8 @@ import { Modal as BsModal } from 'react-bootstrap';
  * pulsante di chiusura se ne va in alto fuori portata.
  */
 const Modal = ({ isOpen, onClose, title, children, size = "lg" }) => {
+  const titleId = useId();
+  const { t } = useTranslation();
   return (
     <BsModal
       show={isOpen}
@@ -24,9 +27,10 @@ const Modal = ({ isOpen, onClose, title, children, size = "lg" }) => {
       centered
       scrollable
       fullscreen="md-down"
+      aria-labelledby={titleId}
     >
-      <BsModal.Header closeButton>
-        <BsModal.Title>{title}</BsModal.Title>
+      <BsModal.Header closeButton closeLabel={t('Close')}>
+        <BsModal.Title id={titleId}>{title}</BsModal.Title>
       </BsModal.Header>
       <BsModal.Body>
         {children}

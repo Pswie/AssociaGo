@@ -1,4 +1,4 @@
-import LoadingIcon from "../assets/5.svg";
+import { ORG_LOGO, ORG_NAME, MODULE_NAME } from '../branding';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -23,16 +23,20 @@ export default function SplashScreen({ message }) {
                     lo fa scendere fino a 180px sui più stretti senza mai
                     superare il 60% dell'altezza disponibile. */}
                 <img
-                    src={LoadingIcon}
-                    alt="AssociaGo Loading"
+                    src={ORG_LOGO}
+                    alt={ORG_NAME}
                     className="logout-logo mb-4"
                     style={{
-                        width: "min(clamp(180px, 60vw, 500px), 60dvh)",
+                        width: "min(220px, 50vw, 40dvh)",
                         height: "auto",
-                        aspectRatio: "1 / 1"
+                        objectFit: 'contain',
+                        padding: 12,
+                        background: '#fff',
+                        borderRadius: 20
                     }}
                 />
-                <h4 className="fw-bold mb-3">AssociaGo</h4>
+                <h4 className="fw-bold mb-1">{ORG_NAME}</h4>
+                <p className="text-muted mb-3">{MODULE_NAME}</p>
                 <div className="d-flex align-items-center justify-content-center gap-2 text-muted">
                     <div className="spinner-border spinner-border-sm" role="status"></div>
                     <span>{displayMessage}</span>
@@ -48,7 +52,7 @@ export default function SplashScreen({ message }) {
                        in entrambe le direzioni. */
                     inset: 0;
                     padding: 1.5rem;
-                    background: #f5f7fa; /* Colore neutro */
+                    background: var(--body-bg, #f5f7fa);
                     display: flex;
                     align-items: center;
                     justify-content: center;

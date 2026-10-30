@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Form, InputGroup, Badge, Spinner, Nav } from 'react-bootstrap';
+import { Alert, Card, Button, Table, Form, InputGroup, Badge, Spinner, Nav } from 'react-bootstrap';
 import { Search, Plus, Edit, Trash2, Calendar, MapPin, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
@@ -13,6 +13,7 @@ const EventList = ({ associationId, shell }) => {
     const { t } = useTranslation();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedEventId, setSelectedEventId] = useState(null);
     const [activeTab, setActiveTab] = useState('events');
@@ -25,10 +26,12 @@ const EventList = ({ associationId, shell }) => {
 
     const fetchEvents = async () => {
         setLoading(true);
+        setError('');
         try {
             const data = await associago.events.getAll(anno);
             setEvents(data);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error fetching events:", error);
         } finally {
             setLoading(false);
@@ -95,6 +98,7 @@ const EventList = ({ associationId, shell }) => {
     // --- RENDER LIST VIEW ---
     return (
         <div className="fade-in">
+            {error && <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={fetchEvents}>{t('Retry')}</Button></Alert>}
             {renderHeader()}
 
             <div className="d-flex justify-content-end mb-3">

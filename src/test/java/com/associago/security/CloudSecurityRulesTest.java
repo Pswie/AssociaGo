@@ -72,9 +72,11 @@ class CloudSecurityRulesTest {
     @Autowired UserRepository users;
     @Autowired AssociationRepository associations;
     @Autowired UserAssociationRepository memberships;
+    @Autowired com.associago.activity.repository.ActivityRepository activities;
 
     private Long financialAssociationId;
     private String linkedSubject;
+    private Long activityId;
 
     @BeforeEach
     void linkedFinancialIdentity() {
@@ -98,6 +100,11 @@ class CloudSecurityRulesTest {
         membership.setAssociation(association);
         membership.setStatus("ACTIVE");
         memberships.saveAndFlush(membership);
+        var activity = new com.associago.activity.Activity();
+        activity.setAssociationId(financialAssociationId);
+        activity.setName("Scoped activity fixture");
+        activity.setCost(new java.math.BigDecimal("12.50"));
+        activityId = activities.saveAndFlush(activity).getId();
     }
 
     @Test
@@ -245,7 +252,8 @@ class CloudSecurityRulesTest {
     @DisplayName("il coordinatore servizi vede attivita ed eventi, non la contabilita")
     void serviceCoordinatorIsLimitedToItsModules() throws Exception {
         mockMvc.perform(get("/api/v1/activities")
-                        .with(jwt().authorities(role("COORDINATORE_SERVIZI"))))
+                        .header("X-Association-Id", financialAssociationId)
+                        .with(jwt().jwt(builder -> builder.subject(linkedSubject)).authorities(role("COORDINATORE_SERVIZI"))))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/events")
@@ -264,8 +272,9 @@ class CloudSecurityRulesTest {
                         .with(jwt().authorities(role("OPERATORE_ALIMENTARE"))))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/attendance/activity/1")
-                        .with(jwt().authorities(role("OPERATORE_ALIMENTARE"))))
+        mockMvc.perform(get("/api/v1/attendance/activity/" + activityId)
+                        .header("X-Association-Id", financialAssociationId)
+                        .with(jwt().jwt(builder -> builder.subject(linkedSubject)).authorities(role("OPERATORE_ALIMENTARE"))))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/members")
@@ -303,5 +312,22 @@ class CloudSecurityRulesTest {
                         .with(jwt().jwt(token -> token.subject(linkedSubject)).authorities(role("PRESIDENTE"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("ASSOCIATION_REQUIRED"));
+    }
+
+    @Test
+    void financialRoleReadsActivityContextAndCostsWithoutReceivingGeneralActivityWrite() throws Exception {
+        var admin = jwt().jwt(builder -> builder.subject(linkedSubject)).authorities(role("RESPONSABILE_AMMINISTRATIVO"));
+        mockMvc.perform(get("/api/v1/activities/" + activityId).header("X-Association-Id", financialAssociationId).with(admin))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.cost").value(12.5));
+        mockMvc.perform(get("/api/v1/activities/" + activityId + "/costs").header("X-Association-Id", financialAssociationId).with(admin))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/activities").header("X-Association-Id", financialAssociationId).with(admin)
+                        .contentType("application/json").content("{}"))
+                .andExpect(status().isForbidden());
+        var operator = jwt().jwt(builder -> builder.subject(linkedSubject)).authorities(role("COORDINATORE_SERVIZI"));
+        mockMvc.perform(get("/api/v1/activities/" + activityId + "/details").header("X-Association-Id", financialAssociationId).with(operator))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.activity.cost").isEmpty()).andExpect(jsonPath("$.netProfit").isEmpty());
+        mockMvc.perform(get("/api/v1/activities/" + activityId + "/costs").header("X-Association-Id", financialAssociationId).with(operator))
+                .andExpect(status().isForbidden());
     }
 }

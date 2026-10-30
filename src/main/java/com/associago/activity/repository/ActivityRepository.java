@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 @Repository
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
@@ -25,4 +28,7 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
                                      @Param("inizio") java.time.LocalDate inizio,
                                      @Param("fine") java.time.LocalDate fine);
     List<Activity> findByAssociationIdAndIsActiveTrue(Long associationId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT activity FROM Activity activity WHERE activity.id = :id")
+    Optional<Activity> findForUpdate(@Param("id") Long id);
 }

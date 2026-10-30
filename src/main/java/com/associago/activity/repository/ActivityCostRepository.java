@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface ActivityCostRepository extends JpaRepository<ActivityCost, Long> {
     List<ActivityCost> findByActivityId(Long activityId);
+    long deleteByActivityId(Long activityId);
 }

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { RedirectToSignIn, SignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { associago } from '../api'
-import { ORG_NAME, SOURCE_CODE_URL } from '../branding'
+import { ORG_NAME, ORG_LOGO, SOURCE_CODE_URL } from '../branding'
 import { clerkApplicationRole } from '../roles'
 import { initialWebAssociation } from '../association-choice'
 import { clerkSignInReturnOptions } from '../clerk-sso'
-import AppIcon from '../assets/6.svg'
 
 /**
  * Accesso al gestionale sul web.
@@ -117,10 +116,10 @@ export default function WebAuthGate({ children, isSatellite = false }) {
     return (
       <div
         className="min-vh-100 d-flex flex-column align-items-center justify-content-center p-4"
-        style={{ background: '#fdfbf7' }}
+        style={{ background: 'var(--body-bg, #f7fbff)' }}
       >
-        <img src={AppIcon} alt={ORG_NAME} width="56" height="56" className="mb-3" />
-        <h1 className="h5 mb-1" style={{ color: '#16281e' }}>
+        <img src={ORG_LOGO} alt={ORG_NAME} width="96" height="96" className="mb-3" style={{ objectFit: 'contain' }} />
+        <h1 className="h5 mb-1" style={{ color: 'var(--text-color)' }}>
           {ORG_NAME}
         </h1>
         <p className="text-muted small mb-4">Gestionale dell&apos;associazione</p>
@@ -246,7 +245,7 @@ function CenteredMessage({ children, tone }) {
   return (
     <div
       className="min-vh-100 d-flex align-items-center justify-content-center p-4"
-      style={{ background: '#fdfbf7' }}
+      style={{ background: 'var(--body-bg, #f7fbff)' }}
     >
       <div
         className={`${tone === 'danger' ? 'text-danger' : 'text-muted'} text-center`}

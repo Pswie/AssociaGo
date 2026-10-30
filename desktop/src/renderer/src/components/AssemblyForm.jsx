@@ -11,6 +11,10 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
     // Use prop id if available (modal mode), otherwise route id (page mode)
     const id = assemblyId || routeId;
     const isEditMode = !!id;
+    const [loading, setLoading] = useState(isEditMode);
+    const [loaded, setLoaded] = useState(!isEditMode);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
         title: '',
@@ -29,15 +33,15 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
     });
 
     useEffect(() => {
+        let cancelled = false;
         if (isEditMode) {
             associago.assemblies.getById(id)
                 .then(data => {
-                    const date = data.date ? new Date(data.date) : null;
-                    const formattedDate = date ? date.toISOString().slice(0, 16) : '';
+                    if (cancelled) return;
                     setFormData({
                         title: data.title || '',
                         description: data.description || '',
-                        date: formattedDate,
+                        date: data.date?.slice(0, 16) || '',
                         startTime: data.startTime || '',
                         endTime: data.endTime || '',
                         location: data.location || '',
@@ -49,9 +53,12 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                         secondCallQuorum: data.secondCallQuorum ?? 33,
                         notes: data.notes || ''
                     });
+                    setLoaded(true);
                 })
-                .catch(err => console.error(err));
+                .catch(err => { if (!cancelled) setError(err.message); })
+                .finally(() => { if (!cancelled) setLoading(false); });
         }
+        return () => { cancelled = true; };
     }, [id, isEditMode]);
 
     const handleChange = (e) => {
@@ -61,7 +68,9 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+        if (saving || !loaded) return;
+        setSaving(true);
+        setError('');
         try {
             const payload = {
                 ...formData,
@@ -79,15 +88,20 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
             else navigate('/assemblies');
         } catch (err) {
             console.error(err);
-            alert(t('Error saving assembly'));
+            setError(err.message || t('Error saving assembly'));
+        } finally {
+            setSaving(false);
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="p-2">
+            {error && <div className="alert alert-danger" role="alert">{error}</div>}
+            {loading && <p role="status">{t('Loading...')}</p>}
+            <fieldset disabled={loading || saving || !loaded}>
             <div className="mb-3">
-                <label className="form-label">{t('Title')}</label>
-                <input
+                <label htmlFor="assembly-title" className="form-label">{t('Title')}</label>
+                <input id="assembly-title"
                     type="text"
                     name="title"
                     value={formData.title}
@@ -98,8 +112,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Description')}</label>
-                <textarea
+                <label htmlFor="assembly-description" className="form-label">{t('Description')}</label>
+                <textarea id="assembly-description"
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
@@ -110,8 +124,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-4">
-                    <label className="form-label">{t('Date')}</label>
-                    <input
+                    <label htmlFor="assembly-date" className="form-label">{t('Date')}</label>
+                    <input id="assembly-date"
                         type="datetime-local"
                         name="date"
                         value={formData.date}
@@ -121,8 +135,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('Start Time')}</label>
-                    <input
+                    <label htmlFor="assembly-startTime" className="form-label">{t('Start Time')}</label>
+                    <input id="assembly-startTime"
                         type="time"
                         name="startTime"
                         value={formData.startTime}
@@ -131,8 +145,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-4">
-                    <label className="form-label">{t('End Time')}</label>
-                    <input
+                    <label htmlFor="assembly-endTime" className="form-label">{t('End Time')}</label>
+                    <input id="assembly-endTime"
                         type="time"
                         name="endTime"
                         value={formData.endTime}
@@ -143,8 +157,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Location')}</label>
-                <input
+                <label htmlFor="assembly-location" className="form-label">{t('Location')}</label>
+                <input id="assembly-location"
                     type="text"
                     name="location"
                     value={formData.location}
@@ -155,8 +169,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-6">
-                    <label className="form-label">{t('Type')}</label>
-                    <select
+                    <label htmlFor="assembly-type" className="form-label">{t('Type')}</label>
+                    <select id="assembly-type"
                         name="type"
                         value={formData.type}
                         onChange={handleChange}
@@ -167,8 +181,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                     </select>
                 </div>
                 <div className="col-md-6">
-                    <label className="form-label">{t('Status')}</label>
-                    <select
+                    <label htmlFor="assembly-status" className="form-label">{t('Status')}</label>
+                    <select id="assembly-status"
                         name="status"
                         value={formData.status}
                         onChange={handleChange}
@@ -185,8 +199,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-6">
-                    <label className="form-label">{t('President')}</label>
-                    <input
+                    <label htmlFor="assembly-president" className="form-label">{t('President')}</label>
+                    <input id="assembly-president"
                         type="text"
                         name="president"
                         value={formData.president}
@@ -196,8 +210,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-6">
-                    <label className="form-label">{t('Secretary')}</label>
-                    <input
+                    <label htmlFor="assembly-secretary" className="form-label">{t('Secretary')}</label>
+                    <input id="assembly-secretary"
                         type="text"
                         name="secretary"
                         value={formData.secretary}
@@ -210,8 +224,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
 
             <div className="row g-3 mb-3">
                 <div className="col-md-6">
-                    <label className="form-label">{t('First Call Quorum')} (%)</label>
-                    <input
+                    <label htmlFor="assembly-firstCallQuorum" className="form-label">{t('First Call Quorum')} (%)</label>
+                    <input id="assembly-firstCallQuorum"
                         type="number"
                         name="firstCallQuorum"
                         value={formData.firstCallQuorum}
@@ -223,8 +237,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                     />
                 </div>
                 <div className="col-md-6">
-                    <label className="form-label">{t('Second Call Quorum')} (%)</label>
-                    <input
+                    <label htmlFor="assembly-secondCallQuorum" className="form-label">{t('Second Call Quorum')} (%)</label>
+                    <input id="assembly-secondCallQuorum"
                         type="number"
                         name="secondCallQuorum"
                         value={formData.secondCallQuorum}
@@ -238,8 +252,8 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
             </div>
 
             <div className="mb-3">
-                <label className="form-label">{t('Notes')}</label>
-                <textarea
+                <label htmlFor="assembly-notes" className="form-label">{t('Notes')}</label>
+                <textarea id="assembly-notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
@@ -248,6 +262,7 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                 />
             </div>
 
+            </fieldset>
             <div className="d-flex justify-content-end gap-2 mt-4">
                 <button
                     type="button"
@@ -258,9 +273,10 @@ const AssemblyForm = ({ associationId, assemblyId, onSuccess, onCancel }) => {
                 </button>
                 <button
                     type="submit"
+                    disabled={loading || saving || !loaded}
                     className="btn btn-primary"
                 >
-                    {isEditMode ? t('Update') : t('Create')}
+                    {saving ? t('Saving...') : isEditMode ? t('Update') : t('Create')}
                 </button>
             </div>
         </form>

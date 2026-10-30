@@ -1,4 +1,13 @@
 {
+  "Retry": "Riprova",
+  "Loading...": "Caricamento…",
+  "Source code": "Codice sorgente",
+  "Menu del profilo": "Menu del profilo",
+  "Cerca nel gestionale": "Cerca nel gestionale",
+  "Commands": "Comandi",
+  "Navigation": "Navigazione",
+  "Expand navigation": "Espandi navigazione",
+  "Collapse navigation": "Riduci navigazione",
   "app": {
     "title": "AssociaGo",
     "loading": "Caricamento in corso..."

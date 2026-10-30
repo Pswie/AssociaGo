@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
 import { associago } from "../api.js";
 import { Globe, Lock, Building, Mail, ArrowRight, Plus, Trash2, Hash, Eye, EyeOff, ShieldCheck } from 'lucide-react';
-import icon6 from '../assets/6.svg';
-import { SOURCE_CODE_URL } from '../branding';
+import { ORG_LOGO, ORG_NAME, MODULE_NAME, SOURCE_CODE_URL } from '../branding';
 
 // Per-language fiscal code / VAT rules used by the entity registration form.
 // Country prefix (DE/FR/ES) is optional where the user might enter only the
@@ -317,10 +316,10 @@ export default function LoginPage({ onLogin }) {
                         </select>
                     </div>
                     <div className="mb-2">
-                        <img src={icon6} alt="Icon" style={{ width: 110, height: 110 }} />
+                        <img src={ORG_LOGO} alt={ORG_NAME} style={{ width: 110, height: 110, objectFit: 'contain', background: '#fff', padding: 8, borderRadius: 16 }} />
                     </div>
-                    <h3 className="fw-bold mb-0">AssociaGo</h3>
-                    <h4 className="opacity-75 mb-0">{t("Desktop Edition")}</h4>
+                    <h3 className="fw-bold mb-1">{ORG_NAME}</h3>
+                    <p className="opacity-75 mb-0">{MODULE_NAME} · {t("Desktop Edition")}</p>
                 </div>
 
                 <div className="card-body p-4 p-md-5">

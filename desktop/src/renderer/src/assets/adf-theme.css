@@ -27,19 +27,22 @@
 
 :root {
   /* ---- Palette del sito ---- */
-  --adf-paper: #fdfbf7;
-  --adf-paper-deep: #f4f2ed;
-  --adf-surface: #fffefb;
-  --adf-ink: #1d211c;
-  --adf-ink-soft: #4c544c;
-  --adf-ink-faint: #7d857c;
-  --adf-forest: #17231c;
-  --adf-forest-2: #21382a;
-  --adf-forest-3: #2c4835;
-  --adf-sage: #9db4a4;
-  --adf-sage-soft: #e7ede7;
-  --adf-clay: #c05a2e;
-  --adf-clay-deep: #a34a24;
+  /* Blu e corallo del logo ufficiale; i nomi dei token storici restano
+     compatibili con i componenti già pubblicati. */
+  --adf-paper: #f7fbff;
+  --adf-paper-deep: #eef4fa;
+  --adf-surface: #ffffff;
+  --adf-ink: #172d43;
+  --adf-ink-soft: #465d73;
+  --adf-ink-faint: #55687c;
+  --adf-forest: #143553;
+  --adf-forest-2: #145a91;
+  --adf-forest-3: #1d6ca3;
+  --adf-sage: #8dc4e5;
+  --adf-sage-soft: #e5f2fb;
+  --adf-clay: #c25449;
+  --adf-clay-deep: #a94037;
+  --adf-coral: #ff9c90;
   --adf-gold: #c99a3f;
   --adf-gold-soft: #d4b36d;
   --adf-hairline: rgba(29, 33, 28, 0.1);
@@ -65,11 +68,11 @@
      stesso file nella sezione bandi: le tre aree hanno la barra identica. */
   --adf-rail-bg: var(--adf-forest);
   --adf-rail-border: rgba(255, 255, 255, 0.11);
-  --adf-rail-text: #aebbb2;
-  --adf-rail-text-strong: #f7f8f4;
+  --adf-rail-text: #c5d9ec;
+  --adf-rail-text-strong: #ffffff;
   --adf-rail-hover: rgba(255, 255, 255, 0.06);
-  --adf-rail-active-bg: #243129;
-  --adf-rail-active-bar: inset 3px 0 0 var(--adf-gold-soft);
+  --adf-rail-active-bg: #254b6a;
+  --adf-rail-active-bar: inset 3px 0 0 var(--adf-coral);
 
   /* Il nome dell'associazione era scritto con un gradiente ritagliato sul testo.
      `none` annulla il gradiente e `currentColor` restituisce al testo il proprio
@@ -112,20 +115,23 @@
    blu-grigio sembra un'altra applicazione. */
 [data-theme="dark"],
 [data-bs-theme="dark"] {
-  --body-bg: #14201a;
-  --card-bg: #1b2a22;
-  --text-color: #eef2ed;
-  --text-muted: #8fa095;
+  --body-bg: #101f2e;
+  --card-bg: #192d40;
+  --text-color: #edf5fc;
+  --text-muted: #adc0d1;
   --border-color: rgba(255, 255, 255, 0.11);
-  --input-bg: #16241d;
+  --input-bg: #142638;
   --primary-color: var(--adf-sage);
 
-  --adf-surface: #1b2a22;
-  --adf-paper-deep: #14201a;
-  --adf-paper: #16241d;
-  --adf-ink: #eef2ed;
-  --adf-ink-soft: #b5c4b9;
-  --adf-ink-faint: #8fa095;
+  --adf-surface: #192d40;
+  --adf-paper-deep: #101f2e;
+  --adf-paper: #142638;
+  --adf-ink: #edf5fc;
+  --adf-ink-soft: #c0d2e2;
+  --adf-ink-faint: #adc0d1;
+  --adf-sage-soft: #233f57;
+  --adf-clay: #ffd1ca;
+  --adf-clay-deep: #ffb0a5;
   --adf-hairline: rgba(255, 255, 255, 0.11);
   --adf-hairline-strong: rgba(255, 255, 255, 0.18);
   --adf-gold: var(--adf-gold-soft);
@@ -149,7 +155,7 @@
   --bs-border-radius-xl: var(--adf-r-shell);
 
   --bs-primary: var(--adf-forest-2);
-  --bs-primary-rgb: 33, 56, 42;
+  --bs-primary-rgb: 20, 90, 145;
   --bs-secondary: var(--adf-ink-soft);
   --bs-success: #2f6b45;
   --bs-info: #3f6870;
@@ -511,9 +517,16 @@ aside.sidebar,
 }
 
 :focus-visible {
-  outline: 2px solid var(--adf-forest-3);
+  outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
+
+.text-primary { color: var(--primary-color) !important; }
+
+[data-bs-theme="dark"] .text-success { color: #80d4aa !important; }
+[data-bs-theme="dark"] .text-danger { color: #ffa79e !important; }
+[data-bs-theme="dark"] .text-info { color: #8ad2e5 !important; }
+[data-bs-theme="dark"] .text-warning { color: #f8d37a !important; }
 
 a {
   color: var(--adf-clay-deep);

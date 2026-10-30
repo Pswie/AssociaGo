@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Row, Col, Spinner, Table, Badge, Image } from 'react-bootstrap';
+import { Alert, Card, Button, Row, Col, Spinner, Table, Badge, Image } from 'react-bootstrap';
 import { associago } from '../api';
+import { ORG_LOGO, ORG_NAME } from '../branding';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, DollarSign, Download, Calendar, Users, Activity, Building } from 'lucide-react';
 
@@ -10,7 +11,8 @@ const Dashboard = ({ shell, associationId }) => {
   const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [logoUrl, setLogoUrl] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(ORG_LOGO);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadDashboard();
@@ -21,18 +23,20 @@ const Dashboard = ({ shell, associationId }) => {
     if (!associationId) return;
 
     setLoading(true);
+    setError('');
     try {
       const data = await associago.dashboard.getStats(associationId, anno);
       setStats(data);
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
+      setError(error.message || t('Unable to load dashboard.'));
     } finally {
       setLoading(false);
     }
   };
 
   const loadLogo = async () => {
-      if (!associationId) return;
+      if (!associationId || !window.api) return;
       try {
           const url = await associago.getLogoUrl(associationId);
           setLogoUrl(url);
@@ -48,7 +52,8 @@ const Dashboard = ({ shell, associationId }) => {
     </div>
   );
 
-  if (!stats) return null;
+  if (error) return <Alert variant="danger" role="alert">{error}<Button variant="link" onClick={loadDashboard}>{t('Retry')}</Button></Alert>;
+  if (!stats) return <Alert variant="info">{t('Nessun dato disponibile per questa associazione.')}</Alert>;
 
   return (
     <div className="fade-in">
@@ -59,15 +64,15 @@ const Dashboard = ({ shell, associationId }) => {
                 <div className="border rounded bg-light d-flex align-items-center justify-content-center overflow-hidden shadow-sm"
                      style={{width: '64px', height: '64px'}}>
                     {logoUrl ? (
-                        <Image src={logoUrl} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover'}}
-                               onError={(e) => e.target.style.display = 'none'} />
+                        <Image src={logoUrl} alt={ORG_NAME} style={{width: '100%', height: '100%', objectFit: 'contain', background: '#fff', padding: 4}}
+                               onError={() => setLogoUrl(ORG_LOGO)} />
                     ) : (
                         <Building size={32} className="text-muted" />
                     )}
                 </div>
             </div>
             <div>
-                <h6 className="text-uppercase text-primary fw-bold small mb-1">{shell.currentAssociation?.nome || "Associazione"}</h6>
+                <h6 className="text-uppercase text-primary fw-bold small mb-1">{shell.currentAssociation?.nome || shell.currentAssociation?.name || ORG_NAME}</h6>
                 <h2 className="fw-bold text-dark mb-0">{t('Dashboard')}</h2>
             </div>
         </div>
@@ -99,7 +104,7 @@ const Dashboard = ({ shell, associationId }) => {
                         {t('new this month')}
                     </div>
                     {/* Decorative bg */}
-                    <Users size={120} className="position-absolute text-primary opacity-5" style={{right: -20, bottom: -20}} />
+                        <Users size={120} className="position-absolute text-primary" aria-hidden="true" style={{right: -20, bottom: -20, opacity: 0.06, pointerEvents: 'none'}} />
                 </Card.Body>
             </Card>
         </Col>
@@ -209,10 +214,10 @@ const Dashboard = ({ shell, associationId }) => {
                     <div className="d-grid gap-3">
                         {/* text-white e text-primary insieme si annullavano a
                             vicenda: sul fondo scuro serve solo il primo. */}
-                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId })}>
+                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId, associationType: shell.currentAssociation?.tipo, onSuccess: loadDashboard })}>
                             <Users size={18} className="me-2" /> {t('Register New Member')}
                         </Button>
-                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.openModal('event-form', { associationId })}>
+                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.openModal('event-form', { associationId, onSuccess: loadDashboard })}>
                             <Calendar size={18} className="me-2" /> {t('Create Event')}
                         </Button>
                         <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.navigate('fiscal')}>

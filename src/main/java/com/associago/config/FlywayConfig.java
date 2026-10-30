@@ -25,7 +25,8 @@ import java.util.Arrays;
 public class FlywayConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(FlywayConfig.class);
-    private static final MigrationVersion DESTRUCTIVE_UPGRADE = MigrationVersion.fromVersion("41");
+    private static final java.util.List<MigrationVersion> BACKUP_UPGRADES = java.util.List.of(
+            MigrationVersion.fromVersion("41"), MigrationVersion.fromVersion("45"));
 
     @Bean(initMethod = "migrate")
     public Flyway flyway(DataSource dataSource, BackupService backupService) {
@@ -51,13 +52,13 @@ public class FlywayConfig {
 
         var migrations = flyway.info();
         var current = migrations.current();
-        if (current == null || current.getVersion() == null
-                || current.getVersion().compareTo(DESTRUCTIVE_UPGRADE) >= 0) {
+        if (current == null || current.getVersion() == null) {
             return;
         }
-        boolean destructiveUpgradePending = Arrays.stream(migrations.pending())
-                .anyMatch(migration -> migration.getVersion() != null
-                        && migration.getVersion().compareTo(DESTRUCTIVE_UPGRADE) >= 0);
+        boolean destructiveUpgradePending = BACKUP_UPGRADES.stream().anyMatch(boundary ->
+                current.getVersion().compareTo(boundary) < 0 && Arrays.stream(migrations.pending())
+                        .anyMatch(migration -> migration.getVersion() != null
+                                && migration.getVersion().compareTo(boundary) >= 0));
         if (!destructiveUpgradePending) {
             return;
         }
@@ -66,7 +67,7 @@ public class FlywayConfig {
             logger.info("Backup SQLite prima dell'aggiornamento dalla versione {}: {}", current.getVersion(), backup);
         } catch (IOException e) {
             throw new IllegalStateException("Aggiornamento interrotto: impossibile creare il backup "
-                    + "prima della migrazione che rimuove dati storici. Il database non è stato aggiornato.", e);
+                    + "prima della migrazione che modifica le tabelle storiche. Il database non è stato aggiornato.", e);
         }
     }
 }

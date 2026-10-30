@@ -9,4 +9,7 @@ import java.util.List;
 public interface AttendanceRecordRepository extends CrudRepository<AttendanceRecord, Long> {
     List<AttendanceRecord> findBySessionId(Long sessionId);
     List<AttendanceRecord> findByMemberId(Long memberId);
+    boolean existsBySessionIdAndMemberIdAndIdNot(Long sessionId, Long memberId, Long excludedId);
+    boolean existsBySessionIdAndMembershipIdAndIdNot(Long sessionId, Long membershipId, Long excludedId);
+    long deleteBySessionId(Long sessionId);
 }

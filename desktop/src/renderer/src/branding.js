@@ -9,8 +9,12 @@
  * Il link deve restare raggiungibile anche senza aver effettuato l'accesso:
  * chi si ferma alla schermata di login sta già interagendo col programma.
  */
-export const ORG_NAME = 'Angeli del Futuro';
+import officialLogo from './assets/brand/logo-ufficiale.png';
 
-export const SOURCE_CODE_URL = 'https://github.com/Pswie/terzo-settore';
+export const ORG_NAME = 'Angeli del Futuro APS';
+export const ORG_LOGO = officialLogo;
+export const MODULE_NAME = 'Gestionale';
+
+export const SOURCE_CODE_URL = 'https://github.com/Pswie/AssociaGo/tree/master';
 
 export const UPSTREAM_URL = 'https://github.com/LorenzoElSalserito/AssociaGo';

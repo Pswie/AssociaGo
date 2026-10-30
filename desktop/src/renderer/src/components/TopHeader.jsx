@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 /**
@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
  *   Assente sopra i 992px, dove il binario laterale è sempre in vista.
  * @param {boolean} [props.navOpen] - Stato del cassetto, per `aria-expanded`.
  */
-export default function TopHeader({ title, actions, onMenuToggle, navOpen = false }) {
+export default function TopHeader({ title, actions, onMenuToggle, onSearch, navOpen = false }) {
     const { t } = useTranslation();
 
     return (
@@ -36,6 +36,7 @@ export default function TopHeader({ title, actions, onMenuToggle, navOpen = fals
                 <h4 className="mb-0">{title}</h4>
             </div>
             <div className="top-header-actions">
+                {onSearch && <button type="button" className="btn btn-light p-2" aria-label={t('Cerca nel gestionale')} title={`${t('Cerca nel gestionale')} (Ctrl+K)`} onClick={onSearch}><Search size={20} /></button>}
                 {actions}
             </div>
 
@@ -129,6 +130,15 @@ export default function TopHeader({ title, actions, onMenuToggle, navOpen = fals
                     .top-header-actions {
                         gap: 0.35rem;
                     }
+                }
+
+                @media (max-width: 575.98px) {
+                    .top-header { flex-wrap: wrap; gap: 0.5rem; }
+                    .top-header-actions { margin-left: auto; gap: 0.25rem; }
+                    .top-header-actions > button, .top-header-actions .profile-avatar { min-width: 44px; min-height: 44px; }
+                    .top-header-actions .dropdown-toggle { padding-inline: 0.5rem; gap: 0.35rem !important; }
+                    .top-header-title { order: 3; flex-basis: 100%; }
+                    .top-header-title h4 { white-space: normal; overflow: visible; }
                 }
             `}</style>
         </header>

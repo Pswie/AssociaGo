@@ -2,6 +2,7 @@ package com.associago.activity;
 
 import com.associago.activity.dto.ActivityCreateDTO;
 import com.associago.activity.dto.ActivityDTO;
+import com.associago.activity.dto.ActivityParticipantDTO;
 import com.associago.activity.mapper.ActivityMapper;
 import com.associago.stats.dto.ActivityFinancialSummaryDTO;
 import com.associago.stats.dto.ActivityWithDetailsDTO;
@@ -33,12 +34,8 @@ public class ActivityController {
     @GetMapping
     public List<ActivityDTO> getActivities(@RequestParam(required = false) Long associationId,
                                            @RequestParam(required = false) Integer anno) {
-        if (associationId != null) {
-            return activityService.findNellEsercizio(associationId, anno).stream()
-                    .map(ActivityMapper::toDTO)
-                    .toList();
-        }
-        return List.of();
+        return activityService.findNellEsercizio(associationId, anno).stream()
+                .map(ActivityMapper::toDTO).toList();
     }
 
     @GetMapping("/association/{associationId}")
@@ -64,55 +61,43 @@ public class ActivityController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ActivityDTO> updateActivity(@PathVariable Long id, @Valid @RequestBody ActivityCreateDTO dto) {
-        return activityService.findById(id)
-                .map(existing -> {
-                    ActivityMapper.updateEntity(existing, dto);
-                    return ResponseEntity.ok(ActivityMapper.toDTO(activityService.save(existing)));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(ActivityMapper.toDTO(activityService.update(id, dto)));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteActivity(@PathVariable Long id) {
-        if (activityService.findById(id).isPresent()) {
-            activityService.deleteById(id);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
+        activityService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 
     // --- Advanced Reporting Endpoints ---
 
     @GetMapping("/{id}/details")
     public ResponseEntity<ActivityWithDetailsDTO> getActivityDetails(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(activityService.getActivityWithDetails(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(activityService.getActivityWithDetails(id));
     }
 
     @GetMapping("/{id}/financial-summary")
     public ResponseEntity<ActivityFinancialSummaryDTO> getActivityFinancialSummary(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(activityService.getActivityFinancialSummary(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(activityService.getActivityFinancialSummary(id));
     }
 
     // --- Sub-Resources Management ---
 
     // Participants
+    @GetMapping("/{id}/participant-candidates")
+    public List<com.associago.activity.dto.ActivityParticipantCandidateDTO> participantCandidates(@PathVariable Long id) {
+        return activityService.participantCandidates(id);
+    }
     @GetMapping("/{id}/participants")
-    public List<ActivityParticipant> getParticipants(@PathVariable Long id) {
-        return activityService.findParticipantsByActivityId(id);
+    public List<ActivityParticipantDTO> getParticipants(@PathVariable Long id) {
+        return activityService.findParticipantsByActivityId(id).stream().map(activityService::participantView).toList();
     }
 
     @PostMapping("/{id}/participants")
-    public ActivityParticipant addParticipant(@PathVariable Long id, @RequestBody ActivityParticipant participant) {
+    public ActivityParticipantDTO addParticipant(@PathVariable Long id, @RequestBody ActivityParticipant participant) {
         participant.setActivityId(id);
-        return activityService.registerParticipant(participant);
+        return activityService.participantView(activityService.registerParticipant(participant));
     }
 
     @DeleteMapping("/participants/{participantId}")
@@ -135,11 +120,7 @@ public class ActivityController {
 
     @PutMapping("/costs/{costId}")
     public ResponseEntity<ActivityCost> updateCost(@PathVariable Long costId, @RequestBody ActivityCost cost) {
-        try {
-            return ResponseEntity.ok(activityService.updateCost(costId, cost));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(activityService.updateCost(costId, cost));
     }
 
     @DeleteMapping("/costs/{costId}")
@@ -162,11 +143,7 @@ public class ActivityController {
 
     @PutMapping("/instructors/{instructorId}")
     public ResponseEntity<ActivityInstructor> updateInstructor(@PathVariable Long instructorId, @RequestBody ActivityInstructor instructor) {
-        try {
-            return ResponseEntity.ok(activityService.updateInstructor(instructorId, instructor));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(activityService.updateInstructor(instructorId, instructor));
     }
 
     @DeleteMapping("/instructors/{instructorId}")
@@ -189,11 +166,7 @@ public class ActivityController {
 
     @PutMapping("/schedules/{scheduleId}")
     public ResponseEntity<ActivitySchedule> updateSchedule(@PathVariable Long scheduleId, @RequestBody ActivitySchedule schedule) {
-        try {
-            return ResponseEntity.ok(activityService.updateSchedule(scheduleId, schedule));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(activityService.updateSchedule(scheduleId, schedule));
     }
 
     @DeleteMapping("/schedules/{scheduleId}")

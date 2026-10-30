@@ -3,9 +3,13 @@ import { useForm } from 'react-hook-form';
 import { associago } from '../api';
 import { useTranslation } from 'react-i18next';
 
-const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
+const EventForm = ({ associationId, eventId, event, onSuccess, onCancel }) => {
   const { t } = useTranslation();
-  const isEditMode = !!eventId;
+  const id = eventId || event?.id;
+  const isEditMode = Boolean(id);
+  const [loading, setLoading] = useState(isEditMode);
+  const [loaded, setLoaded] = useState(!isEditMode);
+  const [error, setError] = useState('');
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       name: '',
@@ -28,18 +32,18 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
   });
 
   useEffect(() => {
+    let cancelled = false;
     if (isEditMode) {
-      associago.events.getById(eventId).then(data => {
-        const start = data.startDatetime ? new Date(data.startDatetime) : null;
-        const end = data.endDatetime ? new Date(data.endDatetime) : null;
+      Promise.resolve(event || associago.events.getById(id)).then(data => {
+        if (cancelled) return;
         reset({
           name: data.name || '',
           description: data.description || '',
           type: data.type || 'MEETING',
-          startDate: start ? start.toISOString().split('T')[0] : '',
-          startTime: start ? start.toTimeString().slice(0, 5) : '',
-          endDate: end ? end.toISOString().split('T')[0] : '',
-          endTime: end ? end.toTimeString().slice(0, 5) : '',
+          startDate: data.startDatetime?.slice(0, 10) || '',
+          startTime: data.startDatetime?.slice(11, 16) || '',
+          endDate: data.endDatetime?.slice(0, 10) || '',
+          endTime: data.endDatetime?.slice(11, 16) || '',
           location: data.location || '',
           address: data.address || '',
           maxParticipants: data.maxParticipants ?? '',
@@ -50,11 +54,15 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
           requireRegistration: data.requireRegistration ?? true,
           generateInvoice: data.generateInvoice ?? false
         });
-      }).catch(err => console.error('Error loading event:', err));
+        setLoaded(true);
+      }).catch(err => { if (!cancelled) setError(err.message); })
+        .finally(() => { if (!cancelled) setLoading(false); });
     }
-  }, [eventId, isEditMode, reset]);
+    return () => { cancelled = true; };
+  }, [id, isEditMode, event, reset]);
 
   const onSubmit = async (data) => {
+    setError('');
     try {
       const payload = {
         associationId: associationId,
@@ -75,7 +83,7 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
       };
 
       if (isEditMode) {
-        await associago.events.update(eventId, payload);
+        await associago.events.update(id, payload);
       } else {
         await associago.events.create(payload);
       }
@@ -83,15 +91,18 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
       onSuccess();
     } catch (error) {
       console.error('Error saving event:', error);
-      alert(t('Error saving event') + ': ' + error.message);
+      setError(error.message);
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="p-2">
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      {loading && <p role="status">{t('Loading...')}</p>}
+      <fieldset disabled={loading || isSubmitting || !loaded}>
       <div className="mb-3">
-        <label className="form-label">{t('Event Name')}</label>
-        <input
+        <label htmlFor="event-name" className="form-label">{t('Event Name')}</label>
+        <input id="event-name"
           {...register('name', { required: t('Name is required') })}
           className="form-control"
         />
@@ -99,8 +110,8 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
       </div>
 
       <div className="mb-3">
-        <label className="form-label">{t('Description')}</label>
-        <textarea
+        <label htmlFor="event-description" className="form-label">{t('Description')}</label>
+        <textarea id="event-description"
           {...register('description')}
           rows="3"
           className="form-control"
@@ -109,8 +120,8 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Type')}</label>
-          <select
+          <label htmlFor="event-type" className="form-label">{t('Type')}</label>
+          <select id="event-type"
             {...register('type', { required: t('Type is required') })}
             className="form-select"
           >
@@ -123,8 +134,8 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
           </select>
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Status')}</label>
-          <select
+          <label htmlFor="event-status" className="form-label">{t('Status')}</label>
+          <select id="event-status"
             {...register('status')}
             className="form-select"
           >
@@ -139,16 +150,16 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Start Date')}</label>
-          <input
+          <label htmlFor="event-startDate" className="form-label">{t('Start Date')}</label>
+          <input id="event-startDate"
             type="date"
             {...register('startDate', { required: t('Start date is required') })}
             className="form-control"
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Start Time')}</label>
-          <input
+          <label htmlFor="event-startTime" className="form-label">{t('Start Time')}</label>
+          <input id="event-startTime"
             type="time"
             {...register('startTime')}
             className="form-control"
@@ -158,16 +169,17 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('End Date')}</label>
-          <input
+          <label htmlFor="event-endDate" className="form-label">{t('End Date')}</label>
+          <input id="event-endDate"
             type="date"
-            {...register('endDate')}
+            {...register('endDate', { validate: (value, values) => !value || `${value}T${values.endTime || '00:00'}` >= `${values.startDate}T${values.startTime || '00:00'}` || t('La fine deve essere successiva all’inizio.') })}
             className="form-control"
           />
+          {errors.endDate && <span className="text-danger small">{errors.endDate.message}</span>}
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('End Time')}</label>
-          <input
+          <label htmlFor="event-endTime" className="form-label">{t('End Time')}</label>
+          <input id="event-endTime"
             type="time"
             {...register('endTime')}
             className="form-control"
@@ -177,15 +189,15 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Location')}</label>
-          <input
+          <label htmlFor="event-location" className="form-label">{t('Location')}</label>
+          <input id="event-location"
             {...register('location')}
             className="form-control"
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Address')}</label>
-          <input
+          <label htmlFor="event-address" className="form-label">{t('Address')}</label>
+          <input id="event-address"
             {...register('address')}
             className="form-control"
           />
@@ -194,28 +206,31 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
 
       <div className="row g-3 mb-3">
         <div className="col-md-4">
-          <label className="form-label">{t('Max Participants')}</label>
-          <input
+          <label htmlFor="event-maxParticipants" className="form-label">{t('Max Participants')}</label>
+          <input id="event-maxParticipants"
             type="number"
+            min="1"
             {...register('maxParticipants')}
             className="form-control"
             placeholder={t('Unlimited')}
           />
         </div>
         <div className="col-md-4">
-          <label className="form-label">{t('Member Cost')} (&euro;)</label>
-          <input
+          <label htmlFor="event-costMember" className="form-label">{t('Member Cost')} (&euro;)</label>
+          <input id="event-costMember"
             type="number"
             step="0.01"
+            min="0"
             {...register('costMember')}
             className="form-control"
           />
         </div>
         <div className="col-md-4">
-          <label className="form-label">{t('Non-Member Cost')} (&euro;)</label>
-          <input
+          <label htmlFor="event-costNonMember" className="form-label">{t('Non-Member Cost')} (&euro;)</label>
+          <input id="event-costNonMember"
             type="number"
             step="0.01"
+            min="0"
             {...register('costNonMember')}
             className="form-control"
           />
@@ -264,6 +279,7 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
         </div>
       </div>
 
+      </fieldset>
       <div className="d-flex justify-content-end gap-2 mt-4">
         <button
           type="button"
@@ -274,7 +290,7 @@ const EventForm = ({ associationId, eventId, onSuccess, onCancel }) => {
         </button>
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || loading || !loaded}
           className="btn btn-primary"
         >
           {isSubmitting ? t('Saving...') : (isEditMode ? t('Update Event') : t('Save Event'))}

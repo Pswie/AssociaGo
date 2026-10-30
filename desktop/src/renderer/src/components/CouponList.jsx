@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Spinner } from 'react-bootstrap';
+import { Alert, Card, Button, Table, Badge, Spinner } from 'react-bootstrap';
 import { Plus, Edit, Trash2, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
@@ -12,6 +12,7 @@ const CouponList = ({ associationId, shell }) => {
     const { t } = useTranslation();
     const [coupons, setCoupons] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [selectedCoupon, setSelectedCoupon] = useState(null);
 
@@ -23,10 +24,12 @@ const CouponList = ({ associationId, shell }) => {
 
     const fetchCoupons = async () => {
         setLoading(true);
+        setError('');
         try {
             const data = await associago.coupons.getByAssociation(associationId, anno);
             setCoupons(data);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error fetching coupons:", error);
         } finally {
             setLoading(false);
@@ -78,6 +81,7 @@ const CouponList = ({ associationId, shell }) => {
 
     return (
         <div className="fade-in">
+            {error && <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={fetchCoupons}>{t('Retry')}</Button></Alert>}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1">{t('Buoni')}</h2>

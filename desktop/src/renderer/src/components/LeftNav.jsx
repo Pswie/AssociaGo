@@ -13,6 +13,7 @@ import {
     Package,
     UserCheck,
     FileText,
+    Receipt,
     PiggyBank,
     Award,
     Upload,
@@ -24,7 +25,7 @@ import {
     X,
     BookOpen as BookOpenIcon
 } from "lucide-react";
-import AppIcon from "../assets/6.svg";
+import { ORG_LOGO, ORG_NAME, MODULE_NAME } from '../branding';
 
 /**
  * Binario di navigazione.
@@ -60,11 +61,22 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
     // quando un pannello copre la pagina.
     useEffect(() => {
         if (!open) return undefined;
+        const previousFocus = document.activeElement;
         const onKeyDown = (event) => {
             if (event.key === 'Escape') onClose?.();
+            if (event.key === 'Tab' && window.matchMedia('(max-width: 991.98px)').matches) {
+                const buttons = [...(panelRef.current?.querySelectorAll('button:not(:disabled), a[href]') || [])].filter(button => button.getClientRects().length && getComputedStyle(button).visibility !== 'hidden');
+                const first = buttons[0];
+                const last = buttons[buttons.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+            }
         };
         document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            if (previousFocus?.isConnected) previousFocus.focus();
+        };
     }, [open, onClose]);
 
     // Con il cassetto aperto la pagina sotto non deve scorrere: su iOS, senza
@@ -113,6 +125,7 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
             case "bi-box-seam": return <Package size={20} />;
             case "bi-person-check": return <UserCheck size={20} />;
             case "bi-file-text": return <FileText size={20} />;
+            case "bi-receipt": return <Receipt size={20} />;
             case "bi-piggy-bank": return <PiggyBank size={20} />;
             case "bi-award": return <Award size={20} />;
             case "bi-upload": return <Upload size={20} />;
@@ -154,8 +167,8 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
                 {/* Logo Header */}
                 <div className="jl-sidebar-header">
                     <div className="jl-logo">
-                        <img src={AppIcon} alt="Angeli del Futuro" className="jl-logo-icon-img" />
-                        {!collapsed && <span className="jl-logo-text">Angeli del Futuro</span>}
+                        <img src={ORG_LOGO} alt={ORG_NAME} className="jl-logo-icon-img" />
+                        {!collapsed && <span className="jl-logo-text"><span>{ORG_NAME}</span><small>{MODULE_NAME}</small></span>}
                     </div>
 
                     {/* Chiusura esplicita: sul telefono il gesto di trascinamento
@@ -243,7 +256,9 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
 
                     .jl-sidebar-header {
                         padding: 1.5rem 1.25rem;
-                        height: 80px;
+                        min-height: 96px;
+                        height: auto;
+                        flex-shrink: 0;
                         display: flex;
                         align-items: center;
                     }
@@ -260,12 +275,15 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
                         width: 50px;
                         height: 50px;
                         object-fit: contain;
+                        padding: 5px;
+                        background: #fff;
+                        border-radius: 10px;
                         flex-shrink: 0;
                     }
 
                     .jl-logo-text {
                         font-weight: 800;
-                        font-size: 1.75rem;
+                        font-size: 1rem;
                         letter-spacing: -0.5px;
                         /* Il nome in gradiente blu-viola era l'elemento più
                            riconoscibile del tema precedente. Sul web diventa un
@@ -280,6 +298,9 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
                         white-space: nowrap;
                         overflow: hidden;
                     }
+
+                    .jl-logo-text > span { display: block; white-space: normal; line-height: 1.25; }
+                    .jl-logo-text > small { display: block; font-size: 0.72rem; font-weight: 500; margin-top: 0.25rem; opacity: 0.8; }
 
                     /* Container che occupa lo spazio rimanente */
                     .jl-nav-container {
@@ -457,12 +478,12 @@ export default function LeftNav({ items, activeId, onSelect, open = false, onClo
                         }
 
                         .jl-logo-icon-img {
-                            width: 40px;
-                            height: 40px;
+                            width: 48px;
+                            height: 48px;
                         }
 
                         .jl-logo-text {
-                            font-size: 1.35rem;
+                            font-size: 1rem;
                             /* Il nome dell'associazione può essere lungo: meglio
                                troncato che sopra il pulsante di chiusura. */
                             text-overflow: ellipsis;

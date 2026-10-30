@@ -5,16 +5,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
+import com.associago.suite.SuiteException;
+import org.springframework.core.env.Environment;
 
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
 
     private final UserService userService;
+    private final Environment environment;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, Environment environment) {
         this.userService = userService;
+        this.environment = environment;
     }
 
     @GetMapping
@@ -31,6 +36,9 @@ public class UserController {
 
     @PostMapping
     public User createUser(@RequestBody User user) {
+        if (environment.matchesProfiles("cloud") && (user.getId() != null || user.getClerkUserId() != null)) {
+            throw new SuiteException(400, "USER_IDENTITY_FORBIDDEN", "Una nuova anagrafica non può sostituire un'identità o un collegamento esistente.");
+        }
         return userService.save(user);
     }
 
@@ -38,6 +46,10 @@ public class UserController {
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         return userService.findById(id)
                 .map(existingUser -> {
+                    if (environment.matchesProfiles("cloud") && (userDetails.getId() != null && !Objects.equals(id, userDetails.getId())
+                            || userDetails.getClerkUserId() != null && !Objects.equals(existingUser.getClerkUserId(), userDetails.getClerkUserId()))) {
+                        throw new SuiteException(409, "USER_IDENTITY_IMMUTABLE", "L'identità e il collegamento di accesso originali non possono essere riassegnati.");
+                    }
                     existingUser.setFirstName(userDetails.getFirstName());
                     existingUser.setLastName(userDetails.getLastName());
                     existingUser.setTaxCode(userDetails.getTaxCode());

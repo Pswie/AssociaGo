@@ -7,7 +7,7 @@ import PaymentMethodForm from './PaymentMethodForm';
 import AssociationRegistryPanel from './AssociationRegistryPanel';
 import SignaturePanel from './SignaturePanel';
 import RowActions from './common/RowActions';
-import { SOURCE_CODE_URL } from '../branding';
+import { ORG_NAME, MODULE_NAME, SOURCE_CODE_URL } from '../branding';
 
 const SettingsDashboard = ({ shell }) => {
   const { t, i18n } = useTranslation();
@@ -490,7 +490,8 @@ const SettingsDashboard = ({ shell }) => {
                     <h6 className="mb-3">{t('App Info')}</h6>
                     <div className="d-flex justify-content-between align-items-start">
                         <div>
-                            <p className="mb-1"><strong>AssociaGo</strong> v{appVersion || backendVersion}</p>
+                            <p className="mb-1"><strong>{ORG_NAME}</strong> · {MODULE_NAME}</p>
+                            <p className="mb-1 text-muted small">AssociaGo {appVersion || backendVersion ? `v${appVersion || backendVersion}` : ''}</p>
                             {backendVersion && backendVersion !== appVersion && (
                                 <p className="mb-1 text-muted small">Backend: v{backendVersion}</p>
                             )}

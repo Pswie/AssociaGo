@@ -36,7 +36,7 @@ class FlywayUpgradeBackupTests {
         Flyway upgraded = new FlywayConfig().flyway(dataSource, backupService);
         upgraded.migrate();
 
-        assertThat(upgraded.info().current().getVersion().getVersion()).isEqualTo("44");
+        assertThat(upgraded.info().current().getVersion().getVersion()).isEqualTo("45");
         Path backup;
         try (var backups = Files.list(directory.resolve("backups"))) {
             var files = backups.toList();
@@ -87,7 +87,7 @@ class FlywayUpgradeBackupTests {
 
     @Test
     void alreadyMigratedDatabaseDoesNotCreateAnotherBackupOnStartup() {
-        DataSource dataSource = databaseAtVersion("41");
+        DataSource dataSource = databaseAtVersion("45");
         BackupService backupService = mock(BackupService.class);
 
         new FlywayConfig().flyway(dataSource, backupService);
@@ -99,6 +99,54 @@ class FlywayUpgradeBackupTests {
         DataSource dataSource = new DriverManagerDataSource("jdbc:sqlite:" + directory.resolve("existing.db"));
         Flyway.configure().dataSource(dataSource).locations("classpath:db/migration").target(version).load().migrate();
         return dataSource;
+    }
+
+    @Test
+    void attendanceUpgradeBacksUpAndPreservesLegacyDuplicatesIdsNotesSequenceAndReferences() throws Exception {
+        DataSource dataSource = databaseAtVersion("44");
+        try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("INSERT INTO associations (id,name) VALUES (1,'Fixture')");
+            statement.execute("INSERT INTO activities (id,association_id,name) VALUES (1,1,'Attendance fixture')");
+            statement.execute("INSERT INTO members (id,first_name,last_name) VALUES (301,'Legacy','Fixture')");
+            statement.execute("INSERT INTO users (id,first_name,last_name) VALUES (7,'Membership','Fixture')");
+            statement.execute("INSERT INTO user_associations (id,user_id,association_id) VALUES (301,7,1)");
+            statement.execute("INSERT INTO attendance_sessions (id,activity_id,date) VALUES (9,1,'2026-10-30')");
+            statement.execute("INSERT INTO attendance_records (id,session_id,member_id,status,notes) VALUES (11,9,301,'PRESENT','historical note'),(12,9,301,'LATE','duplicate retained'),(99,9,301,'ABSENT','deleted high watermark')");
+            statement.execute("DELETE FROM attendance_records WHERE id=99");
+        }
+        BackupService backup = new BackupService(dataSource, directory.toString());
+        Flyway upgraded = new FlywayConfig().flyway(dataSource, backup);
+        upgraded.migrate();
+        Path archive;
+        try (var files = Files.list(directory.resolve("backups"))) { archive = files.findFirst().orElseThrow(); }
+        DataSource snapshot = new DriverManagerDataSource("jdbc:sqlite:" + archive);
+        String rows = "SELECT group_concat(id || ':' || member_id || ':' || status || ':' || notes, '|') FROM (SELECT * FROM attendance_records ORDER BY id)";
+        assertThat(query(dataSource, rows)).isEqualTo(query(snapshot, rows));
+        assertThat(query(dataSource, "SELECT COUNT(*) FROM attendance_records WHERE membership_id IS NOT NULL")).isEqualTo("0");
+        assertThat(query(snapshot, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")).isEqualTo("44");
+        try (Connection connection = dataSource.getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("PRAGMA foreign_keys=ON");
+            statement.execute("INSERT INTO attendance_records (session_id,membership_id,status,notes) VALUES (9,301,'PRESENT','new explicit membership')");
+            assertThat(query(dataSource, "SELECT MAX(id) FROM attendance_records")).isEqualTo("100");
+            assertThatThrownBy(() -> statement.execute("INSERT INTO attendance_records(session_id,membership_id) VALUES(9,301)"))
+                    .isInstanceOf(SQLException.class);
+            assertThatThrownBy(() -> statement.execute("INSERT INTO attendance_records(session_id,membership_id) VALUES(9,404)"))
+                    .isInstanceOf(SQLException.class);
+            assertThatThrownBy(() -> statement.execute("DELETE FROM user_associations WHERE id=301"))
+                    .isInstanceOf(SQLException.class);
+        }
+        assertThat(query(dataSource, "SELECT COUNT(*) FROM attendance_records WHERE member_id=301")).isEqualTo("2");
+        assertThat(query(dataSource, "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='ux_attendance_session_membership'")).isEqualTo("1");
+    }
+
+    @Test
+    void attendanceRebuildIsBlockedWhenItsConsistentBackupCannotBeCreated() throws Exception {
+        DataSource dataSource = databaseAtVersion("44");
+        BackupService backup = mock(BackupService.class);
+        when(backup.createBackup()).thenThrow(new IOException("Unavailable"));
+        assertThatThrownBy(() -> new FlywayConfig().flyway(dataSource, backup))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("Aggiornamento interrotto");
+        assertThat(query(dataSource, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1")).isEqualTo("44");
     }
 
     private void seedHistoricalData(DataSource dataSource) throws SQLException {

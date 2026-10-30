@@ -34,10 +34,10 @@ public class AttendanceMapper {
     public static void updateEntity(AttendanceSession entity, AttendanceSessionUpsertDTO dto) {
         if (dto.activityId() != null) entity.setActivityId(dto.activityId());
         if (dto.date() != null) entity.setDate(dto.date());
-        if (dto.startTime() != null) entity.setStartTime(dto.startTime());
-        if (dto.endTime() != null) entity.setEndTime(dto.endTime());
-        if (dto.instructorId() != null) entity.setInstructorId(dto.instructorId());
-        if (dto.notes() != null) entity.setNotes(dto.notes());
+        entity.setStartTime(dto.startTime());
+        entity.setEndTime(dto.endTime());
+        entity.setInstructorId(dto.instructorId());
+        entity.setNotes(dto.notes());
     }
 
     public static AttendanceRecordDTO toDTO(AttendanceRecord entity) {
@@ -47,7 +47,8 @@ public class AttendanceMapper {
                 entity.getMemberId(),
                 entity.getStatus(),
                 entity.getCheckInTime(),
-                entity.getNotes()
+                entity.getNotes(),
+                entity.getMembershipId()
         );
     }
 
@@ -60,8 +61,9 @@ public class AttendanceMapper {
     public static void updateEntity(AttendanceRecord entity, AttendanceRecordUpsertDTO dto) {
         if (dto.sessionId() != null) entity.setSessionId(dto.sessionId());
         if (dto.memberId() != null) entity.setMemberId(dto.memberId());
+        if (dto.membershipId() != null) entity.setMembershipId(dto.membershipId());
         if (dto.status() != null) entity.setStatus(dto.status());
-        if (dto.checkInTime() != null) entity.setCheckInTime(dto.checkInTime());
-        if (dto.notes() != null) entity.setNotes(dto.notes());
+        entity.setCheckInTime(dto.checkInTime());
+        entity.setNotes(dto.notes());
     }
 }

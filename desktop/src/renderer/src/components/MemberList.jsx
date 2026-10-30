@@ -26,6 +26,7 @@ const MemberList = ({ associationId, shell }) => {
     const { t } = useTranslation();
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [showImport, setShowImport] = useState(false);
     const [medicalAlerts, setMedicalAlerts] = useState({ expiring: [], expired: [] });
@@ -49,11 +50,13 @@ const MemberList = ({ associationId, shell }) => {
 
     const fetchMembers = async () => {
         setLoading(true);
+        setError('');
         try {
             // Use memberships endpoint to get UserAssociation data which includes User details
             const data = await associago.memberships.getByAssociation(associationId, anno);
             setMembers(data);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error fetching members:", error);
         } finally {
             setLoading(false);
@@ -118,6 +121,7 @@ const MemberList = ({ associationId, shell }) => {
 
     return (
         <div className="container-fluid fade-in">
+            {error && <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={fetchMembers}>{t('Retry')}</Button></Alert>}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1">{t('Members')}</h2>

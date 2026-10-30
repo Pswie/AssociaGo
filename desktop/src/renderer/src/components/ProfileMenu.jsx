@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Settings, Info, FolderOpen, Upload, User, LogOut } from "lucide-react";
 import { useTranslation } from 'react-i18next';
+import { Modal as BsModal } from 'react-bootstrap';
+import { ORG_LOGO, ORG_NAME, MODULE_NAME, SOURCE_CODE_URL } from '../branding';
 
 /**
  * ProfileMenu - Menu dropdown profilo utente
@@ -17,6 +19,7 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
     const [isOpen, setIsOpen] = useState(false);
     const [showInfoModal, setShowInfoModal] = useState(false);
     const menuRef = useRef(null);
+    const avatarRef = useRef(null);
     const { t } = useTranslation();
     const [appVersion, setAppVersion] = useState(''); // Loaded from Electron
 
@@ -31,6 +34,28 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const frame = requestAnimationFrame(() => menuRef.current?.querySelector('[role="menuitem"]')?.focus());
+        return () => cancelAnimationFrame(frame);
+    }, [isOpen]);
+
+    const handleMenuKeyDown = (event) => {
+        const buttons = [...menuRef.current.querySelectorAll('[role="menuitem"]')];
+        const current = buttons.indexOf(document.activeElement);
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setIsOpen(false);
+            avatarRef.current?.focus();
+        } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (current + (event.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+            buttons[next]?.focus();
+        } else if (event.key === 'Tab') {
+            setTimeout(() => setIsOpen(false), 0);
+        }
+    };
 
     useEffect(() => {
         // Fetch version dynamically if available via window.api
@@ -68,16 +93,23 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
         <div className="profile-menu" ref={menuRef}>
             {/* Avatar Button */}
             <button
+                type="button"
+                ref={avatarRef}
                 className="profile-avatar"
                 onClick={() => setIsOpen(!isOpen)}
                 title={title}
+                aria-label={t('Menu del profilo')}
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
+                aria-controls={isOpen ? 'profile-menu-items' : undefined}
+                onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setIsOpen(true); } }}
             >
                 {initials}
             </button>
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="profile-dropdown">
+                <div className="profile-dropdown" id="profile-menu-items" role="menu" aria-label={t('Menu del profilo')} onKeyDown={handleMenuKeyDown}>
                     {/* Header */}
                     <div className="profile-dropdown-header">
                         <div className="profile-dropdown-avatar">{initials}</div>
@@ -98,6 +130,8 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
 
                             return (
                                 <button
+                                    type="button"
+                                    role="menuitem"
                                     key={item.id || index}
                                     className={`profile-dropdown-item ${item.danger ? "text-danger" : ""}`}
                                     onClick={() => handleItemClick(item)}
@@ -112,20 +146,18 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
             )}
 
             {/* Info Modal */}
-            {showInfoModal && (
-                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title">{t('App Info')}</h5>
-                                <button type="button" className="btn-close" onClick={() => setShowInfoModal(false)}></button>
-                            </div>
-                            <div className="modal-body text-center">
-                                <h4 className="fw-bold mb-1">AssociaGo</h4>
-                                <p className="text-muted mb-3">{t('Version')} {appVersion}</p>
+            <BsModal show={showInfoModal} onHide={() => setShowInfoModal(false)} centered onExited={() => avatarRef.current?.focus()} aria-labelledby="profile-info-title">
+                            <BsModal.Header closeButton>
+                                <BsModal.Title id="profile-info-title">{t('App Info')}</BsModal.Title>
+                            </BsModal.Header>
+                            <BsModal.Body className="text-center">
+                                <img src={ORG_LOGO} alt={ORG_NAME} width="100" height="100" className="mb-3" style={{ objectFit: 'contain', background: '#fff', padding: 6, borderRadius: 12 }} />
+                                <h4 className="fw-bold mb-1">{ORG_NAME}</h4>
+                                <p className="text-muted mb-3">{MODULE_NAME} · AssociaGo{appVersion ? ` v${appVersion}` : ''}</p>
 
                                 <p className="mb-1">Copyright © Lorenzo De Marco (Lorenzo DM)</p>
                                 <p className="mb-3 text-muted small">{t('License')}: AGPLv3</p>
+                                <p><a href={SOURCE_CODE_URL} target="_blank" rel="noopener noreferrer">{t('Source code')}</a></p>
 
                                 <p className="mb-3">
                                     <a href="https://www.lorenzodm.it" target="_blank" rel="noopener noreferrer" className="text-decoration-none">
@@ -136,16 +168,13 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
                                 <div className="alert alert-warning small text-start">
                                     <strong>{t('Disclaimer')}:</strong> {t('AssociaGo may make errors, always check the outputs provided before forwarding them.')}
                                 </div>
-                            </div>
-                            <div className="modal-footer">
+                            </BsModal.Body>
+                            <BsModal.Footer>
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowInfoModal(false)}>
                                     {t('Close')}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            </BsModal.Footer>
+            </BsModal>
 
             <style>{`
                 .profile-menu {
@@ -156,7 +185,7 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                    background: var(--primary-gradient);
                     color: white;
                     border: none;
                     font-weight: 600;
@@ -181,7 +210,7 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
                     background: var(--card-bg);
                     border-radius: 8px;
                     box-shadow: var(--card-shadow);
-                    min-width: 220px;
+                    width: min(280px, calc(100vw - 1.5rem));
                     z-index: 1000;
                     animation: fadeIn 0.15s ease;
                     border: 1px solid var(--border-color);
@@ -204,7 +233,7 @@ export default function ProfileMenu({ initials = "U", title, subtitle, items = [
                     width: 40px;
                     height: 40px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+                    background: var(--primary-gradient);
                     color: white;
                     display: flex;
                     align-items: center;

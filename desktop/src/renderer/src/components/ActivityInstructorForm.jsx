@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { associago } from '../api';
 import { useTranslation } from 'react-i18next';
 
-const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel }) => {
+const ActivityInstructorForm = ({ activityId, instructor, canFinance = Boolean(window.api), onSuccess, onCancel }) => {
   const { t } = useTranslation();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     defaultValues: instructor || {
@@ -21,10 +21,15 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
 
   const onSubmit = async (data) => {
     try {
+      const payload = { ...data };
+      if (!canFinance) {
+        delete payload.compensation;
+        delete payload.compensationType;
+      }
       if (instructor?.id) {
-        await associago.activities.updateInstructor(instructor.id, data);
+        await associago.activities.updateInstructor(instructor.id, payload);
       } else {
-        await associago.activities.addInstructor(activityId, data);
+        await associago.activities.addInstructor(activityId, payload);
       }
       onSuccess();
     } catch (error) {
@@ -37,15 +42,15 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
     <form onSubmit={handleSubmit(onSubmit)} className="p-2">
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('First Name')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-firstName">{t('First Name')}</label>
+          <input id="activity-instructor-firstName"
             {...register('firstName', { required: t('First Name is required') })}
             className="form-control"
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Last Name')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-lastName">{t('Last Name')}</label>
+          <input id="activity-instructor-lastName"
             {...register('lastName', { required: t('Last Name is required') })}
             className="form-control"
           />
@@ -54,16 +59,16 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Email')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-email">{t('Email')}</label>
+          <input id="activity-instructor-email"
             type="email"
             {...register('email')}
             className="form-control"
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Phone')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-phone">{t('Phone')}</label>
+          <input id="activity-instructor-phone"
             type="tel"
             {...register('phone')}
             className="form-control"
@@ -73,15 +78,15 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
 
       <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Specialization')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-specialization">{t('Specialization')}</label>
+          <input id="activity-instructor-specialization"
             {...register('specialization')}
             className="form-control"
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Certifications')}</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-certifications">{t('Certifications')}</label>
+          <input id="activity-instructor-certifications"
             {...register('certifications')}
             className="form-control"
             placeholder={t('e.g. CONI, FIGC, etc.')}
@@ -89,10 +94,10 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
         </div>
       </div>
 
-      <div className="row g-3 mb-3">
+      {canFinance && <div className="row g-3 mb-3">
         <div className="col-md-6">
-          <label className="form-label">{t('Compensation')} (&euro;)</label>
-          <input
+          <label className="form-label" htmlFor="activity-instructor-compensation">{t('Compensation')} (&euro;)</label>
+          <input id="activity-instructor-compensation"
             type="number"
             step="0.01"
             {...register('compensation')}
@@ -100,14 +105,14 @@ const ActivityInstructorForm = ({ activityId, instructor, onSuccess, onCancel })
           />
         </div>
         <div className="col-md-6">
-          <label className="form-label">{t('Compensation Type')}</label>
-          <select {...register('compensationType')} className="form-select">
+          <label className="form-label" htmlFor="activity-instructor-compensationType">{t('Compensation Type')}</label>
+          <select id="activity-instructor-compensationType" {...register('compensationType')} className="form-select">
             <option value="HOURLY">{t('Hourly')}</option>
             <option value="FIXED">{t('Fixed Rate')}</option>
             <option value="PERCENTAGE">{t('Percentage')}</option>
           </select>
         </div>
-      </div>
+      </div>}
 
       <div className="d-flex justify-content-end gap-2 mt-4">
         <button type="button" onClick={onCancel} className="btn btn-secondary">

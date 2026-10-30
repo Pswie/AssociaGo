@@ -1,11 +1,14 @@
 package com.associago.activity;
 
+import com.associago.activity.dto.ActivityCreateDTO;
+import com.associago.activity.dto.ActivityParticipantDTO;
+import com.associago.activity.mapper.ActivityMapper;
 import com.associago.activity.repository.*;
+import com.associago.attendance.repository.AttendanceSessionRepository;
 import com.associago.stats.dto.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.associago.suite.SuiteException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -14,174 +17,219 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class ActivityService {
-
     private final ActivityRepository activityRepository;
     private final ActivityParticipantRepository participantRepository;
     private final ActivityCostRepository costRepository;
     private final ActivityInstructorRepository instructorRepository;
     private final ActivityScheduleRepository scheduleRepository;
+    private final AttendanceSessionRepository attendance;
+    private final ActivityAccess access;
 
-    @Autowired
-    public ActivityService(ActivityRepository activityRepository,
-                           ActivityParticipantRepository participantRepository,
-                           ActivityCostRepository costRepository,
-                           ActivityInstructorRepository instructorRepository,
-                           ActivityScheduleRepository scheduleRepository) {
-        this.activityRepository = activityRepository;
-        this.participantRepository = participantRepository;
-        this.costRepository = costRepository;
-        this.instructorRepository = instructorRepository;
-        this.scheduleRepository = scheduleRepository;
+    public ActivityService(ActivityRepository activityRepository, ActivityParticipantRepository participantRepository,
+            ActivityCostRepository costRepository, ActivityInstructorRepository instructorRepository,
+            ActivityScheduleRepository scheduleRepository, AttendanceSessionRepository attendance, ActivityAccess access) {
+        this.activityRepository = activityRepository; this.participantRepository = participantRepository;
+        this.costRepository = costRepository; this.instructorRepository = instructorRepository;
+        this.scheduleRepository = scheduleRepository; this.attendance = attendance; this.access = access;
     }
-
-    // --- Basic CRUD Methods ---
-
     public List<Activity> findByAssociationId(Long associationId) {
-        return activityRepository.findByAssociationId(associationId);
+        Long scope = access.association(associationId);
+        return scope == null ? List.of() : activityRepository.findByAssociationId(scope).stream().map(this::responseActivity).toList();
     }
-
-    /**
-     * Le attività in essere in un esercizio, o tutte se l'anno non è indicato.
-     *
-     * <p>Un'attività ha un periodo: quella cominciata a ottobre e finita a marzo
-     * appartiene a due esercizi, e un corso senza data di fine è ancora in corso
-     * — quindi compare anche negli anni successivi.
-     */
     public List<Activity> findNellEsercizio(Long associationId, Integer anno) {
-        return com.associago.esercizio.Esercizio.valido(anno)
-                ? activityRepository.findNellEsercizio(associationId,
-                        com.associago.esercizio.Esercizio.inizio(anno),
-                        com.associago.esercizio.Esercizio.fine(anno))
-                : activityRepository.findByAssociationId(associationId);
+        Long scope = access.association(associationId);
+        if (scope == null) return List.of();
+        List<Activity> rows = com.associago.esercizio.Esercizio.valido(anno)
+                ? activityRepository.findNellEsercizio(scope, com.associago.esercizio.Esercizio.inizio(anno), com.associago.esercizio.Esercizio.fine(anno))
+                : activityRepository.findByAssociationId(scope);
+        return rows.stream().map(this::responseActivity).toList();
     }
-
     public Optional<Activity> findById(Long id) {
-        return activityRepository.findById(id);
+        return activityRepository.findById(id).map(activity -> { access.require(activity.getAssociationId()); return responseActivity(activity); });
     }
-
     @Transactional
     public Activity save(Activity activity) {
-        return activityRepository.save(activity);
+        if (activity.getId() == null) {
+            access.requireWrite(activity.getAssociationId());
+            if (nonzero(activity.getCost())) access.requireFinancial(activity.getAssociationId());
+        } else {
+            Activity existing = activity(activity.getId(), true, false);
+            access.immutable(activity.getAssociationId(), existing.getAssociationId());
+            if (access.cloud()) activity.setAssociationId(existing.getAssociationId());
+            financialChange(existing.getCost(), activity.getCost(), existing.getAssociationId());
+            if (!access.mayReadFinancial()) activity.setCost(existing.getCost());
+        }
+        return responseActivity(activityRepository.save(activity));
     }
-
+    @Transactional
+    public Activity update(Long id, ActivityCreateDTO dto) {
+        Activity existing = activity(id, true, false);
+        access.immutable(dto.associationId(), existing.getAssociationId());
+        BigDecimal previousCost = existing.getCost();
+        financialChange(previousCost, dto.cost(), existing.getAssociationId());
+        ActivityMapper.updateEntity(existing, dto);
+        if (!access.mayReadFinancial()) existing.setCost(previousCost);
+        return responseActivity(activityRepository.save(existing));
+    }
     @Transactional
     public void deleteById(Long id) {
-        activityRepository.deleteById(id);
+        Activity existing = activity(id, true, false);
+        if (access.cloud() && !attendance.findByActivityId(id).isEmpty()) {
+            throw new SuiteException(409, "ACTIVITY_HAS_ATTENDANCE", "Rimuovere prima le sessioni di presenza collegate all'attivit?.");
+        }
+        if (!costRepository.findByActivityId(id).isEmpty()
+                || participantRepository.findByActivityId(id).stream().anyMatch(this::hasPayments)
+                || instructorRepository.findByActivityId(id).stream().anyMatch(this::hasCompensation)) {
+            access.requireFinancial(existing.getAssociationId());
+        }
+        scheduleRepository.deleteByActivityId(id);
+        instructorRepository.deleteByActivityId(id);
+        participantRepository.deleteByActivityId(id);
+        costRepository.deleteByActivityId(id);
+        activityRepository.delete(existing);
     }
-
-    // --- Participant Methods ---
-
-    public List<ActivityParticipant> findParticipantsByActivityId(Long activityId) {
-        return participantRepository.findByActivityId(activityId);
+    public List<ActivityParticipant> findParticipantsByActivityId(Long id) {
+        activity(id, false, false);
+        return participantRepository.findByActivityId(id);
     }
-
+    public List<com.associago.activity.dto.ActivityParticipantCandidateDTO> participantCandidates(Long id) {
+        return access.participantCandidates(activity(id, false, false).getAssociationId());
+    }
+    public ActivityParticipantDTO participantView(ActivityParticipant row) {
+        return ActivityPrivacy.participant(row, access.mayReadFinancial());
+    }
     @Transactional
     public ActivityParticipant registerParticipant(ActivityParticipant participant) {
+        Activity parent = activity(participant.getActivityId(), true, false);
+        access.creating(participant.getId());
+        if (access.cloud()) participant.setUser(access.participantUser(participant.getUser() == null ? null : participant.getUser().getId(), parent.getAssociationId()));
+        if (hasPayments(participant)) access.requireFinancial(parent.getAssociationId());
+        if (participant.getRegistrationDate() == null) participant.setRegistrationDate(LocalDate.now());
         return participantRepository.save(participant);
     }
-
     @Transactional
-    public void removeParticipant(Long participantId) {
-        participantRepository.deleteById(participantId);
+    public void removeParticipant(Long id) {
+        ActivityParticipant row = participantRepository.findById(id).orElseThrow(() -> missing("Partecipante non trovato."));
+        Activity parent = activity(row.getActivityId(), true, false);
+        if (hasPayments(row)) access.requireFinancial(parent.getAssociationId());
+        participantRepository.delete(row);
     }
-
-    // --- Cost Methods ---
-
-    public List<ActivityCost> findCostsByActivityId(Long activityId) {
-        return costRepository.findByActivityId(activityId);
+    public List<ActivityCost> findCostsByActivityId(Long id) {
+        activity(id, false, true);
+        return costRepository.findByActivityId(id);
     }
-
     @Transactional
     public ActivityCost addCost(ActivityCost cost) {
+        activity(cost.getActivityId(), true, true); access.creating(cost.getId());
         return costRepository.save(cost);
     }
-
     @Transactional
-    public ActivityCost updateCost(Long costId, ActivityCost details) {
-        return costRepository.findById(costId).map(cost -> {
-            cost.setDescription(details.getDescription());
-            cost.setAmount(details.getAmount());
-            cost.setCategory(details.getCategory());
-            cost.setDate(details.getDate());
-            cost.setRecurring(details.isRecurring());
-            cost.setFrequency(details.getFrequency());
-            cost.setSupplier(details.getSupplier());
-            cost.setNotes(details.getNotes());
-            return costRepository.save(cost);
-        }).orElseThrow(() -> new RuntimeException("Cost not found"));
+    public ActivityCost updateCost(Long id, ActivityCost details) {
+        ActivityCost row = costRepository.findById(id).orElseThrow(() -> missing("Costo non trovato."));
+        activity(row.getActivityId(), true, true); access.immutable(details.getActivityId(), row.getActivityId());
+        row.setDescription(details.getDescription()); row.setAmount(details.getAmount()); row.setCategory(details.getCategory());
+        row.setDate(details.getDate()); row.setRecurring(details.isRecurring()); row.setFrequency(details.getFrequency());
+        row.setSupplier(details.getSupplier()); row.setNotes(details.getNotes());
+        return costRepository.save(row);
     }
-
     @Transactional
-    public void deleteCost(Long costId) {
-        costRepository.deleteById(costId);
+    public void deleteCost(Long id) {
+        ActivityCost row = costRepository.findById(id).orElseThrow(() -> missing("Costo non trovato."));
+        activity(row.getActivityId(), true, true); costRepository.delete(row);
     }
-
-    // --- Instructor Methods ---
-
-    public List<ActivityInstructor> findInstructorsByActivityId(Long activityId) {
-        return instructorRepository.findByActivityId(activityId);
+    public List<ActivityInstructor> findInstructorsByActivityId(Long id) {
+        activity(id, false, false);
+        return instructorRepository.findByActivityId(id).stream().map(this::responseInstructor).toList();
     }
-
     @Transactional
-    public ActivityInstructor addInstructor(ActivityInstructor instructor) {
-        return instructorRepository.save(instructor);
+    public ActivityInstructor addInstructor(ActivityInstructor row) {
+        Activity parent = activity(row.getActivityId(), true, false); access.creating(row.getId());
+        if (access.cloud()) access.instructorMembership(row.getUserAssociationId(), parent.getAssociationId());
+        if (hasCompensation(row)) access.requireFinancial(parent.getAssociationId());
+        return responseInstructor(instructorRepository.save(row));
     }
-
     @Transactional
-    public ActivityInstructor updateInstructor(Long instructorId, ActivityInstructor details) {
-        return instructorRepository.findById(instructorId).map(instructor -> {
-            instructor.setFirstName(details.getFirstName());
-            instructor.setLastName(details.getLastName());
-            instructor.setEmail(details.getEmail());
-            instructor.setPhone(details.getPhone());
-            instructor.setSpecialization(details.getSpecialization());
-            instructor.setCompensation(details.getCompensation());
-            instructor.setCompensationType(details.getCompensationType());
-            instructor.setActive(details.isActive());
-            return instructorRepository.save(instructor);
-        }).orElseThrow(() -> new RuntimeException("Instructor not found"));
+    public ActivityInstructor updateInstructor(Long id, ActivityInstructor details) {
+        ActivityInstructor row = instructorRepository.findById(id).orElseThrow(() -> missing("Istruttore non trovato."));
+        Activity parent = activity(row.getActivityId(), true, false); access.immutable(details.getActivityId(), row.getActivityId());
+        access.immutable(details.getUserAssociationId(), row.getUserAssociationId());
+        financialChange(row.getCompensation(), details.getCompensation(), parent.getAssociationId());
+        if (details.getCompensationType() != null && !Objects.equals(details.getCompensationType(), row.getCompensationType())) access.requireFinancial(parent.getAssociationId());
+        row.setFirstName(details.getFirstName()); row.setLastName(details.getLastName()); row.setEmail(details.getEmail());
+        row.setPhone(details.getPhone()); row.setSpecialization(details.getSpecialization());
+        row.setCertifications(details.getCertifications()); row.setNotes(details.getNotes()); row.setActive(details.isActive());
+        if (access.mayReadFinancial()) { row.setCompensation(details.getCompensation()); row.setCompensationType(details.getCompensationType()); }
+        return responseInstructor(instructorRepository.save(row));
     }
-
     @Transactional
-    public void deleteInstructor(Long instructorId) {
-        instructorRepository.deleteById(instructorId);
+    public void deleteInstructor(Long id) {
+        ActivityInstructor row = instructorRepository.findById(id).orElseThrow(() -> missing("Istruttore non trovato."));
+        Activity parent = activity(row.getActivityId(), true, false);
+        if (hasCompensation(row)) access.requireFinancial(parent.getAssociationId());
+        if (scheduleRepository.findByActivityId(row.getActivityId()).stream().anyMatch(s -> Objects.equals(s.getInstructorId(), id))) {
+            throw new SuiteException(409, "INSTRUCTOR_IN_USE", "Rimuovere prima l'istruttore dagli orari collegati.");
+        }
+        instructorRepository.delete(row);
     }
-
-    // --- Schedule Methods ---
-
-    public List<ActivitySchedule> findSchedulesByActivityId(Long activityId) {
-        return scheduleRepository.findByActivityId(activityId);
+    public List<ActivitySchedule> findSchedulesByActivityId(Long id) {
+        activity(id, false, false); return scheduleRepository.findByActivityId(id);
     }
-
     @Transactional
-    public ActivitySchedule addSchedule(ActivitySchedule schedule) {
-        return scheduleRepository.save(schedule);
+    public ActivitySchedule addSchedule(ActivitySchedule row) {
+        activity(row.getActivityId(), true, false); access.creating(row.getId()); validateSchedule(row);
+        return scheduleRepository.save(row);
     }
-
     @Transactional
-    public ActivitySchedule updateSchedule(Long scheduleId, ActivitySchedule details) {
-        return scheduleRepository.findById(scheduleId).map(schedule -> {
-            schedule.setDayOfWeek(details.getDayOfWeek());
-            schedule.setStartTime(details.getStartTime());
-            schedule.setEndTime(details.getEndTime());
-            schedule.setLocation(details.getLocation());
-            schedule.setInstructorId(details.getInstructorId());
-            schedule.setActive(details.isActive());
-            return scheduleRepository.save(schedule);
-        }).orElseThrow(() -> new RuntimeException("Schedule not found"));
+    public ActivitySchedule updateSchedule(Long id, ActivitySchedule details) {
+        ActivitySchedule row = scheduleRepository.findById(id).orElseThrow(() -> missing("Orario non trovato."));
+        activity(row.getActivityId(), true, false); access.immutable(details.getActivityId(), row.getActivityId());
+        details.setActivityId(row.getActivityId()); validateSchedule(details);
+        row.setDayOfWeek(details.getDayOfWeek()); row.setStartTime(details.getStartTime()); row.setEndTime(details.getEndTime());
+        row.setLocation(details.getLocation()); row.setInstructorId(details.getInstructorId()); row.setActive(details.isActive());
+        return scheduleRepository.save(row);
     }
-
     @Transactional
-    public void deleteSchedule(Long scheduleId) {
-        scheduleRepository.deleteById(scheduleId);
+    public void deleteSchedule(Long id) {
+        ActivitySchedule row = scheduleRepository.findById(id).orElseThrow(() -> missing("Orario non trovato."));
+        activity(row.getActivityId(), true, false); scheduleRepository.delete(row);
     }
+    private Activity activity(Long id, boolean lock, boolean financial) {
+        if (id == null || id <= 0) throw new SuiteException(400, "ACTIVITY_REQUIRED", "Indicare l'attivit?.");
+        Activity row = (lock ? activityRepository.findForUpdate(id) : activityRepository.findById(id)).orElseThrow(() -> missing("Attivit? non trovata."));
+        if (financial) access.requireFinancial(row.getAssociationId());
+        else if (lock) access.requireWrite(row.getAssociationId());
+        else access.require(row.getAssociationId());
+        return row;
+    }
+    private void validateSchedule(ActivitySchedule row) {
+        if (row.getInstructorId() != null) {
+            var instructor = instructorRepository.findById(row.getInstructorId()).orElseThrow(() -> missing("Istruttore non trovato."));
+            if (!Objects.equals(instructor.getActivityId(), row.getActivityId())) throw new SuiteException(403, "ACTIVITY_FORBIDDEN", "L'istruttore non appartiene all'attivit?.");
+        }
+        if (row.getStartTime() != null && row.getEndTime() != null && row.getEndTime().isBefore(row.getStartTime())) throw new SuiteException(400, "ACTIVITY_TIME_RANGE", "L'orario di fine non pu? precedere l'inizio.");
+    }
+    private void financialChange(BigDecimal previous, BigDecimal requested, Long association) {
+        if (requested != null && (previous == null || requested.compareTo(previous) != 0)) access.requireFinancial(association);
+    }
+    private boolean hasPayments(ActivityParticipant row) {
+        return row.isPaid() || nonzero(row.getAmountPaid()) || row.getInvoiceId() != null || row.getPaymentDate() != null || row.getPaymentMethod() != null;
+    }
+    private boolean hasCompensation(ActivityInstructor row) { return row.getCompensation() != null || row.getCompensationType() != null; }
+    private static boolean nonzero(BigDecimal value) { return value != null && value.compareTo(BigDecimal.ZERO) != 0; }
+    private Activity responseActivity(Activity row) { return access.mayReadFinancial() ? row : ActivityPrivacy.basic(row); }
+    private ActivityInstructor responseInstructor(ActivityInstructor row) { return access.mayReadFinancial() ? row : ActivityPrivacy.instructor(row); }
+    private static SuiteException missing(String message) { return new SuiteException(404, "ACTIVITY_NOT_FOUND", message); }
 
     // --- Advanced Reporting & Stats Methods ---
 
     public ActivityWithDetailsDTO getActivityWithDetails(Long activityId) {
-        Activity activity = activityRepository.findById(activityId)
-                .orElseThrow(() -> new RuntimeException("Activity not found"));
+        return details(activityId, false);
+    }
+
+    private ActivityWithDetailsDTO details(Long activityId, boolean financialReport) {
+        Activity activity = activity(activityId, false, financialReport);
 
         List<ActivityParticipant> participants = participantRepository.findByActivityId(activityId);
         List<ActivityCost> costs = costRepository.findByActivityId(activityId);
@@ -243,8 +291,9 @@ public class ActivityService {
 
         // Recent Participants (last 5)
         dto.setRecentParticipants(participants.stream()
-                .sorted(Comparator.comparing(ActivityParticipant::getRegistrationDate).reversed())
+                .sorted(Comparator.comparing(ActivityParticipant::getRegistrationDate, Comparator.nullsFirst(Comparator.naturalOrder())).reversed())
                 .limit(5)
+                .map(this::participantView)
                 .collect(Collectors.toList()));
 
         // Cost Categories
@@ -283,11 +332,18 @@ public class ActivityService {
         metrics.setDropOutRate(0.0);
         dto.setPerformanceMetrics(metrics);
 
+        if (!access.mayReadFinancial()) {
+            dto.setActivity(ActivityPrivacy.basic(activity));
+            dto.setInstructors(instructors.stream().map(ActivityPrivacy::instructor).toList());
+            dto.setTotalRevenue(null); dto.setPaidRevenue(null); dto.setPendingRevenue(null);
+            dto.setTotalCosts(null); dto.setNetProfit(null); dto.setTopCostCategories(null);
+            dto.setPaymentStatus(null); dto.setPendingParticipants(null);
+        }
         return dto;
     }
 
     public ActivityFinancialSummaryDTO getActivityFinancialSummary(Long activityId) {
-        ActivityWithDetailsDTO details = getActivityWithDetails(activityId);
+        ActivityWithDetailsDTO details = details(activityId, true);
 
         ActivityFinancialSummaryDTO summary = new ActivityFinancialSummaryDTO();
         summary.setActivityId(activityId);

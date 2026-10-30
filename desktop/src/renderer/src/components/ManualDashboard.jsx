@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Card, Row, Col, Spinner, ListGroup } from 'react-bootstrap';
+import { Alert, Button, Card, Form, Row, Col, Spinner, ListGroup } from 'react-bootstrap';
 import { BookOpen, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,6 +10,8 @@ const ManualDashboard = () => {
     const [selectedDoc, setSelectedDoc] = useState('01_intro.md');
     const [content, setContent] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [reload, setReload] = useState(0);
 
     const documents = [
         { id: '01_intro.md', title: '1. Introduzione e Dashboard' },
@@ -33,38 +35,33 @@ const ManualDashboard = () => {
     ];
 
     useEffect(() => {
-        loadDocument(selectedDoc);
-    }, [selectedDoc, i18n.language]);
-
-    const loadDocument = async (filename) => {
+        const controller = new AbortController();
+        let cancelled = false;
+        const loadDocument = async () => {
         setLoading(true);
+        setError('');
         try {
-            const lang = i18n.language || 'it';
-
-            // Try to fetch localized version first
-            let response = await fetch(`/docs/${lang}/${filename}`);
-
-            // Fallback to Italian (in 'it' folder) if localized version not found
-            if (!response.ok) {
-                response = await fetch(`/docs/it/${filename}`);
+            const lang = (i18n.resolvedLanguage || i18n.language || 'it').split('-')[0];
+            for (const language of [...new Set([lang, 'it', 'en'])]) {
+                const url = new URL(`${import.meta.env.BASE_URL || './'}docs/${language}/${selectedDoc}`, window.location.href);
+                const response = await fetch(url, { signal: controller.signal });
+                if (!response.ok) continue;
+                const text = await response.text();
+                // SPA rewrites may return index.html with HTTP 200 for a missing file.
+                if (/^\s*(<!doctype\s+html|<html)/i.test(text)) continue;
+                if (!cancelled) setContent(text);
+                return;
             }
-
-            // Fallback to English if Italian not found (unlikely but safe)
-            if (!response.ok) {
-                 response = await fetch(`/docs/en/${filename}`);
-            }
-
-            if (!response.ok) throw new Error("Document not found");
-
-            const text = await response.text();
-            setContent(text);
+            throw new Error(t('Unable to load document.'));
         } catch (error) {
-            console.error("Error loading doc:", error);
-            setContent(`# ${t('Error')}\n${t('Unable to load document.')}`);
+            if (!cancelled && error.name !== 'AbortError') setError(error.message);
         } finally {
-            setLoading(false);
+            if (!cancelled) setLoading(false);
         }
-    };
+        };
+        loadDocument();
+        return () => { cancelled = true; controller.abort(); };
+    }, [selectedDoc, i18n.language, reload, t]);
 
     return (
         <div className="fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -78,8 +75,14 @@ const ManualDashboard = () => {
                 </div>
             </div>
 
+            <Form.Group controlId="manual-chapter" className="d-md-none mb-3">
+                <Form.Label>{t('Capitolo del manuale')}</Form.Label>
+                <Form.Select value={selectedDoc} onChange={event => setSelectedDoc(event.target.value)}>
+                    {documents.map(doc => <option key={doc.id} value={doc.id}>{t(doc.title)}</option>)}
+                </Form.Select>
+            </Form.Group>
             <Row>
-                <Col md={3} className="mb-4">
+                <Col md={3} className="mb-4 d-none d-md-block">
                     <Card className="border-0 shadow-sm h-100">
                         <Card.Body className="p-0">
                             <ListGroup variant="flush">
@@ -88,6 +91,7 @@ const ManualDashboard = () => {
                                         key={doc.id}
                                         action
                                         active={selectedDoc === doc.id}
+                                        aria-current={selectedDoc === doc.id ? 'page' : undefined}
                                         onClick={() => setSelectedDoc(doc.id)}
                                         className="border-0 py-3 px-4 d-flex justify-content-between align-items-center"
                                         style={{ cursor: 'pointer' }}
@@ -105,12 +109,12 @@ const ManualDashboard = () => {
 
                 <Col md={9}>
                     <Card className="border-0 shadow-sm min-vh-100">
-                        <Card.Body className="p-5">
+                        <Card.Body className="p-3 p-lg-5">
                             {loading ? (
                                 <div className="d-flex justify-content-center align-items-center h-100">
                                     <Spinner animation="border" variant="primary" />
                                 </div>
-                            ) : (
+                            ) : error ? <Alert variant="danger" role="alert">{error}<Button variant="link" onClick={() => setReload(value => value + 1)}>{t('Retry')}</Button></Alert> : (
                                 <div className="markdown-body">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                         {content}

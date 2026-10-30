@@ -3,7 +3,7 @@ package com.associago.stats.dto;
 import com.associago.activity.Activity;
 import com.associago.activity.ActivityCost;
 import com.associago.activity.ActivityInstructor;
-import com.associago.activity.ActivityParticipant;
+import com.associago.activity.dto.ActivityParticipantDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,7 +27,7 @@ public class ActivityWithDetailsDTO {
     private Integer availableSpots;
     
     private List<ActivityInstructor> instructors;
-    private List<ActivityParticipant> recentParticipants;
+    private List<ActivityParticipantDTO> recentParticipants;
     private List<ActivityCostSummaryDTO> topCostCategories;
     
     private ActivityPaymentStatusDTO paymentStatus;
@@ -64,8 +64,8 @@ public class ActivityWithDetailsDTO {
     public void setAvailableSpots(Integer availableSpots) { this.availableSpots = availableSpots; }
     public List<ActivityInstructor> getInstructors() { return instructors; }
     public void setInstructors(List<ActivityInstructor> instructors) { this.instructors = instructors; }
-    public List<ActivityParticipant> getRecentParticipants() { return recentParticipants; }
-    public void setRecentParticipants(List<ActivityParticipant> recentParticipants) { this.recentParticipants = recentParticipants; }
+    public List<ActivityParticipantDTO> getRecentParticipants() { return recentParticipants; }
+    public void setRecentParticipants(List<ActivityParticipantDTO> recentParticipants) { this.recentParticipants = recentParticipants; }
     public List<ActivityCostSummaryDTO> getTopCostCategories() { return topCostCategories; }
     public void setTopCostCategories(List<ActivityCostSummaryDTO> topCostCategories) { this.topCostCategories = topCostCategories; }
     public ActivityPaymentStatusDTO getPaymentStatus() { return paymentStatus; }

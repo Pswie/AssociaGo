@@ -13,4 +13,5 @@ public interface ActivityParticipantRepository extends JpaRepository<ActivityPar
     Integer countByActivityId(Long activityId);
     List<ActivityParticipant> findByUser_Id(Long userId);
     Optional<ActivityParticipant> findByActivityIdAndUser_Id(Long activityId, Long userId);
+    long deleteByActivityId(Long activityId);
 }

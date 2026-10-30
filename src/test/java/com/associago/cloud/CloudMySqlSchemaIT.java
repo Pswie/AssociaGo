@@ -44,6 +44,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Profilo cloud: baseline MySQL e mappatura delle entity")
 class CloudMySqlSchemaIT {
 
+    @Autowired
+    jakarta.persistence.EntityManager attendanceEntityManager;
+
+    @Test
+    @org.springframework.transaction.annotation.Transactional
+    void attendanceMembershipReferencesRoundTripAndLegacyDuplicatesRemainValid() {
+        AttendanceMappingProbe.verify(attendanceEntityManager);
+    }
+
     @SuppressWarnings("resource")
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("associago")

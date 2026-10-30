@@ -138,3 +138,28 @@ test('web association selection is explicit when more than one association exist
     assert.throws(() => initialWebAssociation([first], 'bad'), /non valido/);
     assert.throws(() => initialWebAssociation([], ''), /Nessuna associazione/);
 });
+
+test('attendance loads scoped participants and keeps membership and legacy IDs distinct', async (t) => {
+    const requests = [];
+    const api = await client(t, async (url, config) => { requests.push({ url, config }); return jsonResponse({}); });
+    await api.attendance.getParticipants(71);
+    await api.attendance.createRecord({ sessionId: 501, membershipId: 301, memberId: null, status: 'PRESENT' });
+    await api.attendance.updateRecord(901, { sessionId: 501, membershipId: null, memberId: 301, status: 'ABSENT' });
+    await api.attendance.deleteRecord(901);
+    assert.ok(requests[0].url.endsWith('/v1/attendance/activity/71/participants'));
+    assert.deepEqual(JSON.parse(requests[1].config.body), { sessionId: 501, membershipId: 301, memberId: null, status: 'PRESENT' });
+    assert.equal(requests[2].config.method, 'PUT');
+    assert.deepEqual(JSON.parse(requests[2].config.body), { sessionId: 501, membershipId: null, memberId: 301, status: 'ABSENT' });
+    assert.ok(requests[3].url.endsWith('/v1/attendance/record/901'));
+    assert.equal(requests[3].config.method, 'DELETE');
+});
+
+test('activity candidates use their scoped user identity instead of the membership identifier', async (t) => {
+    const requests = [];
+    const api = await client(t, async (url, config) => { requests.push({ url, config }); return jsonResponse({}); });
+    await api.activities.getParticipantCandidates(71);
+    await api.activities.addParticipant(71, { user: { id: 91 }, isActive: true });
+    assert.ok(requests[0].url.endsWith('/v1/activities/71/participant-candidates'));
+    assert.ok(requests[1].url.endsWith('/v1/activities/71/participants'));
+    assert.deepEqual(JSON.parse(requests[1].config.body), { user: { id: 91 }, isActive: true });
+});

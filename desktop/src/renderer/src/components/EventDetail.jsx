@@ -75,7 +75,7 @@ const EventDetail = ({ eventId, shell, onBack }) => {
                     </div>
                 </div>
                 <div className="ms-auto">
-                    <Button variant="outline-primary" className="me-2" onClick={() => shell.openModal('event-form', { associationId: event.associationId, event: event, onSuccess: loadData })}>
+                    <Button variant="outline-primary" className="me-2" onClick={() => shell.openModal('event-form', { associationId: event.associationId, eventId: event.id, event, onSuccess: loadData })}>
                         <Edit size={18} className="me-2" /> {t('Edit')}
                     </Button>
                 </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Badge, Nav, Spinner, Dropdown , Modal} from 'react-bootstrap';
+import { Alert, Card, Button, Table, Badge, Nav, Spinner, Dropdown , Modal} from 'react-bootstrap';
 import { ArrowLeft, Plus, Trash2, Edit, MoreVertical, DollarSign, Users, Clock, User, Download, Award, Upload , Paperclip} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
 import AttachmentPanel from './AttachmentPanel';
 import CsvImporter from './CsvImporter';
+import { mayViewProjectFinance } from '../project-context';
 import { translateActivityCategory, translateCompensationType, translateCostCategory, translateCertificateType } from '../utils/enumTranslations';
 
 const ActivityDetail = ({ activityId, shell, onBack }) => {
@@ -13,6 +14,11 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('participants');
     const [ricevutaCosto, setRicevutaCosto] = useState(null);
+    const [error, setError] = useState('');
+    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api));
+    const canCertificates = Boolean(window.api) || shell?.pages?.some(page => page.id === 'certificates');
+    const canImport = Boolean(window.api) || shell?.currentUser?.role === 'presidente';
+    const money = value => value == null ? '—' : `€ ${value.toLocaleString('it-IT')}`;
 
     // Sub-resources data
     const [participants, setParticipants] = useState([]);
@@ -23,18 +29,20 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
 
     useEffect(() => {
         loadData();
-    }, [activityId]);
+    }, [activityId, canFinance, canCertificates]);
 
     const loadData = async () => {
         setLoading(true);
+        setError('');
+        if (!canFinance && activeTab === 'costs') setActiveTab('participants');
         try {
             const [d, p, c, i, s, templates] = await Promise.all([
                 associago.activities.getDetails(activityId),
                 associago.activities.getParticipants(activityId),
-                associago.activities.getCosts(activityId),
+                canFinance ? associago.activities.getCosts(activityId) : Promise.resolve([]),
                 associago.activities.getInstructors(activityId),
                 associago.activities.getSchedules(activityId),
-                associago.certificates.getTemplates(shell?.currentAssociationId)
+                canCertificates ? associago.certificates.getTemplates(shell?.currentAssociationId) : Promise.resolve([])
             ]);
             setDetails(d);
             setParticipants(p);
@@ -43,6 +51,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
             setSchedules(s);
             setCertificateTemplates(templates || []);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error loading activity details:", error);
         } finally {
             setLoading(false);
@@ -87,28 +96,29 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
     };
 
     if (loading) return <div className="text-center p-5"><Spinner animation="border" variant="primary" /></div>;
+    if (error) return <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={loadData}>{t('Retry')}</Button> <Button variant="link" onClick={onBack}>{t('Back')}</Button></Alert>;
     if (!details) return <div className="text-center p-5 text-muted">{t('Activity not found')}</div>;
 
     const { activity } = details;
 
     return (
         <div className="fade-in">
-            <div className="d-flex align-items-center mb-4">
-                <Button variant="link" className="p-0 me-3 text-dark" onClick={onBack}>
+            <div className="d-flex flex-wrap align-items-center gap-3 mb-4">
+                <Button variant="link" className="p-0 text-dark" onClick={onBack} aria-label={t('Back')}>
                     <ArrowLeft size={24} />
                 </Button>
-                <div>
+                <div style={{ minWidth: 0, flex: '1 1 200px' }}>
                     <h2 className="fw-bold text-dark mb-0">{activity.name}</h2>
                     <div className="text-muted small">
                         <Badge bg="info" className="me-2">{translateActivityCategory(activity.category, t)}</Badge>
                         {new Date(activity.startDate).toLocaleDateString()} - {activity.endDate ? new Date(activity.endDate).toLocaleDateString() : t('Ongoing')}
                     </div>
                 </div>
-                <div className="ms-auto d-flex gap-2">
-                    <Button variant="outline-secondary" onClick={handleDownloadReport}>
+                <div className="ms-auto d-flex flex-wrap gap-2">
+                    {canFinance && <Button variant="outline-secondary" onClick={handleDownloadReport}>
                         <Download size={18} className="me-2" /> {t('Report')}
-                    </Button>
-                    <Button variant="outline-primary" onClick={() => shell.openModal('activity-form', { associationId: activity.associationId, activity: activity, onSuccess: loadData })}>
+                    </Button>}
+                    <Button variant="outline-primary" onClick={() => shell.openModal('activity-form', { associationId: activity.associationId, activity: activity, canFinance, onSuccess: loadData })}>
                         <Edit size={18} className="me-2" /> {t('Edit')}
                     </Button>
                 </div>
@@ -123,11 +133,11 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                         </Card.Body>
                     </Card>
                 </div>
-                <div className="col-md-3">
+                {canFinance && <><div className="col-md-3">
                     <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <h6 className="text-muted text-uppercase small fw-bold">{t('Revenue')}</h6>
-                            <h3 className="fw-bold text-success mb-0">€ {details.totalRevenue?.toLocaleString()}</h3>
+                            <h3 className="fw-bold text-success mb-0">{money(details.totalRevenue)}</h3>
                         </Card.Body>
                     </Card>
                 </div>
@@ -135,7 +145,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                     <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <h6 className="text-muted text-uppercase small fw-bold">{t('Costs')}</h6>
-                            <h3 className="fw-bold text-danger mb-0">€ {details.totalCosts?.toLocaleString()}</h3>
+                            <h3 className="fw-bold text-danger mb-0">{money(details.totalCosts)}</h3>
                         </Card.Body>
                     </Card>
                 </div>
@@ -144,11 +154,11 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                         <Card.Body>
                             <h6 className="text-muted text-uppercase small fw-bold">{t('Net Profit')}</h6>
                             <h3 className={`fw-bold mb-0 ${details.netProfit >= 0 ? 'text-primary' : 'text-danger'}`}>
-                                € {details.netProfit?.toLocaleString()}
+                                {money(details.netProfit)}
                             </h3>
                         </Card.Body>
                     </Card>
-                </div>
+                </div></>}
             </div>
 
             <Card className="border-0 shadow-sm">
@@ -157,40 +167,40 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                         <Nav.Item><Nav.Link eventKey="participants" className="d-flex align-items-center gap-2"><Users size={18}/> {t('Participants')}</Nav.Link></Nav.Item>
                         <Nav.Item><Nav.Link eventKey="schedules" className="d-flex align-items-center gap-2"><Clock size={18}/> {t('Schedule')}</Nav.Link></Nav.Item>
                         <Nav.Item><Nav.Link eventKey="instructors" className="d-flex align-items-center gap-2"><User size={18}/> {t('Instructors')}</Nav.Link></Nav.Item>
-                        <Nav.Item><Nav.Link eventKey="costs" className="d-flex align-items-center gap-2"><DollarSign size={18}/> {t('Costs')}</Nav.Link></Nav.Item>
-                        <Nav.Item><Nav.Link eventKey="certificates" className="d-flex align-items-center gap-2"><Award size={18}/> {t('Certificates')}</Nav.Link></Nav.Item>
-                        <Nav.Item><Nav.Link eventKey="import" className="d-flex align-items-center gap-2"><Upload size={18}/> {t('CSV Import')}</Nav.Link></Nav.Item>
+                        {canFinance && <Nav.Item><Nav.Link eventKey="costs" className="d-flex align-items-center gap-2"><DollarSign size={18}/> {t('Costs')}</Nav.Link></Nav.Item>}
+                        {canCertificates && <Nav.Item><Nav.Link eventKey="certificates" className="d-flex align-items-center gap-2"><Award size={18}/> {t('Certificates')}</Nav.Link></Nav.Item>}
+                        {canImport && <Nav.Item><Nav.Link eventKey="import" className="d-flex align-items-center gap-2"><Upload size={18}/> {t('CSV Import')}</Nav.Link></Nav.Item>}
                     </Nav>
                 </Card.Header>
                 <Card.Body className="p-0">
                     {activeTab === 'participants' && (
                         <div>
                             <div className="p-3 text-end border-bottom">
-                                <Button size="sm" onClick={() => shell.openModal('activity-participant-form', { activityId, onSuccess: loadData })}>
+                                <Button size="sm" onClick={() => shell.openModal('activity-participant-form', { activityId, associationId: activity.associationId, onSuccess: loadData })}>
                                     <Plus size={16} className="me-1"/> {t('Add Participant')}
                                 </Button>
                             </div>
                             <Table hover responsive className="mb-0 align-middle">
-                                <thead className="bg-light"><tr><th className="ps-4">{t('Name')}</th><th>{t('Payment')}</th><th>{t('Status')}</th><th className="text-end pe-4">{t('Actions')}</th></tr></thead>
+                                <thead className="bg-light"><tr><th className="ps-4">{t('Name')}</th>{canFinance && <th>{t('Payment')}</th>}<th>{t('Status')}</th><th className="text-end pe-4">{t('Actions')}</th></tr></thead>
                                 <tbody>
                                     {participants.map(p => (
                                         <tr key={p.id}>
                                             <td className="ps-4">
                                                 {p.user ? `${p.user.firstName} ${p.user.lastName}` : `#${p.id}`}
                                             </td>
-                                            <td>
-                                                <Badge bg={p.isPaid ? 'success' : 'warning'} text={p.isPaid ? 'white' : 'dark'}>
+                                            {canFinance && <td>
+                                                {p.isPaid == null ? '—' : <Badge bg={p.isPaid ? 'success' : 'warning'} text={p.isPaid ? 'white' : 'dark'}>
                                                     {p.isPaid ? t('Paid') : t('Pending')}
-                                                </Badge>
+                                                </Badge>}
                                                 {p.amountPaid > 0 && <span className="ms-2 small text-muted">€ {p.amountPaid}</span>}
-                                            </td>
+                                            </td>}
                                             <td><Badge bg={p.isActive ? 'success' : 'secondary'}>{p.isActive ? t('Active') : t('Inactive')}</Badge></td>
                                             <td className="text-end pe-4">
                                                 <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteSubResource('participant', p.id)}><Trash2 size={16}/></Button>
                                             </td>
                                         </tr>
                                     ))}
-                                    {participants.length === 0 && <tr><td colSpan="4" className="text-center py-4 text-muted">{t('No participants')}</td></tr>}
+                                    {participants.length === 0 && <tr><td colSpan={canFinance ? 4 : 3} className="text-center py-4 text-muted">{t('No participants')}</td></tr>}
                                 </tbody>
                             </Table>
                         </div>
@@ -226,31 +236,31 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                     {activeTab === 'instructors' && (
                         <div>
                             <div className="p-3 text-end border-bottom">
-                                <Button size="sm" onClick={() => shell.openModal('activity-instructor-form', { activityId, onSuccess: loadData })}>
+                                <Button size="sm" onClick={() => shell.openModal('activity-instructor-form', { activityId, canFinance, onSuccess: loadData })}>
                                     <Plus size={16} className="me-1"/> {t('Add Instructor')}
                                 </Button>
                             </div>
                             <Table hover responsive className="mb-0 align-middle">
-                                <thead className="bg-light"><tr><th className="ps-4">{t('Name')}</th><th>{t('Role')}</th><th>{t('Compensation')}</th><th className="text-end pe-4">{t('Actions')}</th></tr></thead>
+                                <thead className="bg-light"><tr><th className="ps-4">{t('Name')}</th><th>{t('Role')}</th>{canFinance && <th>{t('Compensation')}</th>}<th className="text-end pe-4">{t('Actions')}</th></tr></thead>
                                 <tbody>
                                     {instructors.map(i => (
                                         <tr key={i.id}>
                                             <td className="ps-4">{i.firstName} {i.lastName}</td>
                                             <td>{i.specialization}</td>
-                                            <td>€ {i.compensation} ({translateCompensationType(i.compensationType, t)})</td>
+                                            {canFinance && <td>{money(i.compensation)} {i.compensationType && `(${translateCompensationType(i.compensationType, t)})`}</td>}
                                             <td className="text-end pe-4">
-                                                <Button variant="link" className="text-muted p-0 me-2" onClick={() => shell.openModal('activity-instructor-form', { activityId, instructor: i, onSuccess: loadData })}><Edit size={16}/></Button>
+                                                <Button variant="link" className="text-muted p-0 me-2" onClick={() => shell.openModal('activity-instructor-form', { activityId, instructor: i, canFinance, onSuccess: loadData })}><Edit size={16}/></Button>
                                                 <Button variant="link" className="text-danger p-0" onClick={() => handleDeleteSubResource('instructor', i.id)}><Trash2 size={16}/></Button>
                                             </td>
                                         </tr>
                                     ))}
-                                    {instructors.length === 0 && <tr><td colSpan="4" className="text-center py-4 text-muted">{t('No instructors')}</td></tr>}
+                                    {instructors.length === 0 && <tr><td colSpan={canFinance ? 4 : 3} className="text-center py-4 text-muted">{t('No instructors')}</td></tr>}
                                 </tbody>
                             </Table>
                         </div>
                     )}
 
-                    {activeTab === 'costs' && (
+                    {canFinance && activeTab === 'costs' && (
                         <div>
                             <div className="p-3 text-end border-bottom">
                                 <Button size="sm" onClick={() => shell.openModal('activity-cost-form', { activityId, onSuccess: loadData })}>
@@ -280,7 +290,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                         </div>
                     )}
 
-                    {activeTab === 'certificates' && (
+                    {canCertificates && activeTab === 'certificates' && (
                         <div className="p-3">
                             <Card className="border-0 bg-light">
                                 <Card.Body>
@@ -307,7 +317,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
                         </div>
                     )}
 
-                    {activeTab === 'import' && (
+                    {canImport && activeTab === 'import' && (
                         <div className="p-3">
                             <CsvImporter
                                 title={t('Activity Participants CSV Import')}

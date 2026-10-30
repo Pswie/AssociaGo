@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { associago } from '../api';
 import { useTranslation } from 'react-i18next';
 
-const ActivityForm = ({ associationId, activityId, activity, onSuccess, onCancel }) => {
+const ActivityForm = ({ associationId, activityId, activity, canFinance = Boolean(window.api), onSuccess, onCancel }) => {
   const { t } = useTranslation();
   const id = activityId || activity?.id;
   const [loading, setLoading] = useState(Boolean(id));
@@ -44,7 +44,7 @@ const ActivityForm = ({ associationId, activityId, activity, onSuccess, onCancel
           endTime: data.endTime || null,
           location: data.location,
           maxParticipants: data.maxParticipants ? parseInt(data.maxParticipants) : null,
-          cost: data.cost ? parseFloat(data.cost) : 0,
+          ...(canFinance ? { cost: data.cost ? parseFloat(data.cost) : 0 } : {}),
           isActive: data.isActive ?? true,
           // New fields
           subscriptionType: data.subscriptionType,
@@ -108,7 +108,7 @@ const ActivityForm = ({ associationId, activityId, activity, onSuccess, onCancel
       </div>
 
       <div className="row g-3 mb-3">
-        <div className="col-md-6">
+        {canFinance && <div className="col-md-6">
           <label htmlFor="activity-cost" className="form-label">{t('Cost')} (€)</label>
           <input id="activity-cost"
             type="number"
@@ -117,7 +117,7 @@ const ActivityForm = ({ associationId, activityId, activity, onSuccess, onCancel
             {...register('cost', { min: 0 })}
             className="form-control"
           />
-        </div>
+        </div>}
         <div className="col-md-6">
             <label htmlFor="activity-scheduleDetails" className="form-label">{t('Schedule Details')}</label>
             <input id="activity-scheduleDetails"

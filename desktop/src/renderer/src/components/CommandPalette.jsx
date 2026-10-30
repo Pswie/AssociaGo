@@ -16,14 +16,7 @@ export default function CommandPalette({ shell, isOpen, onClose }) {
 
     // Lista comandi base
     const commands = [
-        { id: 'dashboard', label: t('nav.dashboard'), icon: 'LayoutDashboard', action: () => shell.navigate('dashboard') },
-        { id: 'members', label: t('nav.members'), icon: 'Users', action: () => shell.navigate('members') },
-        { id: 'activities', label: t('nav.activities'), icon: 'Calendar', action: () => shell.navigate('activities') },
-        { id: 'events', label: t('nav.events'), icon: 'Calendar', action: () => shell.navigate('events') },
-        { id: 'fiscal', label: t('nav.fiscal'), icon: 'CreditCard', action: () => shell.navigate('fiscal') },
-        ...['assemblies', 'inventory', 'volunteers', 'attendance', 'coupons', 'budget', 'balance', 'certificates', 'communications'].map(id => ({ id, label: t(`nav.${id}`), action: () => shell.navigate(id) })),
-        { id: 'manual', label: t('User Manual'), action: () => shell.navigate('manual') },
-        { id: 'settings', label: t('nav.settings'), icon: 'Settings', action: () => shell.navigate('settings') },
+        ...(shell.pages || []).map(page => ({ id: page.id, label: page.label, action: () => shell.navigate(page.id) })),
         { id: 'new-member', label: t('New Member'), icon: 'UserPlus', action: () => {
             shell.navigate('members');
             shell.openModal('member-form', {
@@ -55,6 +48,12 @@ export default function CommandPalette({ shell, isOpen, onClose }) {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isOpen && filteredCommands[selectedIndex]) {
+            document.getElementById(`command-${filteredCommands[selectedIndex].id}`)?.scrollIntoView({ block: 'nearest' });
+        }
+    }, [isOpen, selectedIndex, query]);
+
     // Gestione tastiera
     const handleKeyDown = (e) => {
         if (e.key === 'ArrowDown') {
@@ -75,7 +74,7 @@ export default function CommandPalette({ shell, isOpen, onClose }) {
     };
 
     return (
-        <Modal show={isOpen} onHide={onClose} centered size="lg" fullscreen="sm-down" className="command-palette-modal">
+        <Modal show={isOpen} onHide={onClose} centered size="lg" fullscreen="sm-down" className="command-palette-modal" aria-label={t('Cerca nel gestionale')}>
             <Modal.Body className="p-0">
                 <div className="d-flex align-items-center p-3 border-bottom">
                     <Search size={20} className="text-muted me-3" />

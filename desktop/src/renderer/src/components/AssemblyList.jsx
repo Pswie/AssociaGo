@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Form, InputGroup, Badge, Spinner } from 'react-bootstrap';
+import { Alert, Card, Button, Table, Form, InputGroup, Badge, Spinner } from 'react-bootstrap';
 import { Search, Plus, Edit, Trash2, FileText, Users, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { associago } from '../api';
@@ -12,6 +12,7 @@ const AssemblyList = ({ associationId, shell }) => {
     const { t } = useTranslation();
     const [assemblies, setAssemblies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedAssemblyId, setSelectedAssemblyId] = useState(null);
 
@@ -23,10 +24,12 @@ const AssemblyList = ({ associationId, shell }) => {
 
     const fetchAssemblies = async () => {
         setLoading(true);
+        setError('');
         try {
             const data = await associago.assemblies.getAll(associationId, anno);
             setAssemblies(data);
         } catch (error) {
+            setError(error.message || t('Caricamento non riuscito. Riprova.'));
             console.error("Error fetching assemblies:", error);
         } finally {
             setLoading(false);
@@ -64,6 +67,7 @@ const AssemblyList = ({ associationId, shell }) => {
     // --- RENDER LIST VIEW ---
     return (
         <div className="fade-in">
+            {error && <Alert variant="danger" role="alert">{error} <Button variant="link" onClick={fetchAssemblies}>{t('Retry')}</Button></Alert>}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1">{t('Assemblies')}</h2>

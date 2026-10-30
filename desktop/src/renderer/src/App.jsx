@@ -234,7 +234,7 @@ function App({ webSession }) {
   };
 
   const renderModalContent = () => {
-      const commonProps = { ...modalProps, onCancel: closeModal, onSuccess: () => { modalProps.onSuccess?.(); closeModal(); } };
+      const commonProps = { associationId: currentAssociation?.id, associationType: currentAssociation?.tipo, ...modalProps, onCancel: closeModal, onSuccess: () => { modalProps.onSuccess?.(); closeModal(); } };
       switch (modalType) {
           case 'member-form': return <MemberForm {...commonProps} />;
           case 'activity-form': return <ActivityForm {...commonProps} />;
@@ -256,6 +256,27 @@ function App({ webSession }) {
           case 'coupon-form': return <CouponForm {...commonProps} />;
           default: return null;
       }
+  };
+
+  const modalTitles = {
+      'member-form': modalProps.memberId ? 'Modifica socio' : 'Nuovo socio',
+      'activity-form': modalProps.activityId || modalProps.activity?.id ? 'Modifica attività' : 'Nuova attività',
+      'activity-cost-form': 'Costo dell’attività',
+      'activity-instructor-form': 'Istruttore dell’attività',
+      'activity-schedule-form': 'Orario dell’attività',
+      'activity-participant-form': 'Partecipante all’attività',
+      'event-form': modalProps.eventId || modalProps.event?.id ? 'Modifica evento' : 'Nuovo evento',
+      'event-participant-form': 'Partecipante all’evento',
+      'assembly-form': modalProps.assemblyId ? 'Modifica assemblea' : 'Nuova assemblea',
+      'assembly-motion-form': 'Mozione dell’assemblea',
+      'assembly-document-form': 'Documento dell’assemblea',
+      'assembly-participant-form': 'Partecipante all’assemblea',
+      'inventory-form': modalProps.itemId ? 'Modifica bene' : 'Nuovo bene in inventario',
+      'inventory-loan-form': 'Registra prestito',
+      'volunteer-form': modalProps.volunteerId ? 'Modifica volontario' : 'Nuovo volontario',
+      'volunteer-shift-form': modalProps.shift?.id ? 'Modifica turno' : 'Nuovo turno',
+      'volunteer-expense-form': 'Rimborso del volontario',
+      'coupon-form': 'Buono o sconto'
   };
 
   const PAGES = useMemo(() => [
@@ -369,6 +390,7 @@ function App({ webSession }) {
             />
             <main className="jl-main">
                 <TopHeader
+                    onSearch={() => setCommandPaletteOpen(true)}
                     title={activePage.label}
                     navOpen={navOpen}
                     onMenuToggle={() => setNavOpen((open) => !open)}
@@ -413,7 +435,7 @@ function App({ webSession }) {
             </main>
         </div>
       </div>
-      <Modal isOpen={modalOpen} onClose={closeModal} title={t('Edit Item')}>
+      <Modal isOpen={modalOpen} onClose={closeModal} title={t(modalTitles[modalType] || 'Dettagli')}>
           {renderModalContent()}
       </Modal>
 
