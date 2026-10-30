@@ -70,6 +70,6 @@ public class AttendanceController {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> conflict() {
         return ResponseEntity.status(409).body(Map.of("code", "ATTENDANCE_CONFLICT", "message",
-                "La presenza ? gi? registrata oppure il partecipante non ? pi? disponibile. Ricaricare e riprovare."));
+                "La presenza è già registrata oppure il partecipante non è più disponibile. Ricaricare e riprovare."));
     }
 }

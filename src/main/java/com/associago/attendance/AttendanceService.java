@@ -151,7 +151,7 @@ public class AttendanceService {
 
     private Activity activity(Long id, Authentication actor, Long selected) {
         positive(id, "ATTENDANCE_ACTIVITY_REQUIRED");
-        Activity entity = activities.findById(id).orElseThrow(() -> missing("Attivit? non trovata."));
+        Activity entity = activities.findById(id).orElseThrow(() -> missing("Attività non trovata."));
         access.require(actor, entity.getAssociationId(), selected);
         return entity;
     }
@@ -172,7 +172,7 @@ public class AttendanceService {
     private void validateSession(AttendanceSession entity, Long association, boolean newInstructor) {
         if (entity.getDate() == null) throw invalid("ATTENDANCE_DATE_REQUIRED", "Indicare la data della sessione.");
         if (entity.getStartTime() != null && entity.getEndTime() != null && entity.getEndTime().isBefore(entity.getStartTime())) {
-            throw invalid("ATTENDANCE_TIME_RANGE", "L'orario di fine non pu? precedere l'inizio.");
+            throw invalid("ATTENDANCE_TIME_RANGE", "L'orario di fine non può precedere l'inizio.");
         }
         notes(entity.getNotes());
         if (entity.getInstructorId() != null) validateLegacy(entity.getInstructorId(), association, newInstructor);
@@ -194,14 +194,14 @@ public class AttendanceService {
                     .orElseThrow(() -> missing("Iscrizione partecipante non trovata."));
             if (participant.getUser() == null || participant.getAssociation() == null
                     || !Objects.equals(association, participant.getAssociation().getId())) {
-                throw new SuiteException(403, "ASSOCIATION_FORBIDDEN", "Il partecipante non appartiene all'associazione dell'attivit?.");
+                throw new SuiteException(403, "ASSOCIATION_FORBIDDEN", "Il partecipante non appartiene all'associazione dell'attività.");
             }
             duplicate = records.existsBySessionIdAndMembershipIdAndIdNot(entity.getSessionId(), entity.getMembershipId(), excluded);
         } else {
             validateLegacy(entity.getMemberId(), association, creating);
             duplicate = creating && records.existsBySessionIdAndMemberIdAndIdNot(entity.getSessionId(), entity.getMemberId(), excluded);
         }
-        if (duplicate) throw new SuiteException(409, "ATTENDANCE_DUPLICATE", "Il partecipante ha gi? una presenza in questa sessione.");
+        if (duplicate) throw new SuiteException(409, "ATTENDANCE_DUPLICATE", "Il partecipante ha già una presenza in questa sessione.");
     }
 
     private void validateLegacy(Long memberId, Long association, boolean newReference) {
@@ -219,7 +219,7 @@ public class AttendanceService {
     }
     private static void immutable(Long requested, Long actual, String code) {
         if (requested != null && !Objects.equals(requested, actual)) {
-            throw new SuiteException(409, code, "La presenza deve mantenere l'attivit?, la sessione e il partecipante originali.");
+            throw new SuiteException(409, code, "La presenza deve mantenere l'attività, la sessione e il partecipante originali.");
         }
     }
     private static void positive(Long id, String code) {

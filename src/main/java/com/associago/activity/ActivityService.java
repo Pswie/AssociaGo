@@ -77,7 +77,7 @@ public class ActivityService {
     public void deleteById(Long id) {
         Activity existing = activity(id, true, false);
         if (access.cloud() && !attendance.findByActivityId(id).isEmpty()) {
-            throw new SuiteException(409, "ACTIVITY_HAS_ATTENDANCE", "Rimuovere prima le sessioni di presenza collegate all'attivit?.");
+            throw new SuiteException(409, "ACTIVITY_HAS_ATTENDANCE", "Rimuovere prima le sessioni di presenza collegate all'attività.");
         }
         if (!costRepository.findByActivityId(id).isEmpty()
                 || participantRepository.findByActivityId(id).stream().anyMatch(this::hasPayments)
@@ -196,8 +196,8 @@ public class ActivityService {
         activity(row.getActivityId(), true, false); scheduleRepository.delete(row);
     }
     private Activity activity(Long id, boolean lock, boolean financial) {
-        if (id == null || id <= 0) throw new SuiteException(400, "ACTIVITY_REQUIRED", "Indicare l'attivit?.");
-        Activity row = (lock ? activityRepository.findForUpdate(id) : activityRepository.findById(id)).orElseThrow(() -> missing("Attivit? non trovata."));
+        if (id == null || id <= 0) throw new SuiteException(400, "ACTIVITY_REQUIRED", "Indicare l'attività.");
+        Activity row = (lock ? activityRepository.findForUpdate(id) : activityRepository.findById(id)).orElseThrow(() -> missing("Attività non trovata."));
         if (financial) access.requireFinancial(row.getAssociationId());
         else if (lock) access.requireWrite(row.getAssociationId());
         else access.require(row.getAssociationId());
@@ -206,9 +206,9 @@ public class ActivityService {
     private void validateSchedule(ActivitySchedule row) {
         if (row.getInstructorId() != null) {
             var instructor = instructorRepository.findById(row.getInstructorId()).orElseThrow(() -> missing("Istruttore non trovato."));
-            if (!Objects.equals(instructor.getActivityId(), row.getActivityId())) throw new SuiteException(403, "ACTIVITY_FORBIDDEN", "L'istruttore non appartiene all'attivit?.");
+            if (!Objects.equals(instructor.getActivityId(), row.getActivityId())) throw new SuiteException(403, "ACTIVITY_FORBIDDEN", "L'istruttore non appartiene all'attività.");
         }
-        if (row.getStartTime() != null && row.getEndTime() != null && row.getEndTime().isBefore(row.getStartTime())) throw new SuiteException(400, "ACTIVITY_TIME_RANGE", "L'orario di fine non pu? precedere l'inizio.");
+        if (row.getStartTime() != null && row.getEndTime() != null && row.getEndTime().isBefore(row.getStartTime())) throw new SuiteException(400, "ACTIVITY_TIME_RANGE", "L'orario di fine non può precedere l'inizio.");
     }
     private void financialChange(BigDecimal previous, BigDecimal requested, Long association) {
         if (requested != null && (previous == null || requested.compareTo(previous) != 0)) access.requireFinancial(association);
