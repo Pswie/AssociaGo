@@ -9,6 +9,48 @@ import check_runtime_release as audit
 
 
 class ReleaseAuditTests(unittest.TestCase):
+    def test_unmounted_duplicate_secret_still_fails_single_bundle_guard(self):
+        def volume(name):
+            return {
+                "name": name,
+                "secret": {
+                    "secretName": "runtime",
+                    "items": [{"key": "1", "path": "gateway.env"}],
+                },
+            }
+
+        service = {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "volumeMounts": [
+                                    {"name": "mounted", "mountPath": "/run/secrets"}
+                                ]
+                            }
+                        ],
+                        "volumes": [volume("mounted"), volume("unused")],
+                    }
+                }
+            }
+        }
+
+        def check():
+            return audit.audit_service(
+                service,
+                [],
+                "bandiPortal",
+                {"image": None, "account": None, "service": "service"},
+                {"apiOrigins": {"bandiPortal": None}},
+                {"runtimeBundles": {"bandiPortal": {"name": "runtime", "version": 1}}},
+                {},
+            )["checks"]["onePinnedRuntimeBundle"]
+
+        self.assertFalse(check())
+        service["spec"]["template"]["spec"]["volumes"].pop()
+        self.assertTrue(check())
+
     def test_revision_summary_never_serializes_old_plaintext_or_arguments(self):
         secret = "SENSITIVE_VALUE_MUST_NOT_REACH_RECEIPT"
         document = {

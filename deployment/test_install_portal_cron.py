@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import warnings
 from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location(
@@ -187,6 +188,76 @@ class CronTests(unittest.TestCase):
                 None, None, 302, "", {}, "https://other.invalid"
             )
         )
+
+    def test_local_prompt_overrides_environment_and_receipt_has_no_secrets(self):
+        provider = Provider()
+        prompted_api = "synthetic-prompted-api-key-private"
+        stale_api = "synthetic-stale-api-key-must-not-be-used"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            key_file, exported, receipt = (root / name for name in ("cron-key.local", "export.json", "receipt.json"))
+            key_file.write_text(KEY)
+            arguments = [
+                "--gateway-url", "https://portal.example.org",
+                "--cron-key-file", str(key_file),
+                "--export", str(exported), "--receipt", str(receipt),
+                "--apply", "--prompt-api-key",
+            ]
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with (
+                patch.dict("os.environ", {"CRONJOB_API_KEY": stale_api}),
+                patch.object(cron, "hidden_secret", return_value=prompted_api) as prompt,
+                patch.object(cron, "Client", return_value=provider) as client,
+                redirect_stdout(stdout), redirect_stderr(stderr),
+            ):
+                self.assertEqual(cron.main(arguments), 0)
+                self.assertEqual(cron.main(arguments), 0)
+            self.assertEqual(prompt.call_count, 2)
+            self.assertEqual(client.call_count, 2)
+            client.assert_called_with(prompted_api)
+            self.assertEqual(provider.writes, [("PUT", 1)])
+            result = json.loads(receipt.read_text())
+            self.assertTrue(result["configurationVerified"])
+            self.assertFalse(result["executionVerified"])
+            self.assertEqual(result["action"], "unchanged")
+            self.assertEqual(result["jobId"], 1)
+            self.assertEqual(set(result), {"schema", "provider", "checkedAt", "configurationVerified", "executionVerified", "action", "jobId"})
+            for value in (KEY, prompted_api, stale_api):
+                self.assertNotIn(value, stdout.getvalue() + stderr.getvalue() + receipt.read_text())
+            self.assertNotIn(prompted_api, exported.read_text())
+
+    def test_echoed_getpass_fallback_stops_before_reading_a_secret(self):
+        def unavailable_prompt(_prompt):
+            warnings.warn("Hidden input unavailable", cron.getpass.GetPassWarning)
+            raise AssertionError("Echoed input must never be reached")
+
+        with patch.object(cron.getpass, "getpass", side_effect=unavailable_prompt):
+            with self.assertRaisesRegex(cron.CronError, "console locale interattiva"):
+                cron.hidden_secret("API key: ")
+
+    def test_failure_replaces_an_old_success_receipt_without_raw_errors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            receipt = root / "receipt.json"
+            receipt.write_text('{"configurationVerified": true}')
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with (
+                patch.dict("os.environ", {"COLLAB_CRON_KEY": KEY}),
+                patch.object(cron, "hidden_secret", return_value="synthetic-prompted-api-key-private"),
+                patch.object(cron, "Client", side_effect=RuntimeError("raw HTTP diagnostic with synthetic-secret-value")),
+                redirect_stdout(stdout), redirect_stderr(stderr),
+            ):
+                code = cron.main([
+                    "--gateway-url", "https://portal.example.org",
+                    "--export", str(root / "export.json"),
+                    "--receipt", str(receipt), "--apply", "--prompt-api-key",
+                ])
+            self.assertEqual(code, 1)
+            result = json.loads(receipt.read_text())
+            self.assertFalse(result["configurationVerified"])
+            self.assertEqual(result["action"], "interrupted")
+            self.assertIsNone(result["jobId"])
+            self.assertNotIn("synthetic-secret-value", stdout.getvalue() + stderr.getvalue() + receipt.read_text())
 
 
 if __name__ == "__main__":

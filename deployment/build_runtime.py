@@ -40,6 +40,11 @@ def main():
         modules += ["apps/api/collaboration/" + name + ".py" for name in (
             "__init__", "gateway", "router", "security", "store", "models", "results",
             "schemas", "errors", "maintenance", "migrate", "suite_adapter",
+            "native_contract", "native_router", "native_store", "native_binding",
+        )]
+        modules.append("apps/api/collaboration/native_catalog.json")
+        modules += ["apps/api/official_sources/" + name + ".py" for name in (
+            "__init__", "schemas", "http", "service", "router", "runts", "catalogues",
         )]
         modules += [str(p.relative_to(repository)).replace("\\", "/") for p in
                     (repository / "apps/api/collaboration/migrations").glob("*.sql")]

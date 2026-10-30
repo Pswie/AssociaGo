@@ -159,6 +159,12 @@ def prepare(config, public, directory):
         if urls.get("bandiPortal"):
             env["SUITE_BANDI_API_URL"] = urls["bandiPortal"]
         if app == "bandiPortal":
+            native_enabled = config.get("bandiNativeEnabled", False)
+            if type(native_enabled) is not bool:
+                raise PreparationError("bandiNativeEnabled must be an explicit boolean")
+            official_enabled = config.get("bandiOfficialSourcesEnabled", False)
+            if type(official_enabled) is not bool or official_enabled and not native_enabled:
+                raise PreparationError("Official sources require explicit native and source booleans")
             env.update(
                 BANDI_MODE="gateway",
                 APP_ENV="production",
@@ -172,6 +178,10 @@ def prepare(config, public, directory):
                 SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt",
                 SSL_CERT_DIR="/etc/ssl/certs",
             )
+            if native_enabled:
+                env["COLLAB_NATIVE_ENABLED"] = "true"
+            if official_enabled:
+                env["COLLAB_OFFICIAL_SOURCES_ENABLED"] = "true"
             if config.get("allowedOrganizationId"):
                 env["COLLAB_ALLOWED_ORGANIZATION_ID"] = config["allowedOrganizationId"]
         else:
@@ -214,7 +224,7 @@ def prepare(config, public, directory):
             "--image=" + image,
             "--service-account=" + account,
             "--env-vars-file=" + str(path),
-            "--set-secrets="
+            ("--update-secrets=" if app == "bandiPortal" else "--set-secrets=")
             + (
                 "/run/secrets/gateway.env="
                 if app == "bandiPortal"
@@ -453,6 +463,51 @@ def bundle_payload(app, values):
     return json.dumps(values, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
+def gateway_volume_cleanup(document, reference):
+    """Rebuild only the gateway's exact managed secret mount in one revision.
+
+    Cloud SDK can retain old volumes with set-secrets, and update-secrets can
+    copy a nameless container's own mount as though it belonged to a sidecar.
+    Remove the verified mount and its exact volumes before updating secrets,
+    all within the same candidate deployment; never clear unrelated volumes.
+    """
+    spec = document.get("spec", {}).get("template", {}).get("spec", {})
+    containers = spec.get("containers", [])
+    if len(containers) != 1:
+        raise PreparationError("Gateway secret cleanup requires one container")
+    container = containers[0]
+    if any("valueFrom" in item for item in container.get("env", [])):
+        raise PreparationError("Unexpected gateway environment secret binding")
+    volumes = {}
+    for volume in spec.get("volumes", []):
+        name = identifier(volume.get("name"), r"[a-z][a-z0-9-]{0,62}", "volume name")
+        secret = volume.get("secret", {})
+        items = secret.get("items", [])
+        if (
+            name in volumes
+            or secret.get("secretName") != reference["name"]
+            or len(items) != 1
+            or str(items[0].get("key")) != str(reference["version"])
+            or items[0].get("path") != "gateway.env"
+            or set(volume) - {"name", "secret"}
+        ):
+            raise PreparationError("Unexpected gateway secret volume configuration")
+        volumes[name] = volume
+    mounts = container.get("volumeMounts", [])
+    if len(mounts) > 1 or any(
+        mount.get("name") not in volumes
+        or mount.get("mountPath") != "/run/secrets"
+        or set(mount) - {"name", "mountPath"}
+        for mount in mounts
+    ):
+        raise PreparationError("Unexpected gateway secret volume mount")
+    mounted = {mount["name"] for mount in mounts}
+    changes = ["--remove-volume-mount=/run/secrets"] if mounted else []
+    if volumes:
+        changes.append("--remove-volume=" + ",".join(sorted(volumes)))
+    return changes
+
+
 def execute(plan, phase, allow_initial, config, *, applications=None):
     project = "--project=" + plan["project"]
     if phase == "secrets":
@@ -539,6 +594,7 @@ def execute(plan, phase, allow_initial, config, *, applications=None):
             raise PreparationError(
                 "Explicit --allow-initial-service is required for a first service URL"
             )
+        commands = []
         for item in selected:
             result = run_gcloud(
                 [
@@ -558,8 +614,31 @@ def execute(plan, phase, allow_initial, config, *, applications=None):
                 raise PreparationError(
                     "Actual service existence does not match the explicit initial-service plan"
                 )
-        for item in selected:
-            run_gcloud(item["command"])
+            command = list(item["command"])
+            if name and item["application"] == "bandiPortal":
+                result = run_gcloud(
+                    [
+                        "run",
+                        "services",
+                        "describe",
+                        name,
+                        project,
+                        "--region=" + plan["region"],
+                        "--format=json",
+                    ]
+                )
+                try:
+                    document = json.loads(result.stdout)
+                except (ValueError, UnicodeError):
+                    raise PreparationError("Invalid gateway service metadata") from None
+                command.extend(
+                    gateway_volume_cleanup(
+                        document, config["runtimeBundles"][item["application"]]
+                    )
+                )
+            commands.append(command)
+        for command in commands:
+            run_gcloud(command)
 
 
 def main():

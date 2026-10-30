@@ -14,7 +14,7 @@ Obiettivo: rendere coerente il gestionale di Angeli del Futuro e completare i pe
 - [x] Logo ufficiale e nome Angeli del Futuro APS; modulo Gestionale; attribuzioni AssociaGo e collegamento al sorgente conservati.
 - [x] Test browser, lint, unit test e build della prima versione frontend.
 - [x] Verifica frontend finale con i contratti aggiornati di presenze e attività.
-- [ ] Verifica congiunta del backend e delle migrazioni prima della pubblicazione del gestionale: coordinata nel rapporto generale della suite.
+- [x] Verifica congiunta del backend e delle migrazioni e pubblicazione del gestionale: 270 test server passati, V3 applicata, frontend e revisione server promossi insieme; pagina, JS e logo pubblici verificati dal coordinatore.
 
 ## Logo e identità
 

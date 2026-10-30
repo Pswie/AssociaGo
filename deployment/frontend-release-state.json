@@ -1,46 +1,70 @@
 {
-  "status": "published_user_sso_verification_pending",
-  "stagingManifest": "deployment\\.artifacts\\frontends-20261030T142129Z-3822ef6f\\state.json",
+  "status": "published_official_sources_and_native_tools",
+  "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
-  "promotionsPerformed": 8,
   "customDomainsAssigned": 3,
   "dnsChangesPerformed": 0,
   "gitDisconnectPerformed": true,
   "deployments": {
     "associago": {
       "projectId": "prj_sJ5h8IcJGJztPxvBhqnrs92Gw3tc",
-      "deploymentId": "dpl_Eq38aKTpthwg8JJoeCuseFVwB2xM",
-      "url": "https://adf-gestionale-collaudo-rlukvc3ln-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_GdK8pbU1diyRTWUaC6Btb1XF5KVS",
+      "url": "https://adf-gestionale-collaudo-gg1lmci4q-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_2GYmY1HpKk26CNth27DyKZdgjsm1",
-      "publicUrl": "https://gestionale.angelidelfuturoaps.com"
+      "publicUrl": "https://gestionale.angelidelfuturoaps.com",
+      "stagingManifest": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
+      "apiBase": "https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app/api",
+      "apiPrefixVerifiedInPublicBundle": true,
+      "previousProductionDeploymentId": "dpl_EQ3MvncdNaKczRFnq5yYq6G9kMMg",
+      "sourceCommit": "00a6c6e516cbe54be8239d10f6386abc02b80b9c",
+      "officialLogoSha256": "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d",
+      "runtimeRevision": "adf-gestionale-collaudo-as-ui-20261030-c"
     },
     "librepm": {
       "projectId": "prj_4oEizJdNAACf5Xfc0v9SnKTYjVln",
-      "deploymentId": "dpl_DybTjGAg8oxo712NkxYpWjda4xLe",
-      "url": "https://adf-bandi-collaudo-cco8kbrj3-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_ADTbavfbV19DuAD6o5Aqah3KCP7S",
+      "url": "https://adf-bandi-collaudo-5v0n79oi1-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_H6ya3wG2Coe66sseg3hVXLrWYom7",
-      "publicUrl": "https://progetti.angelidelfuturoaps.com"
+      "publicUrl": "https://progetti.angelidelfuturoaps.com",
+      "stagingManifest": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
+      "apiBase": "https://adf-bandi-collaudo-y5sbh5kxpa-oc.a.run.app/api",
+      "apiPrefixVerifiedInPublicBundle": true,
+      "previousProductionDeploymentId": "dpl_EnG5NSX8oJDVzpCE26rCr8PBcvVa",
+      "sourceCommit": "78615261b43474f494e69564f4fff63c5aac1827",
+      "officialLogoSha256": "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d"
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_Ha5QSUjLcLsWVUvpnQVsQ2irPN1Y",
-      "url": "https://adf-bandi-portale-bvb8wu8pm-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_Eh2bsaS1kQriCLF4QU9XdcmzrFDo",
+      "url": "https://adf-bandi-portale-nau9wftdj-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
-      "publicUrl": "https://bandi.angelidelfuturoaps.com/collabora"
+      "publicUrl": "https://bandi.angelidelfuturoaps.com",
+      "previousProductionDeploymentId": "dpl_DUbZo5kvZAro9DCSxB85DXFRbKcH",
+      "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+      "nativeModeEnabled": true,
+      "runtimeRevision": "adf-bandi-portale-api-sources-20261030-a",
+      "sourceCommit": "269190371b20bc4baa21c09e686149d874b176f0",
+      "functionRegion": "fra1",
+      "officialSourcesEnabled": true,
+      "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
+      "sourceBaseCommit": "309e90eb1935e844d6d2e6097d5d57a85d9bf8ea"
     },
     "primary": {
       "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
-      "deploymentId": "dpl_8bKR6oniqm9uAuPNVDSDMAKf1bp2",
-      "url": "https://terzo-settore-pbmomsphf-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_8jK1uKpHjScZUWKhxChj6yWCG6UH",
+      "url": "https://terzo-settore-1quhh47w9-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_8zpXLTr39L7oJSaspqdVnEBct8rw",
-      "publicUrl": "https://www.angelidelfuturoaps.com/admin"
+      "publicUrl": "https://www.angelidelfuturoaps.com/admin",
+      "previousProductionDeploymentId": "dpl_8fN5nNZoztGsG8dETceZHJJeiHA5",
+      "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+      "configuredBandiEntry": "https://bandi.angelidelfuturoaps.com/fonti"
     }
   },
   "qaCompleted": [
@@ -50,27 +74,70 @@
     "Primary final inline callback capture is present on the public HTML; old slogan absent.",
     "Bandi unauthenticated collaboration API401 and legacy API404.",
     "Four canonical legacy Vercel domains redirect308 with exact path/query preservation.",
-    "Bandi394 last full tests; 11 focused after provider adjustment, lint, TypeScript and remote Next build passed.",
     "AssociaGo9 and LibrePM9 callback regressions passed; both web builds passed; AssociaGo16 API/policy frontend regressions passed.",
     "Primary13 regressions, Astrocheck and build passed.",
     "Five staging integrity/publication guard tests passed.",
-    "User confirmed an internal primary service works; the three external application sessions await the new normal user test."
+    "API base corrected to origin/api in both Java frontends and verified in local and publicly served compiled JavaScript.",
+    "Real JavaScript API clients executed with generated environment: api/v1/me, api/v1/associations, api/me contract passed.",
+    "LibrePM startup23 targeted tests and12 real React StrictMode assertions passed; staged web build included actual Clerk authentication branch.",
+    "The user confirmed both Gestionale and Progetti open after the API prefix and Progetti startup corrections.",
+    "LibrePM frontend brand/navigation/statistics/mobile revision deployed; public entry, compiled JS and exact official logo match reviewed artifacts. Source branch cloud/adf-bandi contains commit78615261b43474f494e69564f4fff63c5aac1827.",
+    "AssociaGo frontend and server attendance/activity/access release published together;270 server tests,18 frontend unit tests, lint/build/mobile/axe passed. PostgreSQLV3 applied once and read-only schema verified. Public HTML/JS/logo match reviewed artifacts, runtime health200.",
+    "Bandi original frontend published:460 full web tests,18 focused gate/node checks, lint and gateway+native production build passed; Playwright desktop/mobile owner/collaborator/offline checks passed.",
+    "Native gateway124 PostgreSQL17/ASGI tests passed with zero skips; deployed native revision health/authentication and registered machine authentication verified.",
+    "Native PC PostgreSQL0033 applied after verified complete5.19GB local backup;75 original tables and3375773 rows retain exact counts; five advertised node capabilities and watchdog progress verified.",
+    "Primary Bandi card points to original root; served compiled SDK helper retains buildUrlWithAuth and redirect callback capture.",
+    "cron-job.org job8758073 enabled every30minutes; configuration read-back verified, first scheduled execution HTTP200 in601ms at2026-10-30T18:30:36Z. No GitHub scheduler.",
+    "Bandi loading correction:470 tests in81files, TypeScript and lint passed;3.75MiB actual-BFF fixture completes in at most30enqueue calls with four512KiBchunks, full digest verified.",
+    "Bandi response-fix production deployment is READY and promoted; public root bytes match reviewed candidate and official logo, anonymous RUNTS remains401. All runtime source hashes match tested sources.",
+    "PC polling correction12focused tests passed; new runner66228 and supervisor12676 monitored107seconds with progress and preserved configuration/keys/receipts; no real jobs created.",
+    "Cloud Run gateway native-c serves100percent traffic with one mounted pinned runtime bundle; final27configuration and18HTTP checks all pass. SDK offline reproduction and20helper tests pass.",
+    "Final disposable PostgreSQL17 regression:128passed0skips; fixture container removed, migration003/004 checksums unchanged.",
+    "The user confirmed that native RUNTS displays its list after the loading corrections in the real Clerk owner session.",
+    "Radar progressive rendering correction:476tests81files, finalTypeScript/ESLint passed; staged runtime component hash matches test receipt; production candidate API401/page200 and fra1 region verified.",
+    "Bandi functions moved fromiad1 tofra1 with unchanged source and a single region; project plan unchanged.",
+    "Complete native audit fixed eight loading, polling, upload and layout defects:517tests and124browserfixturecases passed before this source feature.",
+    "Official-source final regression:232PostgreSQL17/ASGI tests,5subtests,zero skips;663webtests in89files,TypeScript and scopedESLint passed.",
+    "Official-source browser fixture:36owner/collaborator,empty/error/partial cases at320/390/1440; runtime hashes match final tested source.",
+    "New imagecd943a1a43f56da362e4d80816851549a71c5e42660c4a96f92324715cf64350 read allfive public sources successfully from a secretlessCloudRunjob; temporaryjob removed.",
+    "Official-source frontend candidates READY/promoted; publicBandi/fonti,/radar,/collabora match candidatebytes; newthreeAPIroutes and nativeRUNTS reject anonymousrequests401.",
+    "Primarypublicadmin matches candidate after normalizing only the two occurrences of the per-requestClerkSignInwidgetID; authenticatedchooser remains a real-session check.",
+    "Gateway sources-20261030-a promoted100percent after seven candidateHTTPchecks; native-c retained as rollback with the same pinnedruntimebundleversion1.",
+    "53offline deployment/helper tests pass, including explicit source/nativeflags and fail-fast frontend prerequisites.",
+    "Final three-service read-only audit:27configuration checks and18HTTPchecks passed; obsolete native-b removed after a fresh zero-traffic/untagged check; five suite revisions remain and temporarysourcejob is absent."
   ],
   "qaPending": [
-    "Normal user login and cross-site session recognition in the three external applications."
+    "A real file over4.5MiB through the production Vercel/Clerk session remains unverified.",
+    "New Fonti record interactions and every original business operation have not been exercised in the real owner session; Opera still requires reauthentication."
   ],
   "notes": [
     "No DNS records were modified; three custom domains were assigned and verified.",
     "Only the AssociaGo old monorepo Git link was disconnected via ordinary interactive confirmation; the primary Git link remains intact.",
-    "Primary server environment values were not decrypted, copied or changed.",
+    "Primary and Bandi public configuration persisted for production/preview; existing server secrets were not decrypted, copied or changed.",
     "No user credentials or personal tokens were requested or inspected, and no user was impersonated.",
     "Clerk development instance is retained; the server-controlled role mapping is documented in clerk-role-applied.json.",
     "Intermediate protected deployments are retained separately and are not the current public production."
   ],
   "legacyDomainRedirects": 4,
   "knownIssues": [
-    "Authenticated cross-site SSO has not yet been confirmed by the normal user after the SDK navigation and query/hash return fixes."
+    "Legacy Python global Ruff/Black/mypy debt remains documented in Bandi/integration/CI-DEBITO-TECNICO.md.",
+    "Five direct public sources have different supported filters; RUNTS name search is partial and has no WebForms pagination."
   ],
-  "primaryStagingManifest": "deployment/.artifacts/primary-final-20261030T143251Z-2e080ec1/state.json",
-  "operationsInFlight": false
+  "primaryStagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+  "operationsInFlight": false,
+  "updatedAt": "2026-10-30T20:33:39.698790+00:00",
+  "stagingManifests": {
+    "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
+    "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
+    "bandi": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+    "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
+  },
+  "userConfirmedAccess": {
+    "associago": true,
+    "librepm": true,
+    "primaryInternalService": true,
+    "bandiOriginalRunts": true
+  },
+  "workInProgress": [],
+  "promotionsPerformedBeforeFinalAudits": 17
 }

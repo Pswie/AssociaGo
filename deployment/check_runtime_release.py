@@ -219,7 +219,13 @@ def http_checks(app, origin, config):
     result = []
     with httpx.Client(trust_env=False, follow_redirects=False, timeout=25) as client:
         for name, endpoint, request_headers, expected_status, expected_code in probes:
-            response = client.get(origin + endpoint, headers=request_headers)
+            # The Java services deliberately scale to zero; observed cold starts
+            # can exceed 25s. Keep other probes bounded by the client's timeout.
+            response = client.get(
+                origin + endpoint,
+                headers=request_headers,
+                **({"timeout": 75} if name == "health" else {}),
+            )
             actual_code = None
             if expected_code:
                 try:

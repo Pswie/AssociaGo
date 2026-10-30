@@ -127,8 +127,14 @@ def main() -> None:
     parser.add_argument("--api-associago", required=True)
     parser.add_argument("--api-librepm", required=True)
     parser.add_argument("--gateway-url")
+    parser.add_argument("--bandi-native", action="store_true", help="Enable the reviewed native Bandi UI; requires the PC transport release")
+    parser.add_argument("--official-sources", action="store_true", help="Enable bounded official-source consultation; requires the native gateway")
     parser.add_argument("--bandi-project-id", required=True)
     args = parser.parse_args()
+    if args.official_sources and not args.bandi_native:
+        parser.error("--official-sources requires --bandi-native")
+    if args.bandi_native and not args.gateway_url:
+        parser.error("--bandi-native requires --gateway-url")
     settings = json.loads(args.settings.read_text(encoding="utf-8-sig"))
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8]
     output = ROOT / "deployment/.artifacts" / ("frontends-" + run_id)
@@ -147,16 +153,35 @@ def main() -> None:
         write_json(output / "state.json", state)
         bandi = output / "bandi"
         source_snapshot(GITHUB / "Bandi", bandi, ["package.json", "package-lock.json", "apps/web/package.json", "apps/web/next.config.ts", "apps/web/next-env.d.ts", "apps/web/tsconfig.json"], ["apps/web/src", "apps/web/public/fonts"])
+        native_brand = GITHUB / "Bandi/apps/web/public/brand"
+        if native_brand.is_dir():
+            copy_tree(native_brand, bandi / "apps/web/public/brand")
+        if args.bandi_native:
+            if not args.gateway_url:
+                raise RuntimeError("The native Bandi UI requires its reviewed gateway origin")
+            logo = bandi / "apps/web/public/brand/logo-ufficiale.png"
+            if not logo.is_file() or hashlib.sha256(logo.read_bytes()).hexdigest() != "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d":
+                raise RuntimeError("The native Bandi official logo is missing or changed")
         shutil.copy2(GITHUB / "Bandi/apps/web/public/robots.txt", bandi / "apps/web/public/robots.txt")
         project_link(bandi, args.bandi_project_id, settings["vercel"]["teamId"])
         bandi_environment = {"BANDI_MODE": "gateway", "COLLABORATION_API_URL": public_origin(args.gateway_url) if args.gateway_url else None, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": settings["clerk"]["publishableKey"], "NEXT_PUBLIC_CLERK_PRIMARY_URL": settings["origins"]["primary"], "NEXT_PUBLIC_CLERK_DOMAIN": urlsplit(settings["origins"]["bandi"]).netloc, "NEXT_PUBLIC_CLERK_PRIMARY_SIGN_IN_PATH": "/admin", "NEXT_PUBLIC_ASSOCIAGO_URL": settings["origins"]["associago"], "NEXT_PUBLIC_LIBREPM_URL": settings["origins"]["librepm"]}
         write_json(bandi / "public-env.json", bandi_environment)
+        if args.bandi_native:
+            bandi_environment["BANDI_NATIVE_ENABLED"] = "1"
+            write_json(bandi / "public-env.json", bandi_environment)
+        if args.official_sources:
+            bandi_environment["NEXT_PUBLIC_OFFICIAL_SOURCES"] = "1"
+            write_json(bandi / "public-env.json", bandi_environment)
         state["projects"]["bandi"] = {"kind": "source-nextjs", "projectId": args.bandi_project_id, "path": str(bandi), "publicEnvironment": bandi_environment, "state": "prepared" if args.gateway_url else "awaiting-gateway", "nodeVersion": "22.x"}
         primary = output / "primary"
         source_snapshot(GITHUB / "terzo-settore", primary, ["vercel.json", "sito/package.json", "sito/package-lock.json", "sito/astro.config.ts", "sito/tsconfig.json"], ["sito/src", "sito/public", "sito/scripts"])
         write_json(primary / "package.json", {"name": "adf-primary-deployment", "private": True, "engines": {"node": "22.x"}})
         project_link(primary, settings["vercel"]["mainSiteProjectId"], settings["vercel"]["teamId"])
         primary_environment = {"PUBLIC_CLERK_PUBLISHABLE_KEY": settings["clerk"]["publishableKey"], "PUBLIC_BANDI_URL": settings["origins"]["bandi"] + "/collabora", "PUBLIC_PROGETTI_URL": settings["origins"]["librepm"], "PUBLIC_GESTIONALE_URL": settings["origins"]["associago"], "PUBLIC_CLERK_REDIRECT_ORIGINS": "https://adf-gestionale-collaudo.vercel.app,https://adf-bandi-collaudo.vercel.app,https://adf-bandi-portale.vercel.app"}
+        if args.bandi_native:
+            primary_environment["PUBLIC_BANDI_URL"] = settings["origins"]["bandi"]
+        if args.official_sources:
+            primary_environment["PUBLIC_BANDI_URL"] = settings["origins"]["bandi"] + "/fonti"
         write_json(primary / "public-env.json", primary_environment)
         state["projects"]["primary"] = {"kind": "source-astro", "projectId": settings["vercel"]["mainSiteProjectId"], "path": str(primary), "publicEnvironment": primary_environment, "state": "prepared", "nodeVersion": "22.x"}
         for source_target in (bandi, primary):

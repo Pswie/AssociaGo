@@ -7,6 +7,7 @@ API and cron secrets are read from private files, environment or getpass.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import getpass
 import ipaddress
 import json
@@ -17,6 +18,7 @@ import ssl
 import sys
 import tempfile
 import time
+import warnings
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import (
@@ -34,6 +36,19 @@ DEFAULT_TITLE = "Bandi portal maintenance"
 
 class CronError(Exception):
     pass
+
+
+def hidden_secret(prompt: str) -> str:
+    # getpass may fall back to echoed input when no real terminal is available.
+    # In that case stop before reading a secret into an ordinary log/pipeline.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", getpass.GetPassWarning)
+            return getpass.getpass(prompt)
+    except getpass.GetPassWarning:
+        raise CronError(
+            "Apri una console locale interattiva: il prompt nascosto non è disponibile."
+        ) from None
 
 
 def gateway_origin(value: str) -> str:
@@ -331,11 +346,31 @@ def private_export(path: Path, payload: dict):
         Path(temporary).unlink(missing_ok=True)
 
 
+def install_receipt(path: Path, result: dict | None):
+    # Deliberately whitelist public metadata; never serialize a job or HTTP error.
+    value = {
+        "schema": "cron-job.org-install/v1",
+        "provider": "cron-job.org",
+        "checkedAt": datetime.now(timezone.utc).isoformat(),
+        "configurationVerified": result is not None,
+        "executionVerified": False,
+        "action": result["action"] if result is not None else "interrupted",
+        "jobId": result["jobId"] if result is not None else None,
+    }
+    private_export(path, value)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gateway-url", required=True)
     parser.add_argument("--title", default=DEFAULT_TITLE)
     parser.add_argument("--cron-key-file", type=Path)
+    parser.add_argument(
+        "--prompt-api-key",
+        action="store_true",
+        help="Ask locally with hidden input instead of reading CRONJOB_API_KEY",
+    )
+    parser.add_argument("--receipt", type=Path, help="Write a sanitized installation receipt")
     parser.add_argument(
         "--export",
         type=Path,
@@ -347,6 +382,9 @@ def main(argv=None):
         help="Explicitly create/update only the matching job",
     )
     args = parser.parse_args(argv)
+    if (args.prompt_api_key or args.receipt) and not args.apply:
+        parser.error("--prompt-api-key e --receipt richiedono --apply")
+    code = 1
     try:
         # Validate a destination before asking for any secrets.
         origin = gateway_origin(args.gateway_url)
@@ -356,16 +394,20 @@ def main(argv=None):
             else os.environ.get("COLLAB_CRON_KEY")
         )
         if not key:
-            key = getpass.getpass("Chiave cron del gateway (non verrà mostrata): ")
+            key = hidden_secret("Chiave cron del gateway (non verrà mostrata): ")
         payload = specification(origin, key, args.title)
         private_export(args.export, payload)
         print("Esportazione privata pronta: " + str(args.export.resolve()))
         if args.apply:
-            api_key = os.environ.get("CRONJOB_API_KEY") or getpass.getpass(
-                "API key cron-job.org (non verrà mostrata): "
-            )
+            api_key = None if args.prompt_api_key else os.environ.get("CRONJOB_API_KEY")
+            if not api_key:
+                api_key = hidden_secret("API key cron-job.org (non verrà mostrata): ")
             result = apply(Client(api_key), payload)
+            if args.receipt:
+                install_receipt(args.receipt, result)
             print(f"Job cron {result['action']}, ID {result['jobId']}.")
+            if args.receipt:
+                print("Ricevuta verificata: " + str(args.receipt.resolve()))
         else:
             print(
                 "Nessuna chiamata di rete. Usare --apply per installare esplicitamente."
@@ -373,12 +415,20 @@ def main(argv=None):
         return 0
     except CronError as error:
         print(str(error), file=sys.stderr)
+    except KeyboardInterrupt:
+        print("Operazione cron annullata nella console locale.", file=sys.stderr)
+        code = 130
     except Exception:
         print(
             "Operazione cron interrotta; verificare configurazione e file privati.",
             file=sys.stderr,
         )
-    return 1
+    if args.apply and args.receipt:
+        try:
+            install_receipt(args.receipt, None)
+        except Exception:
+            print("Ricevuta non scritta; nessuna verifica positiva registrata.", file=sys.stderr)
+    return code
 
 
 if __name__ == "__main__":

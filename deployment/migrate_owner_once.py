@@ -357,9 +357,18 @@ def main():
     )
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument(
+        "--schema",
+        choices=("associago", "librepm", "bandi_portal"),
+        action="append",
+        help="Migrate only the selected schemas; default: all three",
+    )
     parser.add_argument("--ca-file", type=Path)
     parser.add_argument("--ca-sha256")
     args = parser.parse_args()
+    selected = args.schema or ["associago", "librepm", "bandi_portal"]
+    if len(selected) != len(set(selected)):
+        parser.error("Select each schema only once")
     config, public = json.loads(args.config.read_text()), json.loads(
         args.public_settings.read_text()
     )
@@ -368,6 +377,7 @@ def main():
         "stage": "validation",
         "schemas": [],
         "runner_pid": os.getpid(),
+        "selectedSchemas": selected,
     }
     try:
         validate(config, public)
@@ -390,6 +400,8 @@ def main():
                 protect_directory(root)
                 trust_store = create_trust_store(ca_file, root)
                 for schema in ("associago", "librepm"):
+                    if schema not in selected:
+                        continue
                     state["stage"] = schema
                     state["schemas"].append(
                         java_migration(
@@ -400,16 +412,17 @@ def main():
                             trust_store=trust_store,
                         )
                     )
-                state["stage"] = "bandi_portal"
-                state["schemas"].append(
-                    gateway_migration(
-                        config["bandi_portal"],
-                        public["google"]["preparedImages"]["bandiGateway"],
-                        root,
-                        public,
-                        ca_file=ca_file,
+                if "bandi_portal" in selected:
+                    state["stage"] = "bandi_portal"
+                    state["schemas"].append(
+                        gateway_migration(
+                            config["bandi_portal"],
+                            public["google"]["preparedImages"]["bandiGateway"],
+                            root,
+                            public,
+                            ca_file=ca_file,
+                        )
                     )
-                )
         state.update(
             status="succeeded",
             stage="migrated" if args.apply else "validated-no-database-connection",

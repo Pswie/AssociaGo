@@ -4,6 +4,12 @@ Aggiornato il 30 ottobre 2026. Questo è il resoconto operativo corrente.
 [LAVORI-INTEGRAZIONE.md](LAVORI-INTEGRAZIONE.md) descrive la prima integrazione;
 [MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md) la conversione dei database.
 
+La consultazione leggera è pubblicata in [Bandi → Fonti ufficiali](https://bandi.angelidelfuturoaps.com/fonti):
+RUNTS, OpenCoesione, CON IL SUD, Repubblica Digitale e Funding & Tenders UE
+vengono letti dalle fonti, senza il PC o l'AI. Non è stato trasferito o eliminato
+l'archivio locale. Il dettaglio di uso, copertura e limiti è in
+[FONTI-ONLINE.md](../Bandi/integration/FONTI-ONLINE.md).
+
 ## Stato effettivo
 
 Il nuovo account Supabase è stato collegato tramite OAuth ufficiale. Il progetto
@@ -14,8 +20,8 @@ creati i tre schemi privati e sei ruoli separati, verificando privilegi minimi
 ed esclusione dalla Data API. Il precedente progetto Tabaccheria non è stato
 modificato. Aiven era vuoto e non serve recuperarlo.
 
-Le migrazioni applicative sono state applicate: due per AssociaGo, quattro per
-LibrePM e due per il portale Bandi. Il tuo utente Clerk verificato è collegato
+Le migrazioni applicative sono state applicate: tre per AssociaGo, quattro per
+LibrePM e quattro per il portale Bandi. Il tuo utente Clerk verificato è collegato
 ai gestionali; non sono stati inventati soci, progetti o movimenti contabili.
 Il collegamento usa il Session pooler verificato
 `aws-0-eu-west-1.pooler.supabase.com:5432`, con controllo completo TLS e CA
@@ -31,8 +37,18 @@ fra i siti. L'utente ha confermato l'accesso all'area interna Servizi al cittadi
 il successivo collaudo ha mostrato un blocco nel caricamento del profilo
 Progetti e un errore del Gestionale. È stato individuato un prefisso `/api`
 mancante nella configurazione di pubblicazione dei due client Java. La
-correzione è in pubblicazione insieme alla gestione delle attese del profilo;
-il SSO completo e il caricamento dei dati non sono ancora considerati verificati.
+correzione è ora pubblicata insieme alla gestione delle attese del profilo;
+è stato verificato anche il prefisso nel JavaScript realmente servito dai due
+domini pubblici. Il successivo collaudo dell'utente ha confermato che
+**Gestionale e Progetti si aprono entrambi**, mantenendo l'accesso. Per Bandi
+è stata verificata anche una richiesta autenticata riuscita al profilo del
+portale; sono ora pubblicate anche le schermate originali e il collegamento
+alle operazioni native. Il primo collaudo dell'utente ha segnalato caricamenti
+troppo lunghi nelle pagine Bandi. Sono state individuate l'attesa delle code
+vuote e le troppe richieste per ricomporre gli elenchi grandi; le correzioni
+sono pubblicate. Dopo la ricarica l'utente ha confermato **«Ora vedo l'elenco»**
+sulla pagina RUNTS. Questa conferma riguarda quel caricamento e l'accesso,
+senza dichiarare collaudata ogni singola operazione delle31 pagine.
 Il primo backup
 reale dei tre schemi è riuscito; la verifica dell'archivio non equivale a una
 prova di ripristino dell'intero database reale.
@@ -76,6 +92,24 @@ istantanee o sovrascrivere silenziosamente il lavoro.
 
 ## Funzioni sviluppate e problemi corretti
 
+La revisione successiva del frontend è descritta nel registro
+[FRONTEND-MIGLIORIE-SUITE.md](FRONTEND-MIGLIORIE-SUITE.md). Gestionale e Progetti
+sono già aggiornati online: nome e logo ufficiale, navigazione e ricerca più
+chiare, errori recuperabili e uso da telefono. Nel Gestionale sono corretti
+modifica eventi senza duplicati e date locali; le Presenze distinguono le
+vecchie anagrafiche dalle nuove iscrizioni, senza abbinamenti per nome.
+Le Attività applicano ora il contesto dell'associazione anche sul server e
+proteggono dati economici, partecipanti e istruttori. Chiusa la possibilità di
+crearsi un'iscrizione in un'altra associazione o riassegnare un'identità Clerk
+tramite un POST anagrafico. Non si dichiara completato il supporto generale a
+più associazioni indipendenti per gli altri moduli storici.
+
+Prima della migrazione V3 è stato creato un nuovo backup dei tre schemi,
+verificato con indice pg_restore e digest. Per questa revisione sono passati
+270 test server senza salti e 18 test frontend, oltre a lint, build e controlli
+mobile. I dettagli delle Presenze e dei permessi sono in
+[PRESENZE-E-SICUREZZA-ATTIVITA.md](PRESENZE-E-SICUREZZA-ATTIVITA.md).
+
 - Nell'audit iniziale di AssociaGo corretti comunicazioni e destinatari,
   prestiti e restituzioni, rimborsi e doppi pagamenti, import CSV soci,
   modifica soci/attività, ricerca volontari e allegati autenticati.
@@ -92,8 +126,9 @@ istantanee o sovrascrivere silenziosamente il lavoro.
 - Corrette cancellazioni logiche di entità versionate, importi, allegati binari,
   descrizioni lunghe e identificativi testuali nel passaggio a PostgreSQL.
 - Convertiti e verificati i database Java, conservando le varianti precedenti.
-- Creato il gateway Bandi separato dall'archivio: nessuna API locale di
-  ingestione, comando arbitrario o agente AI esposto online.
+- Creato il gateway Bandi separato dall'archivio: i servizi AI e il corpus
+  rimangono sul PC. Le operazioni del proprietario passano attraverso un
+  catalogo finito, autenticato; non è accettato un comando o URL arbitrario.
 - Implementati accesso Clerk verificato dal backend, bozze proprie per i
   collaboratori, vista di tutte le bozze per il proprietario, revisioni,
   rilevamento delle modifiche simultanee e cancellazione logica.
@@ -113,9 +148,48 @@ istantanee o sovrascrivere silenziosamente il lavoro.
 | Persona/situazione | Funzioni |
 | --- | --- |
 | Collaboratore autorizzato | Metadati condivisi, catalogo consentito quando il PC è acceso, proprie bozze online |
-| Proprietario | Tutte le bozze, scelta della bozza principale, autorizzazione delle generazioni |
-| PC spento | Bozze e progetti comuni online; catalogo locale indisponibile; generazioni autorizzate in attesa |
-| PC acceso con nodo collegato | Consultazione del catalogo e lavorazione delle richieste consentite |
+| Proprietario | Sito originale completo: 31 pagine, 15 voci originali più bozze, dati e operazioni del PC, incluse generazioni |
+| PC spento | Bozze e progetti comuni online; schermate e operazioni locali segnalano l'indisponibilità |
+| PC acceso con nodo collegato | Il proprietario consulta e usa il sito originale; i collaboratori mantengono il portale limitato |
+
+La voce **Bandi** nell'Area riservata apre ora
+<https://bandi.angelidelfuturoaps.com>. Si riusano i componenti e i servizi
+originali, con Clerk e un trasporto verso il PC; non è stata costruita una
+seconda applicazione con un archivio diverso. Le bozze sono sempre raggiungibili
+anche da <https://bandi.angelidelfuturoaps.com/collabora>.
+
+Confrontati in sola lettura il servizio locale Docker e il nodo Windows:
+stesso database, schema, credenziale e archivio fisico. Allineata anche la
+configurazione originale di modelli e Agno. La nuova integrazione dei progetti
+si attiva soltanto con le azioni del proprietario **Condividi**, **Collega** e
+**Allinea le tre aree**. Condivide metadati approvati e UUID, senza copiare
+documenti o testi privati. La riconciliazione esplicita recupera un collegamento
+già effettuato se si interrompe la conferma al gateway; non rigenera documenti.
+
+Le richieste sono cifrate a riposo e temporanee; letture, comandi e interrogazioni
+AI hanno corsie distinte. File e immagini richiesti passano a blocchi di 512KiB,
+con digest e limite complessivo di 50MiB, prima di raggiungere le Functions
+Vercel. Il sito controlla attese, annullamenti e richieste già eseguite.
+Le API native e di amministrazione non vengono pubblicate come un proxy libero.
+
+Nel primo riscontro reale sono state analizzate54 letture, tutte concluse sul
+PC con HTTP200: l'attesa era soprattutto nella coda, fino a45,81 secondi.
+Il nodo ora evita di interrogare le corsie vuote a ogni lettura. Il frontend
+ricompone gli elenchi grandi con quattro blocchi da512KiB insieme: il caso da
+3,75MiB richiede non più di30 chiamate, invece di circa465. Un limite effettivo
+di180 secondi comprende rete e corpo della risposta, con errore visibile se
+il collegamento si blocca. Sono passati470 test web; il nuovo sito pubblico
+corrisponde alla candidata verificata. L'utente ha confermato il caricamento
+RUNTS dopo l'aggiornamento; un trasferimento reale oltre4,5MiB resta da provare.
+
+Prima di aggiungere la sola tabella locale `suite_projects` è stato creato
+un backup PostgreSQL completo da **5.187.311.859 byte**, conservato esclusivamente
+sul PC e protetto per utente/SYSTEM. Verificati SHA256 e indice pg_restore;
+applicata la sola migrazione `0033_suite_projects`. I conteggi delle **75 tabelle
+e 3.375.773 righe preesistenti sono invariati**. Dettagli:
+[DATABASE-LOCALE-AGGIORNATO.md](../Bandi/integration/DATABASE-LOCALE-AGGIORNATO.md).
+La verifica dell'indice non viene presentata come un ripristino completo.
+
 
 Il PC usa HTTPS in uscita: nessuna porta del router o database locale da
 pubblicare. Il nodo è stato prima verificato in sola lettura. Dopo i controlli
@@ -127,10 +201,13 @@ continua a controllare la coda mentre il PC è acceso e si avvia all'accesso a
 Windows; non deve essere lasciato un terminale aperto. L'arresto/riavvio breve
 per verificare il nome del progetto non ha eseguito lavori.
 
-Ultimo controllo operativo: 30 ottobre, 14:39 UTC. Worker PID 59816 e
-supervisore PID 42824 attivi; worker in stato `running/polling`, heartbeat
-del gateway aggiornato, 681 consultazioni della
-coda, zero lavori attivi o completati. Il supervisore e l'attività Windows
+Ultimo aggiornamento operativo: 30 ottobre, 19:41 ora italiana. Nuovo worker
+PID 66228 e supervisore PID 12676; stato `running/polling`, heartbeat del
+gateway recente, cinque capacità attive incluse generazione e accesso nativo,
+nessun errore o lavoro attivo nel controllo. Il vecchio nodo è stato arrestato
+regolarmente con code e lease vuote, preservando identità, chiavi e ricevute.
+Una precedente richiesta di sola ricerca era scaduta; è rimasta terminale,
+senza ripetizioni automatiche. Il supervisore e l'attività Windows
 continuano indipendentemente da questa chat. I PID cambiano ai riavvii; fanno
 fede i file di stato e i log indicati sotto. Il risultato atteso è servire le
 consultazioni e lavorare soltanto le generazioni autorizzate dal proprietario.
@@ -139,6 +216,92 @@ Guide: [contratto](../Bandi/integration/COLLABORAZIONE-CONTRATTO.md),
 [gateway](../Bandi/docs/COLLABORAZIONE-GATEWAY.md),
 [nodo PC](../Bandi/integration/NODO-PC.md),
 [interfaccia](../Bandi/apps/web/COLLABORAZIONE.md).
+
+## Controllo completo successivo delle pagine Bandi
+
+Il controllo pagina, componente, client e proxy ha individuato e corretto
+otto difetti: attesa di tutti i pannelli Radar prima di mostrare i bandi,
+catalogo accessorio che bloccava il Laboratorio, polling sovrapposti delle
+candidature, riuso del modulo dopo il cambio del bando, accesso bozze senza
+scadenza, caricamento bozze dipendente dallo stato del PC, risposta grande
+troncata dopo gli upload e un menu troppo largo su telefono.
+
+La revisione finale supera **517 test web su85 file**, TypeScript e lint.
+Il collaudo visivo usa i componenti originali e copre **31 modelli di pagina,
+124 combinazioni desktop/telefono e dati vuoti/errori**, più ruoli, PC offline,
+navigazione e tastiera. L'overflow riprodotto è corretto e verificato anche
+a320,390 e1440px. Dopo i test è cambiato soltanto il CSS del campo interessato;
+il nuovo collaudo completo e la build remota includono quel CSS. Conservati
+anche gli esiti falliti intermedi, senza presentarli come prove riuscite.
+
+Le API sono simulate nella fixture visiva; non si dichiara completato un
+CRUD reale su ogni record o una visita autenticata di tutte le pagine.
+Il collegamento Opera richiede ancora autenticazione e il controllo Windows
+ha restituito un errore del collegamento nativo. Rimane valida la conferma
+dell'utente sul caricamento RUNTS. Nessuna generazione o modifica dell'archivio
+reale è stata eseguita per il collaudo. Supervisori e server temporanei sono
+stati fermati e la loro chiusura è stata verificata indipendentemente.
+
+Matrice, priorità, riproduzioni e limiti:
+[CHECK-COMPLETO-BANDI.md](../Bandi/integration/CHECK-COMPLETO-BANDI.md).
+
+## Consultazione dalle fonti: implementazione pubblicata
+
+Il requisito aggiornato evita di trasferire tutto l'archivio. Sono state
+verificate risposte reali delle API OpenCoesione, CON IL SUD, Repubblica
+Digitale e Funding & Tenders; il codice RUNTS esistente riconosce ancora i
+moduli ufficiali e può consultarli senza AI. La soluzione scelta è leggere
+schede dalle fonti con adattatori server limitati e una piccola cache di
+metadati. I documenti originali si recuperano quando il proprietario avvia
+una lavorazione sul PC; bozze e lavoro associativo rimangono online.
+
+Le fonti basate solo su file e i filtri senza API equivalente richiedono un
+adattamento: non si promette una sostituzione identica di ogni funzione mediante
+un semplice URL. Non sono state avviate scansioni dell'archivio, migrazioni
+massive o attivazioni Cloudflare/Azure. La lettura è ora pubblicata su `/fonti`,
+con tre sezioni per bandi, progetti ed enti. L'Area riservata è configurata per
+aprire questo ingresso. Il proprietario può raggiungere anche gli strumenti
+originali tramite **Analisi e archivio**; quei dati e le lavorazioni AI
+continuano a richiedere il PC acceso. Le bozze rimangono online.
+
+Ogni richiesta legge una pagina, senza scorrere automaticamente il catalogo.
+La cache è soltanto in memoria: massimo 64 voci, 8 MiB e cinque minuti.
+I collaboratori autorizzati possono consultare le fonti, senza acquisire
+accesso alle operazioni native riservate al proprietario. Non sono stati
+aggiunti un archivio PDF cloud o un nuovo comando «Scarica scheda»:
+**Apri fonte** apre la scheda ufficiale dove disponibile. Per RUNTS apre il
+portale generico; per OpenCoesione può aprire il record JSON completo.
+
+Verifiche finali: **232 test PostgreSQL/ASGI e cinque subtest**, zero salti;
+**663 test web in 89 file**, TypeScript e lint; 36 casi browser Fonti, oltre
+ai 124 casi delle schermate native della fase precedente. Un job temporaneo
+senza segreti ha letto tutte e cinque le fonti dal server Google, in circa
+0,2–3,8 secondi ciascuna, ed è stato poi eliminato. Non sono state avviate
+generazioni AI o lavorazioni sull'archivio reale.
+
+Gateway in esercizio: `adf-bandi-portale-api-sources-20261030-a`, 100% traffico,
+con la precedente `native-20261030-c` conservata per il rollback. Bandi Vercel
+`dpl_Eh2bsaS1kQriCLF4QU9XdcmzrFDo`; sito principale
+`dpl_8jK1uKpHjScZUWKhxChj6yWCG6UH`. Otto controlli dei domini pubblici
+confermano pagine 200 e rifiuto anonimo 401 delle API; gli alias corrispondono
+alle candidate promosse. I tre HTML Bandi coincidono byte per byte con le
+candidate. Per `/admin` differisce soltanto l'ID casuale del widget Clerk,
+normalizzato nelle sue due occorrenze. Il chooser autenticato e i clic sui
+record non sono stati ispezionati nella sessione reale: Opera continua a
+richiedere una nuova autenticazione. Le prove con fixture non vengono
+presentate come una nuova conferma dell'utente.
+
+Prove delle fonti, lettori riutilizzabili e piano concreto:
+[ARCHIVIO-ONLINE-FATTIBILITA.md](../Bandi/integration/ARCHIVIO-ONLINE-FATTIBILITA.md).
+
+I sorgenti di questa modalità e i test sono pubblicati nella repository privata
+`Pswie/ets-intelligence-graph`, commit
+`269190371b20bc4baa21c09e686149d874b176f0`, successivo al controllo completo
+`309e90eb1935e844d6d2e6097d5d57a85d9bf8ea`. Nessun token o password è stato
+aggiunto a Git. L'audit finale dei tre server supera 27 controlli di
+configurazione e 18 richieste HTTP; la ricevuta separata della pulizia conferma
+cinque revisioni rimanenti e nessun job temporaneo.
+
 
 ## Clerk e sessione comune
 
@@ -156,7 +319,7 @@ L'istanza è di sviluppo. I normali link fra origini diverse non trasferivano il
 contesto del browser: la navigazione e il ritorno ora usano gli helper ufficiali
 Clerk, con destinazioni limitate ai nostri siti e UUID conservato. La pagina
 centrale mantiene tutte e cinque le aree e un modulo di accesso essenziale.
-**Il nuovo collaudo reale dell'utente deve ancora confermare il login comune.**
+**L'utente ha confermato l'apertura di Gestionale e Progetti con il login comune.**
 Il MCP non espone la registrazione dei satelliti di sviluppo; questo non prova
 che ne manchi la configurazione. Non sono state create istanze di produzione
 o attivati piani a pagamento. La stessa chiave pubblica da sola non prova il
@@ -170,7 +333,7 @@ I collaboratori futuri vanno autorizzati tramite identificativo o organizzazione
 | Principale | [www.angelidelfuturoaps.com](https://www.angelidelfuturoaps.com) | Vercel esistente |
 | AssociaGo | [gestionale.angelidelfuturoaps.com](https://gestionale.angelidelfuturoaps.com) | Vercel + Cloud Run `adf-gestionale-collaudo` |
 | LibrePM | [progetti.angelidelfuturoaps.com](https://progetti.angelidelfuturoaps.com) | Vercel + Cloud Run `adf-bandi-collaudo` |
-| Bandi | [bandi.angelidelfuturoaps.com](https://bandi.angelidelfuturoaps.com/collabora) | Nuovo portale Vercel + gateway Cloud Run `adf-bandi-portale-api` |
+| Bandi | [bandi.angelidelfuturoaps.com](https://bandi.angelidelfuturoaps.com) | Frontend originale Vercel + gateway Cloud Run `adf-bandi-portale-api` + nodo PC |
 
 Il servizio Google chiamato `adf-bandi-collaudo` ospita LibrePM, non Bandi Python/Next.js.
 Il dominio principale usa già DNS Vercel. Le immagini aggiornate sono nel
@@ -180,11 +343,19 @@ senza dati, configurazioni private o modelli del PC.
 [build_runtime.py](deployment/build_runtime.py) registra heartbeat, PID,
 digest e risultato terminale delle costruzioni.
 
-Ho rimosso **18 revisioni Google obsolete** senza traffico o tag. Restano
-soltanto le tre revisioni nuove, una per backend, tutte verificate nuovamente
-con HTTP200 dopo la pulizia. Nei tre pacchetti Artifact Registry della suite
-sono stati rimossi o verificati assenti13 digest obsoleti; restano9 digest
-necessari alle tre immagini correnti, inclusi manifest e attestazioni.
+Nella prima pulizia sono state rimosse **18 revisioni Google obsolete** senza
+traffico o tag; dopo l'aggiornamento sono state eliminate anche una candidata
+AssociaGo scartata, la precedente revisione del portale limitato Bandi e due
+revisioni native sostituite: **22 revisioni rimosse complessivamente**.
+L'inventario globale successivo
+conta **3 servizi, 0 job e 5 revisioni**: tre in servizio e le precedenti revisioni
+AssociaGo/gateway conservate per il ripristino. Solo le nuove ricevono traffico.
+Nei tre pacchetti Artifact Registry erano stati rimossi o verificati assenti
+13 digest obsoleti; le nuove immagini sono controllate separatamente, compresi
+index e manifest figli, prima di qualsiasi rimozione puntuale. Eliminato anche
+l'index della candidata AssociaGo scartata dopo aver verificato che non fosse
+usato da servizi o job in alcuna regione. Conservati i manifest figli e i layer
+condivisi; nessuna cancellazione generale del registro.
 
 La pulizia ha ricontrollato servizi e job in tutte le regioni del progetto,
 riferimenti, tag e immagini prima delle cancellazioni puntuali. Due manifest
@@ -209,8 +380,14 @@ senza segreti e non avvia generazioni.
 [install_portal_cron.py](deployment/install_portal_cron.py) esporta il JSON per
 cron-job.org e, con accesso API disponibile, crea/aggiorna esclusivamente il job
 corrispondente: ogni 30 minuti, Europe/Rome, nessuna chiave nell'URL o risposta
-archiviata. Nessun account cron-job.org è ancora collegato e nessun job remoto
-è stato creato. Guida: [CRON-PORTALE.md](deployment/CRON-PORTALE.md).
+archiviata. **Creato e verificato su cron-job.org il job8758073**, abilitato.
+Il gateway risponde HTTP200 alla chiamata autenticata di controllo.
+Verificata anche la prima esecuzione pianificata delle19:30 ora italiana:
+HTTP200 in601ms, esito positivo nella cronologia di cron-job.org.
+L'API key dell'account non viene salvata nella repository. Il launcher locale
+[attiva-cron-portale.ps1](deployment/attiva-cron-portale.ps1) rimane disponibile
+per modifiche future. Nessun cron GitHub o Google Scheduler è stato aggiunto.
+Guida: [CRON-PORTALE.md](deployment/CRON-PORTALE.md).
 
 Il cron non è un backup e non garantisce l'assenza di pause del piano Free.
 È operativo [backup_cloud_schemas.py](deployment/backup_cloud_schemas.py), con
@@ -220,8 +397,10 @@ directory protette per l'utente, senza cancellare vecchie copie o esporre
 credenziali nei comandi. La prova di ripristino reale ha usato una bozza e due
 revisioni sintetiche: conteggi e hash coincidono dopo il ripristino. I due
 database temporanei sono stati rimossi e la sorgente è rimasta intatta.
-Il primo backup reale dei tre schemi è riuscito: archivio custom di 481.510
-byte, SHA256 e indice pg_restore verificati. Usa il ruolo separato
+L'ultimo backup reale dei tre schemi, dopo le nuove migrazioni, è riuscito
+alle 18:17 UTC: archivio custom di **488.846 byte**, SHA256
+`729aa1126e4efe4b2059dd5e66b70f242b3459871bf564eea3427fcb28530991`
+e indice pg_restore verificati. Usa il ruolo separato
 `suite_backup`, TLS verify-full e la CA Supabase. Il task Windows è installato
 e abilitato: alle 03:30, con recupero dell'orario perso e accesso Windows
 ritardato, evitando sovrapposizioni e copie doppie nella stessa giornata.
@@ -238,7 +417,7 @@ Riferimenti:
 
 ## Verifiche e lavoro restante
 
-- AssociaGo: 232/232 test, PostgreSQL 17/MySQL 8.4/SQLite reali.
+- AssociaGo: ultima regressione270 test, PostgreSQL17/MySQL8.4/SQLite reali.
 - LibrePM: 107/107 test, inclusi PostgreSQL/MySQL e integrazione; ulteriori
   25 verifiche sui ruoli Clerk passate. Un ruolo organizzativo esplicito non può
   riacquistare privilegi da metadati precedenti.
@@ -250,12 +429,15 @@ Riferimenti:
 - Gateway e adattatore: 47 test PostgreSQL e 27 regressioni locali passati;
   Ruff e mypy passati.
 - Nodo: 23 test locali e due prove con gateway PostgreSQL passati.
-- Bandi web: 394/394 test, lint, typecheck e build passati; flussi browser con
-  dati sintetici verificati. Build web AssociaGo/LibrePM e check/build Astro passati.
+- Bandi web: ultima suite completa663 test, lint, typecheck e build passati;
+  ulteriori18 prove mirate del gate sono sovrapposte e non si sommano al totale.
+  Flussi browser con dati sintetici verificati. Build web AssociaGo/LibrePM e
+  check/build Astro passati.
 - Backend pubblicati: 27 verifiche di configurazione e18 richieste HTTP
   passate sui tre indirizzi stabili;16 controlli offline dei preparatori e
   dell'audit di rilascio passati.
-- Cron: sette test offline passati, senza chiamate ad account reali.
+- Cron: dieci test offline passati; installazione reale su cron-job.org riletta
+  e verificata, endpoint autenticato HTTP200.
 - Backup: cinque test offline e prova di ripristino PostgreSQL17 reale passati;
   ulteriori sette test sul recupero delle esecuzioni Windows passati.
 - Immagine gateway: salute200, anonimo401, API locali/documentazione404,
@@ -266,8 +448,26 @@ Il vecchio controllo delle migrazioni complete su SQLite è stato sostituito
 dalla verifica già disponibile su PostgreSQL reale, senza modificare migrazioni
 storiche. Il nuovo job CI esegue esplicitamente upgrade fino a head, confronto
 dei modelli, pgvector e controlli del portale con ruoli distinti: riprodotto in
-locale con **112 test passati e zero saltati**. Black, Ruff e mypy sono passati.
-La verifica locale non equivale a un'esecuzione remota GitHub Actions.
+locale con **232 test passati e zero saltati** nell'ultima regressione, inclusi
+i 128 test nativi precedenti e 104 test delle fonti,
+dopo gli allineamenti dei tipi. Black, Ruff e mypy passano sugli11 nuovi file
+del trasporto e dei test. La CI generale conserva debito preesistente:
+Ruff1.993 segnalazioni, Black131 file storici da formattare, mypy5.641 errori.
+I269 nuovi errori di tipo introdotti durante lo sviluppo sono stati risolti;
+i diagnostici mypy rimasti coincidono esattamente con la baseline. Non sono
+stati esclusi controlli per dichiarare verde la CI. Dettagli:
+[CI-DEBITO-TECNICO.md](../Bandi/integration/CI-DEBITO-TECNICO.md).
+Le verifiche locali non equivalgono a un'esecuzione remota GitHub Actions.
+
+La notifica GitHub «No jobs were run» del run `41075611405` dipendeva da un
+contesto `runner.temp` usato nell'ambiente del job, dove non è disponibile.
+La correzione sposta la risoluzione nel passo di preparazione e passa il
+percorso ai passi successivi tramite `GITHUB_ENV`. Verificati il workflow
+con actionlint ufficiale e la preparazione del file dei ruoli; correzione
+pubblicata nel commit `c96605174d36dde4683564ace9cadac1930400ad` di
+`Pswie/ets-intelligence-graph` e sincronizzata nella copia locale.
+Il vecchio run resta un errore storico. **Non è stato aggiunto alcun cron
+GitHub: la manutenzione richiesta resta esclusivamente su cron-job.org.**
 
 **Audit Bandi completo e di produzione: zero vulnerabilità
 note nell'esecuzione effettuata.** L'errore npm del workspace è stato risolto
@@ -284,9 +484,11 @@ con npm10 e npm11 e nuova regressione/build passati. Dettagli in
 - [x] Applicare migrazioni delle tre app e inizializzare le identità verificate.
 - [x] Configurare segreti, identità, associazione e organizzazione.
 - [x] Pubblicare revisioni, frontend e domini.
-- [ ] Completare la verifica del login reale con la sessione dell'utente.
+- [x] Verificare il login reale: l'utente conferma Gestionale e Progetti aperti.
 - [x] Attivare nodo PC e backup contro le destinazioni verificate.
-- [ ] Collegare cron-job.org con l'accesso API dell'utente e installare il job pronto.
+- [x] Collegare cron-job.org con l'accesso API dell'utente e installare il job.
+- [x] Verificare con l'utente il caricamento RUNTS dopo le correzioni.
+- [ ] Verificare un file oltre4,5MiB attraverso la sessione reale Vercel/Clerk.
 - [x] Ripulire revisioni e immagini Google obsolete dopo il collaudo online.
 
 Gli advisor Supabase dopo il rilascio non hanno restituito segnalazioni di
@@ -304,6 +506,21 @@ a `/api/v1/me`, `/api/v1/associations` e `/api/me` e l'intestazione Bearer.
 Questo controllo intercetta il prefisso mancante che il solo esame della CSP
 e della disponibilità HTML non aveva rilevato. Sono passati anche i cinque
 controlli esistenti degli snapshot frontend.
+
+È stato corretto anche il ciclo di riconoscimento di LibrePM: l'oggetto delle
+organizzazioni cambiava a ogni render e riavviava il tentativo, cancellando
+l'errore precedente. Ora l'effetto dipende dagli identificativi effettivi,
+conserva l'errore fino a un nuovo tentativo esplicito e annulla le richieste
+obsolete. Il recupero del token ha un limite di 15 secondi, il profilo di 75
+e l'intera procedura di 90; un errore del token non avvia una richiesta anonima.
+Passati 23 test API/helper/SSO e una prova del componente React in StrictMode
+con 12 verifiche, inclusi errore persistente, retry e cambio utente.
+
+Il controllo successivo in sola lettura conferma che esiste un solo utente
+Clerk, con il subject previsto e ruolo pubblico `presidente`. AssociaGo ha
+l'accesso tecnico `ADMIN/ACTIVE` all'associazione corretta; LibrePM lo stesso
+subject nel profilo attivo. Non sono stati cambiati ruoli o dati per aggirare
+gli errori di caricamento.
 
 Il ritorno centrale gestisce sia i parametri normali sia il frammento usato
 da Clerk. Cattura solo le tre destinazioni di ritorno prima che l'SDK ripulisca
@@ -342,10 +559,21 @@ Le vecchie anagrafiche non sono state fuse automaticamente. Le cartelle pensate
 per funzionalità future non equivalgono a un prodotto completo di fundraising o
 billing. Non sono stati inventati flussi amministrativi o regole mancanti.
 
-I sorgenti aggiornati sono nelle copie locali delle repository. Questa fase
-pubblica immagini e snapshot verificati; non ha eseguito push GitHub. Per i
+I sorgenti aggiornati sono nelle copie locali delle repository. Su GitHub sono
+pubblicati anche la correzione del workflow CI e il frontend LibrePM del commit
+`78615261b43474f494e69564f4fff63c5aac1827` nel ramo `cloud/adf-bandi`,
+corrispondente alla nuova interfaccia Progetti in esercizio. Il Gestionale
+aggiornato è nel ramo `master` di `Pswie/AssociaGo`, commit
+`00a6c6e516cbe54be8239d10f6386abc02b80b9c`. Le pagine di accesso e le
+informazioni sul software collegano i rispettivi sorgenti aggiornati. Per i
 rilasci successivi seguire [FRONTEND-VERCEL.md](deployment/FRONTEND-VERCEL.md)
 e [DEPLOY-CANDIDATES.md](deployment/DEPLOY-CANDIDATES.md).
+
+Il sito originale Bandi, gateway e regressioni sono pubblicati nella repository
+privata `Pswie/ets-intelligence-graph`, ramo `agent/phase-4-structured-extraction`,
+commit iniziale `8c1e30200ba4ed6516904103d14cf665e7e9cab9`; le correzioni dei
+caricamenti sono nel commit `2b345772773ab334b6ac9ee8b3d2eaaddbaf5404` e descritte in
+[CARICAMENTI-ONLINE.md](../Bandi/integration/CARICAMENTI-ONLINE.md).
 
 ## Residui temporanei
 

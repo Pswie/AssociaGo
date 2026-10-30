@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 import hashlib
 import io
@@ -10,6 +11,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -19,6 +21,7 @@ import deploy_runtime_candidates as deploy
 import migrate_owner_once as migrate
 import prepare_initial_bootstrap as bootstrap
 import prepare_runtime_bundles as generator
+import prepare_frontends as frontends
 import render_initial_bootstrap as renderer
 
 
@@ -105,9 +108,10 @@ class PreparationTests(unittest.TestCase):
             binding = next(
                 value
                 for value in service["command"]
-                if value.startswith("--set-secrets=")
+                if value.startswith(("--set-secrets=", "--update-secrets="))
             )
             if service["application"] == "bandiPortal":
+                self.assertTrue(binding.startswith("--update-secrets="))
                 self.assertIn("/run/secrets/gateway.env=", binding)
                 self.assertTrue(
                     any(
@@ -127,6 +131,127 @@ class PreparationTests(unittest.TestCase):
         self.assertNotIn("synthetic-long", json.dumps(plan))
         deploy.validate_runtime_payloads(self.config)
 
+    def gateway_service(self):
+        def volume(name):
+            return {
+                "name": name,
+                "secret": {
+                    "secretName": self.config["runtimeBundles"]["bandiPortal"]["name"],
+                    "items": [{"key": "1", "path": "gateway.env"}],
+                },
+            }
+
+        return {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": [
+                            {
+                                "volumeMounts": [
+                                    {"name": "mounted", "mountPath": "/run/secrets"}
+                                ]
+                            }
+                        ],
+                        "volumes": [volume("unused"), volume("mounted")],
+                    }
+                }
+            }
+        }
+
+    def test_gateway_redeployment_rebuilds_exact_mount_atomically(self):
+        plan = deploy.prepare(self.config, self.public, self.root)
+        planned = copy.deepcopy(plan)
+        service = self.gateway_service()
+        spec = service["spec"]["template"]["spec"]
+        gateway = next(
+            item for item in plan["services"] if item["application"] == "bandiPortal"
+        )
+        deployed = []
+
+        def fake(args, **kwargs):
+            if args[:3] == ["run", "services", "list"]:
+                return SimpleNamespace(stdout=gateway["service"].encode())
+            if args[:3] == ["run", "services", "describe"]:
+                return SimpleNamespace(stdout=json.dumps(service).encode())
+            self.assertEqual(args[:2], ["run", "deploy"])
+            deployed.append(args)
+            self.assertIn("--no-traffic", args)
+            self.assertTrue(any(arg.startswith("--update-secrets=") for arg in args))
+            self.assertFalse(any(arg.startswith("--set-secrets=") for arg in args))
+            self.assertIn("--remove-volume-mount=/run/secrets", args)
+            spec["containers"][0]["volumeMounts"] = []
+            for argument in args:
+                if argument.startswith("--remove-volume="):
+                    names = argument.split("=", 1)[1].split(",")
+                    spec["volumes"] = [
+                        item for item in spec["volumes"] if item["name"] not in names
+                    ]
+            self.assertEqual(spec["volumes"], [])
+            generated = "generated-" + str(len(deployed))
+            volume = self.gateway_service()["spec"]["template"]["spec"]["volumes"][0]
+            volume["name"] = generated
+            spec["volumes"] = [volume]
+            spec["containers"][0]["volumeMounts"] = [
+                {"name": generated, "mountPath": "/run/secrets"}
+            ]
+            return SimpleNamespace(stdout=b"")
+
+        with patch.object(deploy, "run_gcloud", side_effect=fake):
+            for _ in range(2):
+                deploy.execute(
+                    plan, "runtime", False, self.config, applications=["bandiPortal"]
+                )
+        self.assertIn("--remove-volume=mounted,unused", deployed[0])
+        self.assertIn("--remove-volume=generated-1", deployed[1])
+        self.assertEqual([item["name"] for item in spec["volumes"]], ["generated-2"])
+        self.assertEqual(plan, planned)
+
+    def test_gateway_cleanup_fails_before_deploy_for_unexpected_bindings(self):
+        plan = deploy.prepare(self.config, self.public, self.root)
+        gateway = next(
+            item for item in plan["services"] if item["application"] == "bandiPortal"
+        )
+        changes = [
+            lambda s: s["volumes"][0]["secret"].update(secretName="another-secret"),
+            lambda s: s["volumes"][0]["secret"]["items"][0].update(key="latest"),
+            lambda s: s["volumes"][0]["secret"]["items"][0].update(path="another.env"),
+            lambda s: s["volumes"][0].update(emptyDir={}),
+            lambda s: s["volumes"][0].update(name="mounted"),
+            lambda s: s["containers"].append({}),
+            lambda s: s["containers"][0].update(
+                env=[{"name": "EXTRA_SECRET", "valueFrom": {"secretKeyRef": {}}}]
+            ),
+            lambda s: s["containers"][0]["volumeMounts"][0].update(name="missing"),
+            lambda s: s["containers"][0]["volumeMounts"][0].update(mountPath="/other"),
+            lambda s: s["containers"][0]["volumeMounts"][0].update(subPath="hidden"),
+        ]
+        for index, change in enumerate(changes):
+            with self.subTest(configuration=index):
+                service = self.gateway_service()
+                change(service["spec"]["template"]["spec"])
+                with patch.object(
+                    deploy,
+                    "run_gcloud",
+                    side_effect=[
+                        SimpleNamespace(stdout=gateway["service"].encode()),
+                        SimpleNamespace(stdout=json.dumps(service).encode()),
+                    ],
+                ) as command:
+                    with self.assertRaises(deploy.PreparationError):
+                        deploy.execute(
+                            plan,
+                            "runtime",
+                            False,
+                            self.config,
+                            applications=["bandiPortal"],
+                        )
+                    self.assertTrue(
+                        all(
+                            call.args[0][:2] != ["run", "deploy"]
+                            for call in command.call_args_list
+                        )
+                    )
+
     def test_bundle_serialization_round_trips_exactly(self):
         for app, values in self.values.items():
             payload = deploy.bundle_payload(app, values)
@@ -136,6 +261,183 @@ class PreparationTests(unittest.TestCase):
                 else json.loads(payload)
             )
             self.assertEqual(result, values)
+
+    def test_native_gateway_is_enabled_only_by_an_explicit_boolean(self):
+        def environment():
+            deploy.prepare(self.config, self.public, self.root)
+            return json.loads((self.root / "bandiPortal-runtime-env.json").read_text())
+
+        self.assertNotIn("COLLAB_NATIVE_ENABLED", environment())
+        self.config["bandiNativeEnabled"] = True
+        self.assertEqual(environment()["COLLAB_NATIVE_ENABLED"], "true")
+        self.config["bandiNativeEnabled"] = "false"
+        with self.assertRaises(deploy.PreparationError):
+            environment()
+
+    def test_official_sources_flag_is_opt_in_and_only_reaches_the_gateway(self):
+        for enabled in (None, False, True):
+            with self.subTest(enabled=enabled):
+                config = copy.deepcopy(self.config)
+                config["bandiNativeEnabled"] = True
+                if enabled is not None:
+                    config["bandiOfficialSourcesEnabled"] = enabled
+                with patch.object(
+                    deploy, "run_gcloud", side_effect=AssertionError("No remote calls")
+                ):
+                    deploy.prepare(config, self.public, self.root)
+                for app in deploy.APPS:
+                    environment = json.loads(
+                        (self.root / (app + "-runtime-env.json")).read_text()
+                    )
+                    if app == "bandiPortal" and enabled is True:
+                        self.assertEqual(
+                            environment["COLLAB_OFFICIAL_SOURCES_ENABLED"], "true"
+                        )
+                        self.assertEqual(environment["COLLAB_NATIVE_ENABLED"], "true")
+                    else:
+                        self.assertNotIn("COLLAB_OFFICIAL_SOURCES_ENABLED", environment)
+
+    def test_official_sources_requires_strict_booleans_and_native_runtime(self):
+        for enabled in ("true", "false", 0, 1, None, [], {}):
+            with self.subTest(enabled=enabled):
+                config = copy.deepcopy(self.config)
+                config.update(
+                    bandiNativeEnabled=True, bandiOfficialSourcesEnabled=enabled
+                )
+                with self.assertRaises(deploy.PreparationError):
+                    deploy.prepare(config, self.public, self.root)
+        config = copy.deepcopy(self.config)
+        config.update(bandiNativeEnabled=False, bandiOfficialSourcesEnabled=True)
+        with self.assertRaises(deploy.PreparationError):
+            deploy.prepare(config, self.public, self.root)
+
+    def test_frontend_official_flag_rejects_missing_prerequisites_before_build(self):
+        base = [
+            "prepare-frontends",
+            "--api-associago",
+            "https://associago.example",
+            "--api-librepm",
+            "https://librepm.example",
+            "--bandi-project-id",
+            "prj_synthetic",
+            "--settings",
+            str(self.root / "must-not-be-read.json"),
+        ]
+        for flags in (["--official-sources"], ["--official-sources", "--bandi-native"]):
+            with self.subTest(flags=flags), patch.object(
+                sys, "argv", base + flags
+            ), patch.object(
+                frontends,
+                "ThreadPoolExecutor",
+                side_effect=AssertionError("No build may start"),
+            ) as executor, redirect_stderr(
+                io.StringIO()
+            ):
+                with self.assertRaises(SystemExit) as error:
+                    frontends.main()
+                self.assertEqual(error.exception.code, 2)
+                executor.assert_not_called()
+
+    def test_frontend_flags_preserve_other_apps_and_select_the_expected_bandi_entry(
+        self,
+    ):
+        settings = self.root / "frontend-settings.json"
+        settings.write_text(json.dumps(self.public))
+        github = self.root / "synthetic-github"
+        robots = github / "Bandi/apps/web/public/robots.txt"
+        robots.parent.mkdir(parents=True)
+        robots.write_text("User-agent: *\nDisallow: /\n")
+
+        def snapshot(_source, target, _files, _directories):
+            target.mkdir(parents=True)
+            if target.name == "bandi":
+                logo = target / "apps/web/public/brand/logo-ufficiale.png"
+                logo.parent.mkdir(parents=True)
+                logo.write_bytes(b"synthetic-reviewed-logo")
+
+        def build(name, _repository, project_id, api, public, output):
+            target = output / name
+            target.mkdir()
+            return {
+                "kind": "prebuilt-static",
+                "projectId": project_id,
+                "path": str(target),
+                "state": "prepared",
+                "publicEnvironment": frontends.spa_environment(api, public),
+            }
+
+        # Snapshot contents and logo approval have separate tests/release pins.
+        # Keep this CLI contract test independent of sibling repositories/builds.
+        reviewed_hash = (
+            "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d"
+        )
+        synthetic_hashing = SimpleNamespace(
+            sha256=lambda _value: SimpleNamespace(hexdigest=lambda: reviewed_hash)
+        )
+        for flags, suffix in (
+            ([], "/collabora"),
+            (["--bandi-native"], ""),
+            (["--bandi-native", "--official-sources"], "/fonti"),
+        ):
+            with self.subTest(flags=flags):
+                command = [
+                    "prepare-frontends",
+                    "--settings",
+                    str(settings),
+                    "--api-associago",
+                    "https://associago.example",
+                    "--api-librepm",
+                    "https://librepm.example",
+                    "--gateway-url",
+                    "https://gateway.example",
+                    "--bandi-project-id",
+                    "prj_synthetic",
+                    *flags,
+                ]
+                output = io.StringIO()
+                with (
+                    patch.object(sys, "argv", command),
+                    patch.object(frontends, "ROOT", self.root / "frontend-root"),
+                    patch.object(frontends, "GITHUB", github),
+                    patch.object(frontends, "source_snapshot", side_effect=snapshot),
+                    patch.object(frontends, "build_spa", side_effect=build),
+                    patch.object(frontends, "hashlib", synthetic_hashing),
+                    patch.object(
+                        frontends, "inventory", return_value={"count": 0, "files": []}
+                    ),
+                    patch.object(
+                        frontends.subprocess,
+                        "run",
+                        side_effect=AssertionError("No CLI"),
+                    ),
+                    redirect_stdout(output),
+                ):
+                    frontends.main()
+                root = Path(json.loads(output.getvalue())["root"])
+                state = json.loads((root / "state.json").read_text())
+                self.assertEqual(state["status"], "succeeded")
+                projects = state["projects"]
+                self.assertEqual(
+                    projects["primary"]["publicEnvironment"]["PUBLIC_BANDI_URL"],
+                    self.public["origins"]["bandi"] + suffix,
+                )
+                for name, project in projects.items():
+                    environment = project["publicEnvironment"]
+                    self.assertNotIn("COLLAB_OFFICIAL_SOURCES_ENABLED", environment)
+                    if name == "bandi" and "--official-sources" in flags:
+                        self.assertEqual(
+                            environment["NEXT_PUBLIC_OFFICIAL_SOURCES"], "1"
+                        )
+                        self.assertEqual(environment["BANDI_NATIVE_ENABLED"], "1")
+                    else:
+                        self.assertNotIn("NEXT_PUBLIC_OFFICIAL_SOURCES", environment)
+                    if name in ("associago", "librepm"):
+                        self.assertEqual(
+                            environment,
+                            frontends.spa_environment(
+                                "https://" + name + ".example", self.public
+                            ),
+                        )
 
     def test_unreviewed_bundle_name_version_image_and_shared_accounts_are_rejected(
         self,

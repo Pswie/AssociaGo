@@ -6,9 +6,9 @@
     "librepmService": "adf-bandi-collaudo",
     "bandiGatewayService": "adf-bandi-portale-api",
     "preparedImages": {
-      "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:e10171886873edf4ce4f2afd3b204636a13a0f8e6c1ab774635eaea515f78896",
+      "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:1b5e8a2d6163cc5876e5b18b459919459443de9eb3874495677ad6155fc51f41",
       "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:18981e863362d3a15a7a278e29577a1e1c05b2f646a73d96de878f0ec8447b3c",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:bcaf06d62ecfe5259cc6cb3fe36542aba2e24dd88113e7360a0a3d8cd0e1455c"
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:cd943a1a43f56da362e4d80816851549a71c5e42660c4a96f92324715cf64350"
     }
   },
   "vercel": {
@@ -52,6 +52,6 @@
   "supabaseCertificateSha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
   "supabasePlan": "free",
   "allowPaidSupabase": false,
-  "status": "published-awaiting-user-sso-verification",
+  "status": "published-official-sources-with-native-owner-tools",
   "supabaseProjectName": "Angeli del futuro"
 }
