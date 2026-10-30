@@ -1,0 +1,92 @@
+[
+  {
+    "name": "missing-peer-headers",
+    "request": "GET peer project without peer headers",
+    "expectedStatus": 401
+  },
+  {
+    "name": "invalid-peer-key",
+    "request": "GET peer project with wrong key",
+    "expectedStatus": 401
+  },
+  {
+    "name": "wrong-organization-header",
+    "request": "GET peer project with another valid organization UUID",
+    "expectedStatus": 403
+  },
+  {
+    "name": "wrong-organization-body",
+    "request": "PUT projection with body organization differing from header/configuration",
+    "expectedStatus": 403
+  },
+  {
+    "name": "source-identity-spoof",
+    "request": "POST seed with source.system different from authenticated peer",
+    "expectedStatus": 403
+  },
+  {
+    "name": "projection-path-id-mismatch",
+    "request": "PUT projection with body suiteProjectId different from path UUID",
+    "expectedStatus": 400
+  },
+  {
+    "name": "malformed-project-id",
+    "request": "GET peer project with non-UUID suiteProjectId",
+    "expectedStatus": 400
+  },
+  {
+    "name": "stale-projection",
+    "request": "PUT projection sourceVersion below persisted sourceVersion",
+    "expectedStatus": 409
+  },
+  {
+    "name": "duplicate-projection",
+    "request": "PUT identical projection twice",
+    "expectedStatus": 200,
+    "invariant": "Same localId and exactly one local project/mirror"
+  },
+  {
+    "name": "duplicate-seed",
+    "request": "POST same organization/source/system/entity/localId twice",
+    "expectedStatus": 200,
+    "invariant": "Same suiteProjectId; no repeated plan overwrite"
+  },
+  {
+    "name": "rebind-existing-mapping",
+    "request": "POST link or peer instance to different previously linked localId",
+    "expectedStatus": 409
+  },
+  {
+    "name": "integration-disabled",
+    "request": "Call user integration API with SUITE_ENABLED=false",
+    "expectedStatus": 503
+  },
+  {
+    "name": "remote-timeout",
+    "request": "Synchronize registered project while one peer is unreachable",
+    "expectedStatus": 200,
+    "invariant": "Failed peer sync status error; other peer success retained"
+  },
+  {
+    "name": "foreign-local-record",
+    "request": "Link targetLocalId outside configured association/profile",
+    "expectedStatus": 403
+  },
+  {
+    "name": "unsupported-accounting-currency",
+    "request": "PUT AssociaGo projection with currency USD",
+    "expectedStatus": 409
+  },
+  {
+    "name": "redirect-not-followed",
+    "request": "Peer responds with redirect",
+    "expectedStatus": 503,
+    "invariant": "No request to redirected host; no key forwarded"
+  },
+  {
+    "name": "subcent-accounting-budget",
+    "request": "PUT AssociaGo projection with plannedBudget amount 100.001",
+    "expectedStatus": 409,
+    "invariant": "No rounding or local ledger mutation"
+  }
+]

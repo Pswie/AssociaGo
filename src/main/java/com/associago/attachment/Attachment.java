@@ -1,6 +1,9 @@
 package com.associago.attachment;
 
 import jakarta.persistence.*;
+import org.hibernate.Length;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 
 /**
@@ -55,9 +58,11 @@ public class Attachment {
     @Column(nullable = false, length = 64)
     private String sha256;
 
-    @Lob
     @Basic(fetch = FetchType.LAZY)
-    @Column(nullable = false, columnDefinition = "longblob")
+    // Bind bytes directly: PostgreSQL BYTEA is not a JDBC/OID large object.
+    // The length selects LONGBLOB on MySQL while SQLite still stores binary data.
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(nullable = false, length = Length.LONG32)
     private byte[] content;
 
     @Column(name = "created_at", updatable = false)

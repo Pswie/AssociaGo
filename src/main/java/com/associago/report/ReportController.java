@@ -9,6 +9,9 @@ import com.associago.association.AssociationService;
 import com.associago.event.Event;
 import com.associago.event.EventService;
 import com.associago.finance.FinancialService;
+import com.associago.finance.FinancialAccess;
+import com.associago.suite.SuiteException;
+import org.springframework.security.core.Authentication;
 import com.associago.finance.Transaction;
 import com.associago.member.Member;
 import com.associago.member.MemberService;
@@ -34,11 +37,12 @@ public class ReportController {
     private final AssociationService associationService;
     private final ActivityService activityService;
     private final EventService eventService;
+    private final FinancialAccess financialAccess;
 
     public ReportController(ReportService reportService, MemberService memberService,
                             FinancialService financialService, AssemblyService assemblyService,
                             AssociationService associationService, ActivityService activityService,
-                            EventService eventService) {
+                            EventService eventService, FinancialAccess financialAccess) {
         this.reportService = reportService;
         this.memberService = memberService;
         this.financialService = financialService;
@@ -46,6 +50,7 @@ public class ReportController {
         this.associationService = associationService;
         this.activityService = activityService;
         this.eventService = eventService;
+        this.financialAccess = financialAccess;
     }
 
     private Association getAssociation(Long associationId) {
@@ -66,8 +71,9 @@ public class ReportController {
     }
 
     @GetMapping("/finance/transactions/{id}/receipt")
-    public ResponseEntity<byte[]> getTransactionReceipt(@PathVariable Long id, @RequestHeader(value = "X-Association-Id", required = false) Long associationId) throws IOException {
-        Transaction transaction = financialService.getTransactionById(id).orElseThrow(() -> new RuntimeException("Transaction not found"));
+    public ResponseEntity<byte[]> getTransactionReceipt(@PathVariable Long id, @RequestHeader(value = "X-Association-Id", required = false) Long associationId, Authentication authentication) throws IOException {
+        Transaction transaction = financialService.getTransactionById(id).orElseThrow(() -> new SuiteException(404,"TRANSACTION_MISSING","Movimento non trovato."));
+        financialAccess.requireRecord(authentication,transaction.getAssociationId(),associationId);
         Member member = null;
         if (transaction.getUserId() != null) {
             member = memberService.getMemberById(transaction.getUserId()).orElse(null);
@@ -83,9 +89,10 @@ public class ReportController {
     }
 
     @GetMapping("/finance/year/{year}")
-    public ResponseEntity<byte[]> getFinancialReport(@PathVariable int year, @RequestHeader(value = "X-Association-Id", required = false) Long associationId) throws IOException {
-        Map<String, BigDecimal> summary = financialService.getYearOverYearComparison(year);
-        List<Transaction> transactions = financialService.getAllTransactions(); // Should be filtered by year ideally
+    public ResponseEntity<byte[]> getFinancialReport(@PathVariable int year, @RequestHeader(value = "X-Association-Id", required = false) Long associationId, Authentication authentication) throws IOException {
+        associationId=financialAccess.readAssociation(authentication,associationId,null);
+        Map<String, BigDecimal> summary = financialService.getYearOverYearComparison(year,associationId);
+        List<Transaction> transactions = financialService.getTransactionsForYear(associationId,year);
         Association association = getAssociation(associationId != null ? associationId : 1L);
 
         byte[] pdf = reportService.generateFinancialReport(year, summary, transactions, association);
@@ -100,9 +107,10 @@ public class ReportController {
     public ResponseEntity<byte[]> getComparisonReport(
             @RequestParam int year1,
             @RequestParam int year2,
-            @RequestHeader(value = "X-Association-Id", required = false) Long associationId
+            @RequestHeader(value = "X-Association-Id", required = false) Long associationId, Authentication authentication
     ) throws IOException {
-        Map<String, BigDecimal> summary = financialService.getCustomComparison(year1, year2);
+        associationId=financialAccess.readAssociation(authentication,associationId,null);
+        Map<String, BigDecimal> summary = financialService.getCustomComparison(year1, year2,associationId);
         Association association = getAssociation(associationId != null ? associationId : 1L);
 
         byte[] pdf = reportService.generateComparisonReport(year1, year2, summary, association);

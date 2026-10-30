@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "organizationId": "9b8bd5f6-e4d9-4a1a-9f3d-44a3f969f401",
+  "source": {
+    "system": "bandi",
+    "entity": "preparation",
+    "localId": "72576a41-1783-4aaf-9c31-758901e74dbc",
+    "revision": "opaque-revision-1"
+  },
+  "title": "Laboratorio di quartiere"
+}

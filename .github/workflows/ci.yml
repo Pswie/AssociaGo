@@ -5,10 +5,57 @@ on:
   pull_request:
 
 jobs:
+  suite-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install contract checker dependencies
+        run: python -m pip install -r integration/requirements.txt
+      - name: Check suite API contract and fixtures
+        run: python scripts/integration/check_contract.py
+
   backend:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: associago_test
+          MYSQL_ROOT_PASSWORD: associago-mysql-ci-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -passociago-mysql-ci-only"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: associago_test
+          POSTGRES_USER: associago_ci_admin
+          POSTGRES_PASSWORD: associago-postgres-admin-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U associago_ci_admin -d associago_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     env:
       GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-ci
+      # Ephemeral CI services on literal loopback; no deployed database is contacted.
+      MYSQL_TEST_URL: jdbc:mysql://127.0.0.1:3306/associago_test?useSSL=false&allowPublicKeyRetrieval=true
+      MYSQL_TEST_USER: root
+      MYSQL_TEST_PASSWORD: associago-mysql-ci-only
+      POSTGRES_TEST_URL: jdbc:postgresql://127.0.0.1:5432/associago_test?sslmode=disable
+      POSTGRES_TEST_USER: associago_test_app
+      POSTGRES_TEST_PASSWORD: associago-app-ci-only
+      POSTGRES_TEST_MIGRATION_USER: associago_test_owner
+      POSTGRES_TEST_MIGRATION_PASSWORD: associago-owner-ci-only
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -17,10 +64,39 @@ jobs:
           java-version: '21'
       - name: Grant execute permission
         run: chmod +x gradlew
+      - name: Prepare separate PostgreSQL migration and runtime roles
+        env:
+          PGPASSWORD: associago-postgres-admin-ci-only
+        run: |
+          docker exec -i -e PGPASSWORD "${{ job.services.postgres.id }}" \
+            psql -h 127.0.0.1 -U associago_ci_admin -d associago_test -v ON_ERROR_STOP=1 \
+            -v owner_password=associago-owner-ci-only -v runtime_password=associago-app-ci-only \
+            < src/test/resources/postgresql_runtime_roles.sql
       - name: Build backend
         run: ./gradlew build
+      - name: Require real PostgreSQL and MySQL test coverage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          for suite in ("CloudPostgresSchemaIT", "CloudMySqlSchemaIT"):
+              report = Path(f"build/test-results/test/TEST-com.associago.cloud.{suite}.xml")
+              if not report.is_file():
+                  raise SystemExit(f"Missing database test report: {suite}")
+              result = ET.parse(report).getroot().attrib
+              if int(result.get("tests", 0)) == 0 or any(int(result.get(key, 0)) for key in ("skipped", "failures", "errors")):
+                  raise SystemExit(f"Database tests did not all execute successfully: {suite}")
+          PY
       - name: Generate SBOM
         run: ./gradlew cyclonedxBom
+      - name: Upload backend test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/*.xml
 
   frontend:
     runs-on: ubuntu-latest

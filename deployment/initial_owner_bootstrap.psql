@@ -1,0 +1,70 @@
+-- Administrative, explicit first-run operation after all migrations, before runtime cutover.
+-- Input comes from prepare_initial_bootstrap.py's private env file. Never use psql -a/-e.
+-- No members, projects, transactions, statutory offices, fiscal IDs or passwords are invented.
+\set ON_ERROR_STOP on
+\getenv owner_subject ADF_OWNER_SUBJECT
+\getenv owner_first_name ADF_OWNER_FIRST_NAME
+\getenv owner_last_name ADF_OWNER_LAST_NAME
+\getenv owner_email ADF_OWNER_EMAIL
+\getenv email_verified ADF_OWNER_EMAIL_VERIFIED
+\getenv librepm_owner_id ADF_LIBREPM_OWNER_ID
+
+BEGIN;
+SELECT pg_advisory_xact_lock(hashtext('adf_initial_verified_owner'));
+CREATE TEMP TABLE bootstrap_verified_owner (
+    subject text NOT NULL, first_name text NOT NULL, last_name text NOT NULL,
+    email text NOT NULL, email_verified boolean NOT NULL, librepm_id uuid NOT NULL
+) ON COMMIT DROP;
+INSERT INTO bootstrap_verified_owner VALUES (
+    :'owner_subject', :'owner_first_name', :'owner_last_name', :'owner_email',
+    :'email_verified'::boolean, :'librepm_owner_id'::uuid
+);
+DO $guard$
+DECLARE person bootstrap_verified_owner;
+BEGIN
+    SELECT * INTO STRICT person FROM bootstrap_verified_owner;
+    IF person.subject <> 'user_3GyG1NastOd4H8LiZChA5g61g9O'
+       OR NOT person.email_verified OR length(trim(person.first_name)) = 0
+       OR length(trim(person.last_name)) = 0 OR position('@' in person.email) < 2 THEN
+        RAISE EXCEPTION 'An exact, verified owner identity is required.';
+    END IF;
+    IF EXISTS (SELECT 1 FROM associago.associations)
+       OR EXISTS (SELECT 1 FROM associago.users)
+       OR EXISTS (SELECT 1 FROM associago.user_associations)
+       OR EXISTS (SELECT 1 FROM librepm.users) THEN
+        RAISE EXCEPTION 'Bootstrap requires empty identity tables. Existing identities were not changed.';
+    END IF;
+END
+$guard$;
+
+INSERT INTO associago.associations (
+    name, slug, email, is_active, use_remote_db, db_ssl, created_at, updated_at
+) VALUES (
+    'Angeli del Futuro APS', 'angeli-del-futuro-aps', 'angelidelfuturoaps@outlook.it',
+    true, false, false, CURRENT_TIMESTAMP AT TIME ZONE 'UTC', CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+) RETURNING id AS bootstrap_association_id \gset
+
+INSERT INTO associago.users (first_name, last_name, email, clerk_user_id, created_at, updated_at)
+SELECT first_name, last_name, email, subject, CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+       CURRENT_TIMESTAMP AT TIME ZONE 'UTC' FROM bootstrap_verified_owner
+RETURNING id AS bootstrap_user_id \gset
+
+-- ADMIN is technical application access, not a declaration of legal president or paid membership.
+INSERT INTO associago.user_associations (user_id, association_id, role, status, is_board_member, created_at, updated_at)
+VALUES (:bootstrap_user_id, :bootstrap_association_id, 'ADMIN', 'ACTIVE', false,
+        CURRENT_TIMESTAMP AT TIME ZONE 'UTC', CURRENT_TIMESTAMP AT TIME ZONE 'UTC');
+
+INSERT INTO librepm.users (
+    id, username, display_name, email, clerk_user_id, active, is_ghost,
+    password_hash, created_at, updated_at, sync_status
+)
+SELECT librepm_id::text, 'clerk-' || subject, first_name || ' ' || last_name, email, subject,
+       true, false, '!clerk-only:' || gen_random_uuid()::text || gen_random_uuid()::text,
+       to_char(CURRENT_TIMESTAMP AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'),
+       to_char(CURRENT_TIMESTAMP AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS'), 'LOCAL_ONLY'
+FROM bootstrap_verified_owner;
+COMMIT;
+
+-- Identifiers only: no email, private profile fields or credentials in the receipt.
+SELECT :bootstrap_association_id AS association_id, :bootstrap_user_id AS associago_user_id,
+       :'librepm_owner_id' AS librepm_owner_id;

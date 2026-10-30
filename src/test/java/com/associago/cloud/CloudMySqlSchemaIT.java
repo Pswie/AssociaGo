@@ -1,5 +1,8 @@
 package com.associago.cloud;
 
+import com.associago.attachment.Attachment;
+import com.associago.attachment.AttachmentOwner;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -10,12 +13,15 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MySQLContainer;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,7 +55,9 @@ class CloudMySqlSchemaIT {
 
     static {
         boolean available = true;
-        if (System.getenv("MYSQL_TEST_URL") == null) {
+        if (System.getenv("MYSQL_TEST_URL") != null) {
+            LocalJdbcTestTarget.requireLoopback(System.getenv("MYSQL_TEST_URL"), "mysql");
+        } else {
             // Ciclo di vita gestito a mano invece che con @Container: il
             // container va avviato solo se non puntiamo a un database esterno.
             try {
@@ -74,6 +82,9 @@ class CloudMySqlSchemaIT {
 
     @Autowired
     DataSource dataSource;
+
+    @Autowired
+    EntityManager entityManager;
 
     /**
      * Via di fuga per gli ambienti dove Testcontainers non individua il daemon
@@ -102,6 +113,8 @@ class CloudMySqlSchemaIT {
         // e' l'unico modo per accorgersi se una entity e la tabella hanno smesso
         // di combaciare.
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+        registry.add("spring.jpa.properties.hibernate.hbm2ddl.auto", () -> "validate");
+        registry.add("spring.jpa.properties.jakarta.persistence.schema-generation.database.action", () -> "validate");
         registry.add("spring.jpa.properties.hibernate.boot.allow_jdbc_metadata_access", () -> "true");
 
         // Valori fittizi ma non vuoti: CloudSecurityConfig rifiuta di partire se
@@ -130,6 +143,26 @@ class CloudMySqlSchemaIT {
                 assertThat(rs.getBoolean("success")).isTrue();
             }
         }
+    }
+
+    @Test
+    @Transactional
+    void postgresCompatibleBinaryMappingStillRoundTripsLargeMysqlBlob() throws Exception {
+        byte[] bytes = new byte[131_072];
+        for (int i = 0; i < bytes.length; i++) bytes[i] = (byte) (i % 251);
+        Attachment attachment = new Attachment();
+        attachment.setOwnerType(AttachmentOwner.VOLUNTEER_EXPENSE);
+        attachment.setOwnerId(999_002L);
+        attachment.setKind("mysql-roundtrip");
+        attachment.setFileName("roundtrip.bin");
+        attachment.setContent(bytes);
+        attachment.setSizeBytes(bytes.length);
+        attachment.setSha256(HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
+        entityManager.persist(attachment);
+        entityManager.flush();
+        Long id = attachment.getId();
+        entityManager.clear();
+        assertThat(entityManager.find(Attachment.class, id).getContent()).containsExactly(bytes);
     }
 
     @Test

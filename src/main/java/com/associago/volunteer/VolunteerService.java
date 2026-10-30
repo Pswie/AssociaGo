@@ -29,6 +29,10 @@ public class VolunteerService {
     private final FinancialService financialService;
     private final AttachmentService attachments;
     private final AssociationRepository associationRepository;
+    private com.associago.project.ProjectAssignmentService projectAssignments;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setProjectAssignments(com.associago.project.ProjectAssignmentService service) { projectAssignments = service; }
 
     public VolunteerService(VolunteerRepository volunteerRepository,
                             VolunteerShiftRepository shiftRepository,
@@ -97,8 +101,13 @@ public class VolunteerService {
         return shiftRepository.findByVolunteerId(volunteerId);
     }
 
+    public VolunteerShift getShift(Long id) {
+        return shiftRepository.findById(id).orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Shift not found"));
+    }
+
     @Transactional
     public VolunteerShift createShift(VolunteerShift shift) {
+        validateProjectShift(shift);
         if (shift.getStatus() == null) {
             shift.setStatus("SCHEDULED");
         }
@@ -113,8 +122,17 @@ public class VolunteerService {
             shift.setRole(shiftDetails.getRole());
             shift.setHoursWorked(shiftDetails.getHoursWorked());
             shift.setStatus(shiftDetails.getStatus());
+            if (shiftDetails.getProjectId() != null) shift.setProjectId(shiftDetails.getProjectId());
+            validateProjectShift(shift);
             return shiftRepository.save(shift);
-        }).orElseThrow(() -> new RuntimeException("Shift not found"));
+        }).orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Shift not found"));
+    }
+
+    private void validateProjectShift(VolunteerShift shift) {
+        if (shift.getProjectId() != null) {
+            if (projectAssignments == null) throw new IllegalStateException("Project validation unavailable");
+            projectAssignments.validateShift(shift);
+        }
     }
 
     // Expenses

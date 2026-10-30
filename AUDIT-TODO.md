@@ -1,5 +1,11 @@
 # AssociaGo — analisi e interventi
 
+**Stato operativo aggiornato:** questo documento conserva l'audit iniziale.
+Aiven era vuoto ed è stato sostituito con Supabase Free; migrazioni, pubblicazione,
+portale Bandi, nodo PC e backup sono descritti in
+[PUBBLICAZIONE-SUITE.md](PUBBLICAZIONE-SUITE.md). Le voci sulla vecchia attesa
+Aiven nelle sezioni storiche sotto non sono più il lavoro da fare.
+
 Data: 29 ottobre 2026. Base iniziale: `a53197c` (`master`).
 
 ## Obiettivo

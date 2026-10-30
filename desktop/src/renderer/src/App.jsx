@@ -37,6 +37,7 @@ import BudgetDashboard from './components/BudgetDashboard';
 import AnnualBalanceDashboard from './components/AnnualBalanceDashboard';
 import CertificateList from './components/CertificateList';
 import CommunicationDashboard from './components/CommunicationDashboard';
+import ProjectsDashboard from './components/ProjectsDashboard';
 
 import MemberForm from './components/MemberForm';
 import ActivityForm from './components/ActivityForm';
@@ -67,7 +68,8 @@ function App({ webSession }) {
   const { t, i18n } = useTranslation();
 
   const [appState, setAppState] = useState('LOADING');
-  const [activeId, setActiveId] = useState('dashboard');
+  const [requestedSuiteProjectId, setRequestedSuiteProjectId] = useState(() => new URLSearchParams(window.location.search).get('suiteProject'));
+  const [activeId, setActiveId] = useState(() => new URLSearchParams(window.location.search).has('suiteProject') ? 'projects' : 'dashboard');
   const [pageRevision, setPageRevision] = useState(0);
 
   const [currentAssociation, setCurrentAssociation] = useState(null);
@@ -97,6 +99,24 @@ function App({ webSession }) {
 
   // Toast state
   const [toast, setToast] = useState(null);
+
+  const selectSuiteProject = useCallback((id) => {
+    const url = new URL(window.location.href);
+    if (id === null) url.searchParams.delete('suiteProject');
+    else url.searchParams.set('suiteProject', id);
+    window.history.replaceState({}, '', url);
+    setRequestedSuiteProjectId(id);
+  }, []);
+
+  useEffect(() => {
+    const restore = () => {
+      const query = new URLSearchParams(window.location.search);
+      setRequestedSuiteProjectId(query.get('suiteProject'));
+      if (query.has('suiteProject')) setActiveId('projects');
+    };
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, []);
 
   useEffect(() => {
     initApp();
@@ -243,6 +263,7 @@ function App({ webSession }) {
     { id: "members", label: t('nav.members'), icon: "bi-people", component: MemberList },
     { id: "activities", label: t('nav.activities'), icon: "bi-calendar3", component: ActivityList },
     { id: "events", label: t('nav.events'), icon: "bi-calendar3", component: EventList },
+    { id: "projects", label: 'Progetti', icon: "bi-card-checklist", component: ProjectsDashboard },
     { id: "fiscal", label: t('nav.fiscal'), icon: "bi-credit-card", component: FiscalDashboard },
     // Le fatture ricevute: il backend le gestiva da sempre — elenco, scadenze,
     // importazione della fattura elettronica — e non c'era nessuna voce da cui
@@ -293,6 +314,8 @@ function App({ webSession }) {
     currentUser,
     currentAssociation,
     currentAssociationId: currentAssociation?.id, // Fix for SettingsDashboard
+    requestedSuiteProjectId,
+    selectSuiteProject,
     /*
      * L'esercizio che si sta guardando.
      *
@@ -305,7 +328,7 @@ function App({ webSession }) {
     theme,
     setTheme,
     savePreferences // Expose savePreferences to shell
-  }), [currentUser, currentAssociation, visiblePages, anno, theme, i18n.language]);
+  }), [currentUser, currentAssociation, visiblePages, anno, theme, i18n.language, requestedSuiteProjectId, selectSuiteProject]);
 
   const profileItems = [
     { id: "settings", label: t('nav.settings'), icon: "bi-gear", onClick: () => setActiveId("settings") },
@@ -323,7 +346,11 @@ function App({ webSession }) {
   // Soci e volontari non entrano nel gestionale: la loro schermata è un'altra.
   // Il backend risponderebbe comunque 403 su tutto il resto.
   if (webSession && isPersonalOnly(currentUser?.role)) {
-    return <PersonalArea />;
+    return <>{requestedSuiteProjectId !== null && <div className="alert alert-warning m-3" role="alert">Il tuo ruolo non consente di aprire il progetto richiesto. Chiedi al responsabile di verificare i permessi.</div>}<PersonalArea /></>;
+  }
+
+  if (webSession && visiblePages.length === 0) {
+    return <main className="p-4"><div className="alert alert-warning" role="alert">Il ruolo di questo accesso non consente di aprire il gestionale. Chiedi al responsabile di verificare i permessi.</div><button type="button" className="btn btn-outline-secondary" onClick={handleLogout}>Esci</button></main>;
   }
 
   const PageComponent = activePage.component;
@@ -369,6 +396,9 @@ function App({ webSession }) {
                 />
                 <section className="jl-content" ref={contentRef}>
                     <div className="jl-page p-3 p-lg-4">
+                        {requestedSuiteProjectId !== null && !visiblePages.some(page => page.id === 'projects') && (
+                            <div className="alert alert-warning" role="alert">Il ruolo di questo accesso non consente di aprire il progetto richiesto. Chiedi al responsabile di verificare i permessi.</div>
+                        )}
                         {webSession && !currentUser?.id && !isPersonalOnly(webSession.role) && (
                             <div className="alert alert-warning" role="status">
                                 Questo accesso non è collegato a un&apos;anagrafica. Chiedi al referente di verificare la tua email: invii e approvazioni richiedono il collegamento.

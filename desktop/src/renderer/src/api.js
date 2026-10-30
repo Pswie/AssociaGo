@@ -402,6 +402,35 @@ const finance = {
     },
 };
 
+// Progetti operativi locali e registro comune: gli ID restano distinti.
+const projects = {
+    getAll: (assocId = CURRENT_ASSOCIATION_ID) => apiRequest(`/v1/projects?associationId=${encodeURIComponent(assocId)}`),
+    getById: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}`),
+    create: (data) => apiRequest('/v1/projects', { method: 'POST', body: data }),
+    update: (id, data) => apiRequest(`/v1/projects/${encodeURIComponent(id)}`, { method: 'PUT', body: data }),
+    delete: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    balance: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/balance`),
+    suite: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/suite`),
+    candidates: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/candidates`),
+    assignments: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/assignments`),
+    assign: (id, data) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/assignments`, { method: 'POST', body: data }),
+    removeAssignment: (id, assignmentId) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/assignments/${encodeURIComponent(assignmentId)}`, { method: 'DELETE' }),
+    shifts: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/shifts`),
+    createShift: (id, data) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/shifts`, { method: 'POST', body: data }),
+    transactions: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/transactions`),
+    availableTransactions: (id) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/transactions/available`),
+    attachTransaction: (id, transactionId) => apiRequest(`/v1/projects/${encodeURIComponent(id)}/transactions/${encodeURIComponent(transactionId)}`, { method: 'POST' }),
+};
+
+const suiteProjects = {
+    status: () => apiRequest('/integrations/v1/status'),
+    getAll: () => apiRequest('/integrations/v1/projects'),
+    getById: (id) => apiRequest(`/integrations/v1/projects/${encodeURIComponent(id)}`),
+    share: (localId) => apiRequest('/integrations/v1/projects/share', { method: 'POST', body: { localId: String(localId) } }),
+    link: (id, localId) => apiRequest(`/integrations/v1/projects/${encodeURIComponent(id)}/link`, { method: 'POST', body: { localId: String(localId) } }),
+    sync: (id) => apiRequest(`/integrations/v1/projects/${encodeURIComponent(id)}/sync`, { method: 'POST' }),
+};
+
 // I buoni dati alle persone. Un buono da 10 euro consegnato a qualcuno è denaro
 // uscito: `issue` crea anche il movimento in uscita, `create` scrive solo la
 // riga. Sono due cose diverse e vanno tenute distinte.
@@ -874,6 +903,8 @@ export const associago = {
     reports,
     dashboard,
     finance,
+    projects,
+    suiteProjects,
     inventory,
     volunteers,
     coupons,

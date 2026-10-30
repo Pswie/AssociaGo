@@ -1,0 +1,34 @@
+{
+  "status": "applied_verified",
+  "applicationId": "app_3Gxvz4titOppeEzZH4dZtSnlLyp",
+  "instanceId": "ins_3Gxvz2mMxOLdPdj4GYYWlX5uPQM",
+  "environment": "development",
+  "liveMutationPerformed": true,
+  "patchCount": 1,
+  "configVersionBefore": "v1_bda339da",
+  "configVersionAfter": "v1_89bd4c45",
+  "mappingVerifiedByRead": true,
+  "appliedConfig": {
+    "session": {
+      "claims": {
+        "role": "{{user.public_metadata.role}}"
+      }
+    }
+  },
+  "sessionBefore": null,
+  "sessionAfter": {
+    "allowed_clock_skew": 5,
+    "claims": {
+      "role": "{{user.public_metadata.role}}"
+    },
+    "lifetime": 60
+  },
+  "executionContext": {
+    "sandbox": "danger-full-access",
+    "approvalPolicy": "never"
+  },
+  "limitations": [
+    "The expression was read back from persisted configuration; no user's JWT was requested or inspected.",
+    "Normal application login, token refresh and cross-site SSO remain to be tested."
+  ]
+}

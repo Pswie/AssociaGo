@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "organizationId": "9b8bd5f6-e4d9-4a1a-9f3d-44a3f969f401",
+  "suiteProjectId": "3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+  "title": "Laboratorio di quartiere",
+  "description": null,
+  "version": 2,
+  "instances": [
+    {
+      "system": "librepm",
+      "entity": "project",
+      "localId": "3be5b4d8-c44b-4fb9-8423-a4ec431c76cc"
+    },
+    {
+      "system": "associago",
+      "entity": "project",
+      "localId": "42"
+    },
+    {
+      "system": "bandi",
+      "entity": "preparation",
+      "localId": "72576a41-1783-4aaf-9c31-758901e74dbc"
+    }
+  ],
+  "links": {
+    "librepm": "https://librepm.example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "associago": "https://associago.example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "bandi": "https://bandi.example.org/suite/projects/3be5b4d8-c44b-4fb9-8423-a4ec431c76cc"
+  },
+  "sync": [
+    {
+      "system": "associago",
+      "status": "error",
+      "lastSuccessAt": "2026-10-29T22:40:00Z",
+      "errorCode": "SUITE_PEER_UNAVAILABLE",
+      "errorMessage": "Peer temporarily unavailable"
+    },
+    {
+      "system": "bandi",
+      "status": "synced",
+      "lastSuccessAt": "2026-10-29T22:40:00Z",
+      "errorCode": null,
+      "errorMessage": null
+    }
+  ],
+  "financial": null,
+  "workforce": {
+    "assignedCount": 2,
+    "completedHours": "12.50"
+  },
+  "preparation": {
+    "localId": "72576a41-1783-4aaf-9c31-758901e74dbc",
+    "version": 1,
+    "title": "Laboratorio di quartiere",
+    "status": "draft",
+    "reviewDecision": "pending",
+    "requestedGrant": {
+      "amount": "25000.00",
+      "currency": "EUR"
+    }
+  }
+}

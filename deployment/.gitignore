@@ -1,0 +1,4 @@
+.artifacts/
+.private/
+*.local
+__pycache__/

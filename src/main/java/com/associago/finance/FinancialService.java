@@ -6,6 +6,7 @@ import com.associago.finance.repository.PaymentMethodRepository;
 import com.associago.finance.repository.TransactionRepository;
 import com.associago.membership.UserAssociation;
 import com.associago.membership.repository.UserAssociationRepository;
+import com.associago.suite.SuiteException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,10 @@ public class FinancialService {
     private final UserAssociationRepository userAssociationRepository;
     private final AccountRepository accountRepository;
     private final JournalEntryRepository journalEntryRepository;
+    private com.associago.project.repository.ProjectRepository projects;
+
+    @Autowired
+    public void setProjects(com.associago.project.repository.ProjectRepository projects) { this.projects = projects; }
 
     @Autowired
     public FinancialService(TransactionRepository transactionRepository,
@@ -43,6 +48,7 @@ public class FinancialService {
 
     @Transactional
     public Transaction saveTransaction(Transaction transaction) {
+        validateProject(transaction);
         calculateCommissions(transaction);
         processMembershipRenewal(transaction);
         Transaction savedTransaction = transactionRepository.save(transaction);
@@ -56,7 +62,17 @@ public class FinancialService {
     @Transactional
     public Transaction updateTransaction(Long id, Transaction transactionDetails) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found with id: " + id));
+                .orElseThrow(() -> new SuiteException(404,"TRANSACTION_MISSING","Movimento non trovato."));
+        if (transactionDetails.getAssociationId()!=null && !transactionDetails.getAssociationId().equals(transaction.getAssociationId()))
+            throw new SuiteException(403,"ASSOCIATION_IMMUTABLE","Non è possibile spostare il movimento in un'altra associazione.");
+        if (transaction.getProjectId()!=null && transactionDetails.getProjectId()!=null && !transaction.getProjectId().equals(transactionDetails.getProjectId()))
+            throw new SuiteException(409,"TRANSACTION_LINKED","Il movimento è già attribuito a un altro progetto.");
+        Long originalProject=transaction.getProjectId();
+        Long requestedProject=originalProject!=null?originalProject:transactionDetails.getProjectId();
+        if (requestedProject!=null) projects.lockForFinancialWrite(requestedProject);
+        if (transactionRepository.lockIfProjectUnchanged(id,originalProject)!=1)
+            throw new SuiteException(409,"TRANSACTION_CHANGED","Il movimento è stato attribuito da un'altra richiesta. Ricaricare prima di salvare.");
+        transaction=transactionRepository.findById(id).orElseThrow(() -> new SuiteException(404,"TRANSACTION_MISSING","Movimento non trovato."));
 
         transaction.setDate(transactionDetails.getDate());
         transaction.setAmount(transactionDetails.getAmount());
@@ -70,6 +86,8 @@ public class FinancialService {
         transaction.setActivityId(transactionDetails.getActivityId());
         transaction.setMembershipId(transactionDetails.getMembershipId());
         transaction.setInventoryItemId(transactionDetails.getInventoryItemId());
+        if (transactionDetails.getProjectId() != null) transaction.setProjectId(transactionDetails.getProjectId());
+        validateProject(transaction);
 
         // Update new fields
         transaction.setVerified(transactionDetails.isVerified());
@@ -93,6 +111,17 @@ public class FinancialService {
         createJournalEntryFromTransaction(updatedTransaction);
 
         return updatedTransaction;
+    }
+
+    private void validateProject(Transaction transaction) {
+        if (transaction.getProjectId() == null) return;
+        if (projects == null) throw new IllegalStateException("Project validation unavailable");
+        projects.lockForFinancialWrite(transaction.getProjectId());
+        var project = projects.findById(transaction.getProjectId())
+                .orElseThrow(() -> new SuiteException(404,"PROJECT_MISSING","Progetto del movimento non trovato."));
+        if (!java.util.Objects.equals(project.getAssociationId(), transaction.getAssociationId())) {
+            throw new SuiteException(403,"ASSOCIATION_FORBIDDEN","Il movimento e il progetto devono appartenere alla stessa associazione.");
+        }
     }
 
     private void calculateCommissions(Transaction transaction) {
@@ -153,7 +182,12 @@ public class FinancialService {
         }
     }
 
+    @Transactional
     public void deleteTransaction(Long id) {
+        Transaction current=transactionRepository.findById(id).orElseThrow(() -> new SuiteException(404,"TRANSACTION_MISSING","Movimento non trovato."));
+        if (current.getProjectId()!=null) projects.lockForFinancialWrite(current.getProjectId());
+        if (transactionRepository.lockIfProjectUnchanged(id,current.getProjectId())!=1)
+            throw new SuiteException(409,"TRANSACTION_CHANGED","Il movimento è stato attribuito da un'altra richiesta. Ricaricare prima di eliminarlo.");
         // Also delete associated journal entries
         List<JournalEntry> entries = journalEntryRepository.findByTransactionId(id);
         journalEntryRepository.deleteAll(entries);
@@ -173,17 +207,21 @@ public class FinancialService {
     }
 
     public Map<String, BigDecimal> getYearOverYearComparison(int currentYear) {
+        return getYearOverYearComparison(currentYear,null);
+    }
+
+    public Map<String, BigDecimal> getYearOverYearComparison(int currentYear,Long associationId) {
         LocalDate startCurrent = LocalDate.of(currentYear, 1, 1);
         LocalDate endCurrent = LocalDate.of(currentYear, 12, 31);
 
         LocalDate startPrevious = LocalDate.of(currentYear - 1, 1, 1);
         LocalDate endPrevious = LocalDate.of(currentYear - 1, 12, 31);
 
-        BigDecimal incomeCurrent = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startCurrent, endCurrent);
-        BigDecimal expenseCurrent = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startCurrent, endCurrent);
+        BigDecimal incomeCurrent = transactionRepository.sumScoped(associationId,TransactionType.INCOME, startCurrent, endCurrent);
+        BigDecimal expenseCurrent = transactionRepository.sumScoped(associationId,TransactionType.EXPENSE, startCurrent, endCurrent);
 
-        BigDecimal incomePrevious = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startPrevious, endPrevious);
-        BigDecimal expensePrevious = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startPrevious, endPrevious);
+        BigDecimal incomePrevious = transactionRepository.sumScoped(associationId,TransactionType.INCOME, startPrevious, endPrevious);
+        BigDecimal expensePrevious = transactionRepository.sumScoped(associationId,TransactionType.EXPENSE, startPrevious, endPrevious);
 
         Map<String, BigDecimal> comparison = new HashMap<>();
         comparison.put("incomeCurrent", incomeCurrent != null ? incomeCurrent : BigDecimal.ZERO);
@@ -195,17 +233,21 @@ public class FinancialService {
     }
 
     public Map<String, BigDecimal> getCustomComparison(int year1, int year2) {
+        return getCustomComparison(year1,year2,null);
+    }
+
+    public Map<String, BigDecimal> getCustomComparison(int year1,int year2,Long associationId) {
         LocalDate start1 = LocalDate.of(year1, 1, 1);
         LocalDate end1 = LocalDate.of(year1, 12, 31);
 
         LocalDate start2 = LocalDate.of(year2, 1, 1);
         LocalDate end2 = LocalDate.of(year2, 12, 31);
 
-        BigDecimal income1 = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, start1, end1);
-        BigDecimal expense1 = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, start1, end1);
+        BigDecimal income1 = transactionRepository.sumScoped(associationId,TransactionType.INCOME, start1, end1);
+        BigDecimal expense1 = transactionRepository.sumScoped(associationId,TransactionType.EXPENSE, start1, end1);
 
-        BigDecimal income2 = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, start2, end2);
-        BigDecimal expense2 = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, start2, end2);
+        BigDecimal income2 = transactionRepository.sumScoped(associationId,TransactionType.INCOME, start2, end2);
+        BigDecimal expense2 = transactionRepository.sumScoped(associationId,TransactionType.EXPENSE, start2, end2);
 
         Map<String, BigDecimal> comparison = new HashMap<>();
         comparison.put("incomeYear1", income1 != null ? income1 : BigDecimal.ZERO);
@@ -217,10 +259,13 @@ public class FinancialService {
     }
 
     public List<JournalEntry> getJournalEntries(Long associationId, LocalDate startDate, LocalDate endDate) {
-        if (associationId != null && startDate != null && endDate != null) {
-            return journalEntryRepository.findByAssociationIdAndDateBetween(associationId, startDate, endDate);
-        }
-        return journalEntryRepository.findAll();
+        return journalEntryRepository.findScoped(associationId,startDate,endDate);
+    }
+
+    public List<Transaction> getTransactionsForYear(Long associationId,int year) {
+        LocalDate start=LocalDate.of(year,1,1),end=LocalDate.of(year,12,31);
+        return getTransactions((root,query,cb) -> associationId==null ? cb.between(root.get("date"),start,end)
+                : cb.and(cb.equal(root.get("associationId"),associationId),cb.between(root.get("date"),start,end)));
     }
 
     // --- Double Entry Logic ---

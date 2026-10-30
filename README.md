@@ -6,7 +6,7 @@ AssociaGo is a comprehensive management software designed for associations, non-
 
 The repository also includes the web application currently used by Angeli del Futuro: Clerk authentication, role permissions, annual views, projects, expense documents and database-backed attachments. The cloud backend was recovered from its deployed Google Cloud Build source, and the web frontend from the exact deployed `Pswie/terzo-settore` commit. See [AUDIT-TODO.md](AUDIT-TODO.md) for the review and completed fixes, and [CLOUD-DEPLOYMENT.md](CLOUD-DEPLOYMENT.md) for provenance, deployment and rollback.
 
-The October 2026 update has not been published: the existing Aiven database hostname returns NXDOMAIN and the Cloud Run service cannot start. Restore that database before deploying the candidate or changing traffic. Existing cloud migrations are preserved; older desktop databases are backed up automatically before the V41 upgrade removes legacy sports metadata.
+The October 2026 update is deployed on Google Cloud Run and Vercel, using the dedicated Free Supabase project Angeli del futuro with three private schemas. Aiven contained no data and does not need to be restored. The shared Clerk navigation correction is published and awaiting the user's real cross-site login verification. See [PUBBLICAZIONE-SUITE.md](PUBBLICAZIONE-SUITE.md) for the current three-site architecture, Clerk access, local Bandi worker, backups and remaining activation steps. Existing cloud migrations are preserved; older desktop databases are backed up automatically before the V41 upgrade removes legacy sports metadata.
 
 ## License
 
@@ -24,7 +24,7 @@ AssociaGo follows a monolithic architecture with a clear separation between the 
 ### Backend
 The backend is built with Java 21 and Spring Boot 3.4.0. It exposes a RESTful API consumed by the frontend.
 - **Framework:** Spring Boot (Web, Data JPA, Security, Validation, Actuator)
-- **Database:** SQLite (for local deployment) with support for MariaDB/MySQL.
+- **Database:** SQLite (local deployment), PostgreSQL/Supabase for the hosted suite, and retained MariaDB/MySQL support.
 - **Migration:** Flyway is used for database schema version control.
 - **Reporting:** Apache PDFBox and Apache POI are used for generating PDF and Excel reports.
 - **Logging:** SLF4J with Logback, configured for file and console output with daily rotation.
@@ -150,3 +150,13 @@ The database schema is managed via Flyway migrations located in `src/main/resour
 - `inventory_items` / `inventory_loans`
 - `volunteers` / `volunteer_shifts`
 - `attendance_sessions` / `attendance_records`
+
+## Integrazione con LibrePM e Bandi
+
+La preparazione PostgreSQL/Supabase del 30 ottobre è descritta in
+[MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md). Aiven era vuoto: vengono
+inizializzati archivi nuovi, senza importazione dei dati.
+
+I tre siti condividono il contesto del progetto tramite un registro in LibrePM e API tra server. AssociaGo conserva contabilità, soci e volontari; Bandi conserva i fascicoli. L'integrazione è disattivata finche non viene configurata esplicitamente.
+
+Il [resoconto del lavoro](LAVORI-INTEGRAZIONE.md) spiega funzionalità, scelte, verifiche e passaggi per la pubblicazione. Consultare anche [contratto e collaudo](integration/README.md), [specifica OpenAPI](integration/suite-v1.openapi.json) e [regole funzionali](integration/SUITE-V1-CONTRACT.md).

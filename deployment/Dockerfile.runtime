@@ -1,0 +1,23 @@
+# Package an already-tested bootJar from a deliberately minimal build context.
+FROM eclipse-temurin:21-jre AS extract
+WORKDIR /app
+COPY app.jar ./app.jar
+RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination extracted
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY supabase-root-2021.crt /usr/local/share/ca-certificates/supabase-root-2021.crt
+RUN keytool -importcert -cacerts -storepass changeit -noprompt \
+      -alias supabase-root-2021 \
+      -file /usr/local/share/ca-certificates/supabase-root-2021.crt \
+    && useradd -r -u 1001 -m suiteapp
+COPY --from=extract /app/extracted/dependencies/ ./
+COPY --from=extract /app/extracted/spring-boot-loader/ ./
+COPY --from=extract /app/extracted/snapshot-dependencies/ ./
+COPY --from=extract /app/extracted/application/ ./
+USER suiteapp
+ENV SPRING_PROFILES_ACTIVE=cloud-postgres
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Djava.security.egd=file:/dev/./urandom"
+ENV LIBREPM_DATA_PATH=/tmp/librepm
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]

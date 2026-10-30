@@ -1,0 +1,98 @@
+-- Run once with psql as the dedicated project's administrative database role.
+-- Online portal only: the local Bandi database and pgvector stay on the PC.
+-- This is provisioning, not an application migration. Never run on a shared
+-- project without reviewing names and privileges. It refuses existing targets.
+\set ON_ERROR_STOP on
+\getenv associago_owner_password SUPABASE_ASSOCIAGO_OWNER_PASSWORD
+\getenv associago_app_password SUPABASE_ASSOCIAGO_APP_PASSWORD
+\getenv librepm_owner_password SUPABASE_LIBREPM_OWNER_PASSWORD
+\getenv librepm_app_password SUPABASE_LIBREPM_APP_PASSWORD
+\getenv bandi_portal_owner_password SUPABASE_BANDI_PORTAL_OWNER_PASSWORD
+\getenv bandi_portal_app_password SUPABASE_BANDI_PORTAL_APP_PASSWORD
+
+BEGIN;
+SELECT length(:'associago_owner_password') >= 32
+   AND length(:'associago_app_password') >= 32
+   AND length(:'librepm_owner_password') >= 32
+   AND length(:'librepm_app_password') >= 32
+   AND length(:'bandi_portal_owner_password') >= 32
+   AND length(:'bandi_portal_app_password') >= 32
+   AND (SELECT count(DISTINCT password) FROM (VALUES
+       (:'associago_owner_password'), (:'associago_app_password'),
+       (:'librepm_owner_password'), (:'librepm_app_password'),
+       (:'bandi_portal_owner_password'), (:'bandi_portal_app_password')) AS supplied(password)) = 6
+   AS passwords_valid \gset
+\if :passwords_valid
+\else
+    DO $password_error$
+    BEGIN
+        RAISE EXCEPTION 'Six distinct database passwords of at least 32 characters are required.';
+    END
+    $password_error$;
+\endif
+
+DO $checks$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_class relation JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+               WHERE namespace.nspname = 'public' AND relation.relkind IN ('r', 'p', 'v', 'm', 'S')) THEN
+        RAISE EXCEPTION 'The public schema contains existing objects. Use a dedicated empty Supabase project.';
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname IN
+        ('associago_owner', 'associago_app', 'librepm_owner', 'librepm_app', 'bandi_portal_owner', 'bandi_portal_app'))
+       OR EXISTS (SELECT 1 FROM pg_namespace WHERE nspname IN ('associago', 'librepm', 'bandi_portal')) THEN
+        RAISE EXCEPTION 'A target schema or application role already exists. No existing objects were changed.';
+    END IF;
+END
+$checks$;
+
+CREATE ROLE associago_owner LOGIN PASSWORD :'associago_owner_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE associago_app LOGIN PASSWORD :'associago_app_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE librepm_owner LOGIN PASSWORD :'librepm_owner_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE librepm_app LOGIN PASSWORD :'librepm_app_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE bandi_portal_owner LOGIN PASSWORD :'bandi_portal_owner_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE bandi_portal_app LOGIN PASSWORD :'bandi_portal_app_password' NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+GRANT associago_owner, librepm_owner, bandi_portal_owner TO CURRENT_USER;
+
+CREATE SCHEMA associago AUTHORIZATION associago_owner;
+CREATE SCHEMA librepm AUTHORIZATION librepm_owner;
+CREATE SCHEMA bandi_portal AUTHORIZATION bandi_portal_owner;
+CREATE SCHEMA IF NOT EXISTS extensions;
+
+REVOKE ALL ON SCHEMA associago, librepm, bandi_portal FROM PUBLIC;
+-- Supabase built-in roles exist in hosted projects, not plain PostgreSQL.
+DO $api_roles$
+DECLARE api_role text;
+BEGIN
+    FOREACH api_role IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = api_role) THEN
+            EXECUTE format('REVOKE ALL ON SCHEMA associago, librepm, bandi_portal FROM %I', api_role);
+        END IF;
+    END LOOP;
+END
+$api_roles$;
+
+GRANT USAGE ON SCHEMA associago TO associago_app;
+GRANT USAGE ON SCHEMA librepm TO librepm_app;
+GRANT USAGE ON SCHEMA bandi_portal TO bandi_portal_app;
+GRANT USAGE ON SCHEMA extensions TO associago_owner, associago_app, librepm_owner, librepm_app, bandi_portal_owner, bandi_portal_app;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE associago_owner IN SCHEMA associago GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO associago_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE associago_owner IN SCHEMA associago GRANT USAGE, SELECT ON SEQUENCES TO associago_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE associago_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE librepm_owner IN SCHEMA librepm GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO librepm_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE librepm_owner IN SCHEMA librepm GRANT USAGE, SELECT ON SEQUENCES TO librepm_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE librepm_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+ALTER DEFAULT PRIVILEGES FOR ROLE bandi_portal_owner IN SCHEMA bandi_portal GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO bandi_portal_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE bandi_portal_owner IN SCHEMA bandi_portal GRANT USAGE, SELECT ON SEQUENCES TO bandi_portal_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE bandi_portal_owner REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+
+ALTER ROLE associago_owner SET search_path TO associago, extensions;
+ALTER ROLE associago_app SET search_path TO associago, extensions;
+ALTER ROLE librepm_owner SET search_path TO librepm, extensions;
+ALTER ROLE librepm_app SET search_path TO librepm, extensions;
+ALTER ROLE bandi_portal_owner SET search_path TO bandi_portal, extensions;
+ALTER ROLE bandi_portal_app SET search_path TO bandi_portal, extensions;
+COMMIT;
+
+-- Keep these schemas OUT of Supabase Data API "Exposed schemas".
+-- Migrations connect as *_owner; application queries connect as *_app.

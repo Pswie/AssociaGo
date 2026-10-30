@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "organizationId": "9b8bd5f6-e4d9-4a1a-9f3d-44a3f969f401",
+  "suiteProjectId": "3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+  "system": "bandi",
+  "localId": "72576a41-1783-4aaf-9c31-758901e74dbc",
+  "sourceVersion": 0,
+  "financial": null,
+  "workforce": null,
+  "preparation": {
+    "localId": "72576a41-1783-4aaf-9c31-758901e74dbc",
+    "version": 1,
+    "title": "Laboratorio di quartiere",
+    "status": "draft",
+    "reviewDecision": "pending",
+    "requestedGrant": {
+      "amount": "25000.00",
+      "currency": "EUR"
+    }
+  }
+}

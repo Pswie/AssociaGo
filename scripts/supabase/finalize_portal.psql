@@ -1,0 +1,30 @@
+-- Run after the three applications have applied their migrations as *_owner.
+-- Runtime roles do not need to write the migration history.
+\set ON_ERROR_STOP on
+BEGIN;
+DO $finalize$
+DECLARE
+    app text;
+    other_app text;
+    history text;
+BEGIN
+    FOREACH app IN ARRAY ARRAY['associago', 'librepm', 'bandi_portal'] LOOP
+        history := CASE WHEN app = 'bandi_portal' THEN 'portal_schema_migrations' ELSE 'flyway_schema_history' END;
+        IF to_regclass(format('%I.%I', app, history)) IS NULL THEN
+            RAISE EXCEPTION 'Apply migrations first: missing %.%', app, history;
+        END IF;
+        EXECUTE format('REVOKE ALL ON TABLE %I.%I FROM %I', app, history, app || '_app');
+        IF has_schema_privilege(app || '_app', app, 'CREATE') THEN
+            RAISE EXCEPTION 'Runtime role % must not create database objects', app || '_app';
+        END IF;
+        FOREACH other_app IN ARRAY ARRAY['associago', 'librepm', 'bandi_portal'] LOOP
+            IF app <> other_app AND has_schema_privilege(app || '_app', other_app, 'USAGE') THEN
+                RAISE EXCEPTION 'Cross-application schema access is forbidden: % -> %', app, other_app;
+            END IF;
+        END LOOP;
+    END LOOP;
+END
+$finalize$;
+-- Revisions are append-only even when the runtime login is used directly.
+REVOKE UPDATE, DELETE, TRUNCATE ON TABLE bandi_portal.portal_revisions FROM bandi_portal_app;
+COMMIT;

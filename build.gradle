@@ -69,10 +69,13 @@ dependencies {
 
     // MySQL (cloud backend deployment)
     runtimeOnly 'com.mysql:mysql-connector-j'
+    // Optional cloud-postgres profile (Supabase PostgreSQL); desktop/MySQL remain supported.
+    runtimeOnly 'org.postgresql:postgresql:42.7.14'
 
     // Flyway
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql' // For MariaDB
+    implementation 'org.flywaydb:flyway-database-postgresql'
 
     // PDF & Excel (AssociaGo specific)
     implementation 'org.apache.pdfbox:pdfbox:3.0.2'
@@ -94,6 +97,7 @@ dependencies {
     // Il profilo cloud gira su MySQL, non su MariaDB: lo schema va collaudato
     // sul motore che useremo davvero.
     testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:postgresql'
 }
 
 tasks.named('test') {

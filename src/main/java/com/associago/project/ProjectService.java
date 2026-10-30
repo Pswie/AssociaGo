@@ -6,6 +6,7 @@ import com.associago.project.dto.ProjectBalance;
 import com.associago.project.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.associago.suite.SuiteException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +27,18 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TransactionRepository transactionRepository;
+    private com.associago.suite.SuiteProjectLinkRepository suiteLinks;
+    private com.associago.project.repository.ProjectAssignmentRepository assignments;
+    private com.associago.volunteer.repository.VolunteerShiftRepository shifts;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setWorkspaceRepositories(com.associago.suite.SuiteProjectLinkRepository links,
+            com.associago.project.repository.ProjectAssignmentRepository assignments,
+            com.associago.volunteer.repository.VolunteerShiftRepository shifts) {
+        this.suiteLinks = links;
+        this.assignments = assignments;
+        this.shifts = shifts;
+    }
 
     public ProjectService(ProjectRepository projectRepository,
                           TransactionRepository transactionRepository) {
@@ -67,18 +80,20 @@ public class ProjectService {
 
     @Transactional
     public boolean delete(Long id) {
-        // I movimenti restano: cancellare un progetto non deve far sparire
-        // righe di prima nota, che sono documenti contabili. Perdono solo il
-        // riferimento al progetto.
+        // Preserve both accounting entries and their historical project attribution.
         if (!projectRepository.existsById(id)) {
             return false;
         }
-        transactionRepository.findByProjectId(id).forEach(transaction -> {
-            transaction.setProjectId(null);
-            transactionRepository.save(transaction);
-        });
-        projectRepository.deleteById(id);
-        return true;
+        projectRepository.lockForFinancialWrite(id);
+        if (suiteLinks != null && suiteLinks.findByProjectId(id).isPresent()
+                || assignments != null && assignments.countByProjectId(id) > 0
+                || shifts != null && !shifts.findByProjectId(id).isEmpty()
+                || transactionRepository.existsByProjectId(id)) {
+            throw new SuiteException(409,"PROJECT_REFERENCED","Il progetto ha movimenti, collegamenti o presenze storiche: conservarlo e aggiornarne lo stato, senza eliminarlo.");
+        }
+        if (projectRepository.deleteIfUnreferenced(id)==1) return true;
+        if (!projectRepository.existsById(id)) return false;
+        throw new SuiteException(409,"PROJECT_REFERENCED","Il progetto ha ricevuto un collegamento da un'altra richiesta: non è stato eliminato.");
     }
 
     /**
@@ -88,9 +103,9 @@ public class ProjectService {
     public Optional<ProjectBalance> balance(Long projectId, LocalDate today) {
         return projectRepository.findById(projectId).map(project -> {
             BigDecimal income = transactionRepository
-                    .sumByProjectAndType(projectId, TransactionType.INCOME);
+                    .sumByProjectAndAssociationAndType(projectId, project.getAssociationId(), TransactionType.INCOME);
             BigDecimal expense = transactionRepository
-                    .sumByProjectAndType(projectId, TransactionType.EXPENSE);
+                    .sumByProjectAndAssociationAndType(projectId, project.getAssociationId(), TransactionType.EXPENSE);
             return ProjectBalance.of(project, income, expense, today);
         });
     }
@@ -99,8 +114,8 @@ public class ProjectService {
         return findByAssociation(associationId).stream()
                 .map(project -> ProjectBalance.of(
                         project,
-                        transactionRepository.sumByProjectAndType(project.getId(), TransactionType.INCOME),
-                        transactionRepository.sumByProjectAndType(project.getId(), TransactionType.EXPENSE),
+                        transactionRepository.sumByProjectAndAssociationAndType(project.getId(), project.getAssociationId(), TransactionType.INCOME),
+                        transactionRepository.sumByProjectAndAssociationAndType(project.getId(), project.getAssociationId(), TransactionType.EXPENSE),
                         today))
                 .toList();
     }

@@ -40,7 +40,7 @@
         * ammette font-src 'self', perché il tema carica Plus Jakarta Sans come
           asset del bundle invece di prenderlo da un CDN.
 
-      `terzo-settore.vercel.app` è il dominio primario di Clerk, quello che
+      `VITE_CLERK_PRIMARY_URL` è il dominio primario di Clerk, quello che
       tiene la sessione: da satellite questa applicazione ci dialoga per
       riconoscere un accesso già avvenuto. Lo scambio passa da redirect di primo
       livello, che nessuna direttiva qui intercetta, ma `satelliteAutoSync` di
@@ -48,15 +48,15 @@
       fallirebbe in silenzio e si tornerebbe a chiedere l'accesso due volte.
       È un'origine dell'associazione, non un terzo.
 
-      Come per l'indirizzo del backend Cloud Run qui sopra, il valore è scritto
-      per esteso: una direttiva CSP deve poter essere letta e verificata guardando
-      la pagina servita, non ricostruita dalle variabili del build.
+      Vite sostituisce i segnaposto con le origini delle sole variabili pubbliche
+      di build. La CSP emessa può essere verificata nella pagina servita e segue
+      il backend e il dominio primario effettivamente configurati.
 
       https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://img.clerk.com; connect-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://clerk-telemetry.com https://*.clerk-telemetry.com https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app https://terzo-settore.vercel.app; worker-src 'self' blob:; frame-src 'self' https://distinct-oryx-35.clerk.accounts.dev https://challenges.cloudflare.com https://terzo-settore.vercel.app; form-action 'self' https://terzo-settore.vercel.app;"
+      content="default-src 'self'; script-src 'self' %CLERK_HOSTS% https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https://img.clerk.com; connect-src 'self' %CLERK_HOSTS% https://clerk-telemetry.com https://*.clerk-telemetry.com %API_ORIGIN% %PRIMARY_ORIGIN%; worker-src 'self' blob:; frame-src 'self' %CLERK_HOSTS% https://challenges.cloudflare.com %PRIMARY_ORIGIN%; form-action 'self' %PRIMARY_ORIGIN%;"
     />
     <title>Gestionale — Angeli del Futuro</title>
   </head>

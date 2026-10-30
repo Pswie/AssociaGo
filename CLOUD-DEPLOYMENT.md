@@ -1,9 +1,23 @@
 # Pubblicazione Google Cloud: stato e procedura
 
+**Aggiornamento 30 ottobre 2026:** Supabase Free è attivo con i tre schemi
+privati e i backend Google aggiornati. I quattro frontend sono su Vercel e
+le revisioni Google obsolete sono state rimosse dopo i controlli del traffico.
+Il login comune Clerk è in collaudo con l'utente. Il resoconto operativo è
+[PUBBLICAZIONE-SUITE.md](PUBBLICAZIONE-SUITE.md); la conversione è in
+[MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md). Aiven era vuoto: le procedure
+di recupero presenti sotto restano soltanto riferimenti storici.
+
 Verifica eseguita il 29 ottobre 2026. Questa repository conteneva una versione
 precedente a quella effettivamente pubblicata. Il backend del servizio esistente
 è stato recuperato dalla sorgente originale di Cloud Build e integrato con merge
 a tre vie, mantenendo le correzioni locali dell'audit.
+
+L'integrazione successiva fra AssociaGo, LibrePM e Bandi aggiunge SQLite V43/V44
+e MySQL V13 in AssociaGo. Il riepilogo, la configurazione e i collaudi sono in
+[LAVORI-INTEGRAZIONE.md](LAVORI-INTEGRAZIONE.md). `adf-bandi-collaudo` ospita
+LibrePM; la repository Python/Next Bandi è un terzo applicativo e richiede il
+proprio endpoint prima dell'attivazione completa.
 
 ## Provenienza del backend recuperato
 

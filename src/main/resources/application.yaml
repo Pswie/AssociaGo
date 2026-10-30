@@ -8,6 +8,10 @@ spring:
 
   profiles:
     active: desktop
+    group:
+      # Keep the cloud security/Clerk configuration and disable desktop-only beans.
+      cloud-postgres:
+        - cloud
 
   datasource:
     url: jdbc:sqlite:${associago.data.path}/associago.db

@@ -137,6 +137,9 @@ public class CloudSecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/error", "/actuator/health", "/actuator/info").permitAll()
+                // These controller methods enforce constant-time peer authentication and a fixed organization.
+                .requestMatchers("/api/integrations/v1/peer/**").permitAll()
+                .requestMatchers("/api/integrations/v1/**").hasAnyRole(PROJECT_ROLES)
                 .requestMatchers("/api/auth/**", "/api/v1/auth/**").denyAll()
                 .requestMatchers("/api/setup/**", "/api/v1/setup/**",
                         "/api/bootstrap/**", "/api/v1/bootstrap/**",

@@ -1,0 +1,53 @@
+{
+  "status": "dry_run_validated",
+  "liveMutationPerformed": false,
+  "observedConfigVersion": "v1_bda339da",
+  "currentSessionConfig": null,
+  "currentSessionConfigMeaning": "Unknown: null does not establish the absence of custom claims.",
+  "tool": "patch_instance_config",
+  "proposedCall": {
+    "application_id": "app_3Gxvz4titOppeEzZH4dZtSnlLyp",
+    "instance": "ins_3Gxvz2mMxOLdPdj4GYYWlX5uPQM",
+    "config": {
+      "session": {
+        "claims": {
+          "role": "{{user.public_metadata.role}}"
+        }
+      }
+    },
+    "destructive": false,
+    "dry_run": true
+  },
+  "mergeSemantics": "Official MCP tool declares deep merge; unmentioned configuration and claims are preserved.",
+  "targetConfigPath": "/session/claims/role",
+  "targetJwtPath": "$.role",
+  "observedDryRunResponse": {
+    "config_version": "v1_89bd4c45",
+    "dry_run": true,
+    "before": {
+      "session": null
+    },
+    "after": {
+      "session": {
+        "allowed_clock_skew": 5,
+        "claims": {
+          "role": "{{user.public_metadata.role}}"
+        },
+        "lifetime": 60
+      }
+    }
+  },
+  "serverValidationCompleted": true,
+  "executionContext": {
+    "sandbox": "danger-full-access",
+    "approvalPolicy": "never"
+  },
+  "notes": [
+    "The proposal derives each user's role from server-controlled public metadata; it does not hardcode presidente.",
+    "The organization claim o.rol is untouched and retains exclusive precedence in both Java backends.",
+    "Only a dry-run was performed successfully. The preview config_version does not prove a persisted configuration change. This file does not authorize or perform live application.",
+    "An earlier attempt in an agent-selected read-only context was blocked before server validation; the final attempt used the authorized current profile, with the same approval policy and official MCP.",
+    "No actual user's default session JWT or runtime expression result was inspected. Normal application login remains to be tested after any future live application.",
+    "No personal JWTs, credentials, user details or private metadata were requested."
+  ]
+}

@@ -2,6 +2,14 @@ package com.associago.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import com.associago.association.Association;
+import com.associago.association.repository.AssociationRepository;
+import com.associago.membership.UserAssociation;
+import com.associago.membership.repository.UserAssociationRepository;
+import com.associago.user.User;
+import com.associago.user.repository.UserRepository;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +24,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 /**
  * Le regole di accesso del profilo {@code cloud}.
@@ -60,6 +69,36 @@ class CloudSecurityRulesTest {
 
     @Autowired
     MockMvc mockMvc;
+    @Autowired UserRepository users;
+    @Autowired AssociationRepository associations;
+    @Autowired UserAssociationRepository memberships;
+
+    private Long financialAssociationId;
+    private String linkedSubject;
+
+    @BeforeEach
+    void linkedFinancialIdentity() {
+        linkedSubject = "finance-rules-" + UUID.randomUUID();
+        Association association = new Association();
+        association.setName(linkedSubject);
+        association.setSlug(linkedSubject);
+        association.setType("APS");
+        association.setEmail(linkedSubject + "@example.org");
+        association.setPassword("fixture-only");
+        association = associations.saveAndFlush(association);
+        financialAssociationId = association.getId();
+        User user = new User();
+        user.setFirstName("Fixture");
+        user.setLastName("Financial");
+        user.setEmail(linkedSubject + "@example.org");
+        user.setClerkUserId(linkedSubject);
+        user = users.saveAndFlush(user);
+        UserAssociation membership = new UserAssociation();
+        membership.setUser(user);
+        membership.setAssociation(association);
+        membership.setStatus("ACTIVE");
+        memberships.saveAndFlush(membership);
+    }
 
     @Test
     @DisplayName("senza token le API rispondono 401, non 200")
@@ -189,7 +228,8 @@ class CloudSecurityRulesTest {
     @DisplayName("il responsabile amministrativo vede contabilita e soci, non i volontari")
     void administrativeManagerIsLimitedToItsModules() throws Exception {
         mockMvc.perform(get("/api/v1/finance/transactions")
-                        .with(jwt().authorities(role("RESPONSABILE_AMMINISTRATIVO"))))
+                        .header("X-Association-Id", financialAssociationId)
+                        .with(jwt().jwt(token -> token.subject(linkedSubject)).authorities(role("RESPONSABILE_AMMINISTRATIVO"))))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/members")
@@ -241,7 +281,8 @@ class CloudSecurityRulesTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/finance/transactions")
-                        .with(jwt().authorities(role("PRESIDENTE"))))
+                        .header("X-Association-Id", financialAssociationId)
+                        .with(jwt().jwt(token -> token.subject(linkedSubject)).authorities(role("PRESIDENTE"))))
                 .andExpect(status().isOk());
 
         // I coupon non sono ancora delegati a un reparto: cadono nella regola
@@ -253,5 +294,14 @@ class CloudSecurityRulesTest {
         mockMvc.perform(get("/api/v1/coupons/association/1")
                         .with(jwt().authorities(role("COORDINATORE_SERVIZI"))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("la contabilità cloud richiede un'associazione selezionata anche al presidente")
+    void financialReadRequiresAssociationScope() throws Exception {
+        mockMvc.perform(get("/api/v1/finance/transactions")
+                        .with(jwt().jwt(token -> token.subject(linkedSubject)).authorities(role("PRESIDENTE"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("ASSOCIATION_REQUIRED"));
     }
 }

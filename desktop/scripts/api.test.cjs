@@ -87,3 +87,54 @@ test('text attachments download as authenticated blobs', async (t) => {
     assert.equal(await blob.text(), 'xml attachment');
     assert.equal(config.headers.Authorization, 'Bearer fresh-download-token');
 });
+
+test('project assignment and transaction attachment use scoped existing records', async (t) => {
+    const requests = [];
+    const api = await client(t, async (url, config) => { requests.push({ url, config }); return jsonResponse({}); });
+    await api.projects.assign(9, { personType: 'VOLUNTEER', personId: 21 });
+    await api.projects.availableTransactions(9);
+    await api.projects.attachTransaction(9, 35);
+    assert.ok(requests[0].url.endsWith('/v1/projects/9/assignments'));
+    assert.deepEqual(JSON.parse(requests[0].config.body), { personType: 'VOLUNTEER', personId: 21 });
+    assert.ok(requests[1].url.endsWith('/v1/projects/9/transactions/available'));
+    assert.ok(requests[2].url.endsWith('/v1/projects/9/transactions/35'));
+    assert.equal(requests[2].config.method, 'POST');
+    assert.equal(requests[2].config.body, undefined);
+});
+
+test('suite sharing sends local identity without browser-supplied owner or secrets', async (t) => {
+    const requests = [];
+    const api = await client(t, async (url, config) => { requests.push({ url, config }); return jsonResponse({}); });
+    await api.suiteProjects.share(9);
+    await api.suiteProjects.link('73013b9d-7288-4e34-a841-5db4dc15ba60', 9);
+    assert.ok(requests[0].url.endsWith('/integrations/v1/projects/share'));
+    assert.deepEqual(JSON.parse(requests[0].config.body), { localId: '9' });
+    assert.ok(requests[1].url.endsWith('/integrations/v1/projects/73013b9d-7288-4e34-a841-5db4dc15ba60/link'));
+    assert.equal(Object.hasOwn(requests[0].config.headers, 'X-Suite-Key'), false);
+});
+
+test('a requested shared project resolves only by explicit app correspondence', async () => {
+    const { localProjectForContext, safeProjectLink, SUITE_UUID, mayViewProjectFinance } = await loadModule('../src/renderer/src/project-context.js');
+    const local = [{ id: 7, name: 'Stesso titolo' }, { id: 9, name: 'Progetto locale' }];
+    assert.equal(localProjectForContext({ instances: [{ system: 'associago', entity: 'project', localId: '9' }] }, local), local[1]);
+    assert.equal(localProjectForContext({ title: 'Stesso titolo', instances: [] }, local), null);
+    assert.equal(localProjectForContext({ instances: [{ system: 'associago', entity: 'project', localId: '404' }] }, local), null);
+    assert.equal(SUITE_UUID.test('unknown'), false);
+    assert.equal(safeProjectLink('javascript:alert(1)'), null);
+    assert.equal(safeProjectLink('https://user:password@example.com'), null);
+    assert.equal(mayViewProjectFinance('coordinatore-servizi'), false);
+    assert.equal(mayViewProjectFinance('presidente'), true);
+    assert.equal(mayViewProjectFinance('ADMIN', true), true);
+});
+
+test('web association selection is explicit when more than one association exists', async () => {
+    const { initialWebAssociation } = await loadModule('../src/renderer/src/association-choice.js');
+    const first = { id: 1, name: 'Associazione uno' };
+    const second = { id: 2, name: 'Associazione due' };
+    assert.equal(initialWebAssociation([first]), first);
+    assert.equal(initialWebAssociation([first, second]), null);
+    assert.equal(initialWebAssociation([first, second], '2'), second);
+    assert.throws(() => initialWebAssociation([first, second], '404'), /Nessun’altra associazione/);
+    assert.throws(() => initialWebAssociation([first], 'bad'), /non valido/);
+    assert.throws(() => initialWebAssociation([], ''), /Nessuna associazione/);
+});

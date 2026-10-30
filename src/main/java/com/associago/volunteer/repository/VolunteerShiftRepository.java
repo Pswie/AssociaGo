@@ -10,4 +10,5 @@ public interface VolunteerShiftRepository extends CrudRepository<VolunteerShift,
     List<VolunteerShift> findByVolunteerId(Long volunteerId);
     List<VolunteerShift> findByEventId(Long eventId);
     List<VolunteerShift> findByActivityId(Long activityId);
+    List<VolunteerShift> findByProjectId(Long projectId);
 }

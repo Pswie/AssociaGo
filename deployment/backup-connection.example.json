@@ -1,0 +1,9 @@
+{
+  "host": "REPLACE_WITH_DATABASE_HOST",
+  "port": 5432,
+  "database": "postgres",
+  "user": "REPLACE_WITH_BACKUP_OPERATOR",
+  "password": "REPLACE_IN_PRIVATE_COPY_ONLY",
+  "sslmode": "verify-full",
+  "sslrootcert": "C:/Users/REPLACE/AppData/Local/BandiSuite/private/database-ca.crt"
+}

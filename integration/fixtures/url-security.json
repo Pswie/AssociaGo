@@ -1,0 +1,104 @@
+[
+  {
+    "name": "https-origin",
+    "url": "https://librepm.example.org",
+    "valid": true,
+    "deepLink": false
+  },
+  {
+    "name": "loopback-v4",
+    "url": "http://127.0.0.1:8765",
+    "valid": true,
+    "deepLink": false
+  },
+  {
+    "name": "loopback-host",
+    "url": "http://localhost:8765",
+    "valid": true,
+    "deepLink": false
+  },
+  {
+    "name": "loopback-v6",
+    "url": "http://[::1]:8765",
+    "valid": true,
+    "deepLink": false
+  },
+  {
+    "name": "http-remote",
+    "url": "http://librepm.example.org",
+    "valid": false,
+    "deepLink": false
+  },
+  {
+    "name": "userinfo",
+    "url": "https://user:password@example.org",
+    "valid": false,
+    "deepLink": false
+  },
+  {
+    "name": "fragment",
+    "url": "https://example.org/#secret",
+    "valid": false,
+    "deepLink": false
+  },
+  {
+    "name": "query-in-origin",
+    "url": "https://example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "valid": false,
+    "deepLink": false
+  },
+  {
+    "name": "valid-deep-link",
+    "url": "https://example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "valid": true,
+    "deepLink": true
+  },
+  {
+    "name": "invalid-deep-link-id",
+    "url": "https://example.org/?suiteProject=not-uuid",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "token-in-deep-link",
+    "url": "https://example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc&token=secret",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "duplicate-project-query",
+    "url": "https://example.org/?suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc&suiteProject=3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "relative",
+    "url": "/suite/projects/3be5b4d8-c44b-4fb9-8423-a4ec431c76cc",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "javascript",
+    "url": "javascript:alert(1)",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "file",
+    "url": "file:///etc/passwd",
+    "valid": false,
+    "deepLink": true
+  },
+  {
+    "name": "lookalike-loopback",
+    "url": "http://localhost.example.org",
+    "valid": false,
+    "deepLink": false
+  },
+  {
+    "name": "invalid-port",
+    "url": "https://example.org:99999",
+    "valid": false,
+    "deepLink": false
+  }
+]

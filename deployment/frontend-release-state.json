@@ -1,0 +1,76 @@
+{
+  "status": "published_user_sso_verification_pending",
+  "stagingManifest": "deployment\\.artifacts\\frontends-20261030T142129Z-3822ef6f\\state.json",
+  "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
+  "promotionsPerformed": 8,
+  "customDomainsAssigned": 3,
+  "dnsChangesPerformed": 0,
+  "gitDisconnectPerformed": true,
+  "deployments": {
+    "associago": {
+      "projectId": "prj_sJ5h8IcJGJztPxvBhqnrs92Gw3tc",
+      "deploymentId": "dpl_Eq38aKTpthwg8JJoeCuseFVwB2xM",
+      "url": "https://adf-gestionale-collaudo-rlukvc3ln-villa-langellottis-projects.vercel.app",
+      "state": "READY",
+      "target": "production",
+      "previousPreviewDeploymentId": "dpl_2GYmY1HpKk26CNth27DyKZdgjsm1",
+      "publicUrl": "https://gestionale.angelidelfuturoaps.com"
+    },
+    "librepm": {
+      "projectId": "prj_4oEizJdNAACf5Xfc0v9SnKTYjVln",
+      "deploymentId": "dpl_DybTjGAg8oxo712NkxYpWjda4xLe",
+      "url": "https://adf-bandi-collaudo-cco8kbrj3-villa-langellottis-projects.vercel.app",
+      "state": "READY",
+      "target": "production",
+      "previousPreviewDeploymentId": "dpl_H6ya3wG2Coe66sseg3hVXLrWYom7",
+      "publicUrl": "https://progetti.angelidelfuturoaps.com"
+    },
+    "bandi": {
+      "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
+      "deploymentId": "dpl_Ha5QSUjLcLsWVUvpnQVsQ2irPN1Y",
+      "url": "https://adf-bandi-portale-bvb8wu8pm-villa-langellottis-projects.vercel.app",
+      "state": "READY",
+      "target": "production",
+      "publicUrl": "https://bandi.angelidelfuturoaps.com/collabora"
+    },
+    "primary": {
+      "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
+      "deploymentId": "dpl_8bKR6oniqm9uAuPNVDSDMAKf1bp2",
+      "url": "https://terzo-settore-pbmomsphf-villa-langellottis-projects.vercel.app",
+      "state": "READY",
+      "target": "production",
+      "previousPreviewDeploymentId": "dpl_8zpXLTr39L7oJSaspqdVnEBct8rw",
+      "publicUrl": "https://www.angelidelfuturoaps.com/admin"
+    }
+  },
+  "qaCompleted": [
+    "Four final production deployments READY and verified by project.targets.production.",
+    "Four public HTTPS entry points return200; Bandi custom domain is not gated by Vercel Authentication.",
+    "Real anonymous browser: all three applications automatically reach the central login and preserve the selected project in Clerk return parameters.",
+    "Primary final inline callback capture is present on the public HTML; old slogan absent.",
+    "Bandi unauthenticated collaboration API401 and legacy API404.",
+    "Four canonical legacy Vercel domains redirect308 with exact path/query preservation.",
+    "Bandi394 last full tests; 11 focused after provider adjustment, lint, TypeScript and remote Next build passed.",
+    "AssociaGo9 and LibrePM9 callback regressions passed; both web builds passed; AssociaGo16 API/policy frontend regressions passed.",
+    "Primary13 regressions, Astrocheck and build passed.",
+    "Five staging integrity/publication guard tests passed.",
+    "User confirmed an internal primary service works; the three external application sessions await the new normal user test."
+  ],
+  "qaPending": [
+    "Normal user login and cross-site session recognition in the three external applications."
+  ],
+  "notes": [
+    "No DNS records were modified; three custom domains were assigned and verified.",
+    "Only the AssociaGo old monorepo Git link was disconnected via ordinary interactive confirmation; the primary Git link remains intact.",
+    "Primary server environment values were not decrypted, copied or changed.",
+    "No user credentials or personal tokens were requested or inspected, and no user was impersonated.",
+    "Clerk development instance is retained; the server-controlled role mapping is documented in clerk-role-applied.json.",
+    "Intermediate protected deployments are retained separately and are not the current public production."
+  ],
+  "legacyDomainRedirects": 4,
+  "knownIssues": [
+    "Authenticated cross-site SSO has not yet been confirmed by the normal user after the SDK navigation and query/hash return fixes."
+  ],
+  "primaryStagingManifest": "deployment/.artifacts/primary-final-20261030T143251Z-2e080ec1/state.json",
+  "operationsInFlight": false
+}

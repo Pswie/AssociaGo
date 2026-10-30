@@ -3,8 +3,10 @@ package com.associago.volunteer;
 import com.associago.volunteer.dto.VolunteerCreateDTO;
 import com.associago.volunteer.dto.VolunteerDTO;
 import com.associago.volunteer.mapper.VolunteerMapper;
+import com.associago.project.ProjectAssignmentService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,9 +18,11 @@ import java.util.stream.StreamSupport;
 public class VolunteerController {
 
     private final VolunteerService volunteerService;
+    private final ProjectAssignmentService projectAssignments;
 
-    public VolunteerController(VolunteerService volunteerService) {
+    public VolunteerController(VolunteerService volunteerService, ProjectAssignmentService projectAssignments) {
         this.volunteerService = volunteerService;
+        this.projectAssignments = projectAssignments;
     }
 
     /**
@@ -69,22 +73,28 @@ public class VolunteerController {
     }
 
     @GetMapping("/{id}/shifts")
-    public ResponseEntity<List<VolunteerShift>> getShiftsByVolunteer(@PathVariable Long id) {
-        return ResponseEntity.ok(volunteerService.getShiftsByVolunteer(id));
+    public ResponseEntity<List<VolunteerShift>> getShiftsByVolunteer(@PathVariable Long id, Authentication authentication) {
+        List<VolunteerShift> shifts = volunteerService.getShiftsByVolunteer(id);
+        shifts.stream().map(VolunteerShift::getProjectId).filter(java.util.Objects::nonNull).distinct()
+                .forEach(projectId -> projectAssignments.project(projectId, authentication));
+        return ResponseEntity.ok(shifts);
     }
 
     @PostMapping("/shifts")
-    public ResponseEntity<VolunteerShift> createShift(@RequestBody VolunteerShift shift) {
+    public ResponseEntity<VolunteerShift> createShift(@RequestBody VolunteerShift shift, Authentication authentication) {
+        if (shift.getProjectId() != null) projectAssignments.project(shift.getProjectId(), authentication);
+        shift.setId(null);
+        shift.setVerifiedBy(null);
+        shift.setVerifiedAt(null);
         return ResponseEntity.ok(volunteerService.createShift(shift));
     }
 
     @PutMapping("/shifts/{id}")
-    public ResponseEntity<VolunteerShift> updateShift(@PathVariable Long id, @RequestBody VolunteerShift shift) {
-        try {
-            return ResponseEntity.ok(volunteerService.updateShift(id, shift));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<VolunteerShift> updateShift(@PathVariable Long id, @RequestBody VolunteerShift shift, Authentication authentication) {
+        VolunteerShift existing = volunteerService.getShift(id);
+        if (existing.getProjectId() != null) projectAssignments.project(existing.getProjectId(), authentication);
+        if (shift.getProjectId() != null) projectAssignments.project(shift.getProjectId(), authentication);
+        return ResponseEntity.ok(volunteerService.updateShift(id, shift));
     }
 
     @GetMapping("/{id}/expenses")

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "organizationId": "9b8bd5f6-e4d9-4a1a-9f3d-44a3f969f401",
+  "source": {
+    "system": "associago",
+    "entity": "project",
+    "localId": "42",
+    "revision": "opaque-revision-1"
+  },
+  "title": "Laboratorio di quartiere"
+}

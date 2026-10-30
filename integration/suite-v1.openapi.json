@@ -1,0 +1,2324 @@
+{
+  "openapi": "3.1.0",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "info": {
+    "title": "Suite progetti: AssociaGo / LibrePM / Bandi",
+    "version": "1.0.0",
+    "description": "Canonical HTTP boundary. x-suite-systems identifies the applications implementing each operation. Existing local user authentication remains authoritative; peer keys are server-only. Versions are nonnegative integers, monetary values decimal strings. All response properties are present; unavailable summaries are null. No raw member/volunteer data."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Current application backend origin"
+    }
+  ],
+  "tags": [
+    {
+      "name": "User",
+      "description": "Existing local user authentication and project permissions."
+    },
+    {
+      "name": "Peer",
+      "description": "Server-to-server only, all three peer headers required."
+    }
+  ],
+  "paths": {
+    "/api/integrations/v1/projects": {
+      "get": {
+        "operationId": "listUserProjects",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm",
+          "associago",
+          "bandi"
+        ],
+        "description": "Direct array. Registered contexts visible to the locally authenticated user. AssociaGo/Bandi proxy through LibrePM with local access checks.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContextList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "registerLibrePmProject",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "Register an existing owned/authorized LibrePM project idempotently.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterProjectRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/projects/share": {
+      "post": {
+        "operationId": "shareLocalProject",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "associago",
+          "bandi"
+        ],
+        "description": "Read the authorized local record server-side, derive actorSubject, seed LibrePM and persist mapping. No browser-supplied seed or owner is accepted.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalProjectRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/projects/{suiteProjectId}": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getUserProject",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm",
+          "associago",
+          "bandi"
+        ],
+        "description": "",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/projects/{suiteProjectId}/sync": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "syncUserProject",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm",
+          "associago",
+          "bandi"
+        ],
+        "description": "Retry synchronization. A failed peer is represented by its persisted sync error; other peers stay usable.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/projects/{suiteProjectId}/link": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "linkLocalProject",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "associago",
+          "bandi"
+        ],
+        "description": "Link an existing authorized local project/preparation to a registered suite project. Never silently rebind an existing mapping.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LocalProjectRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/selection": {
+      "get": {
+        "operationId": "getSelection",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Selection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setSelection",
+        "tags": [
+          "User"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "Persist the selected visible project for this user and organization.",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "BrowserSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Selection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectionRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/peer/projects": {
+      "get": {
+        "operationId": "listPeerProjects",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContextList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "seedProject",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "Idempotency tuple is organizationId/source.system/source.entity/source.localId. The authenticated peer must match source.system. A retry or changed opaque revision does not overwrite the existing plan.",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting mapping or amount not representable exactly by the native operational budget (SUITE_AMOUNT_PRECISION). Rejection occurs before creating the project.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectSeed"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/peer/projects/{suiteProjectId}": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "get": {
+        "operationId": "getPeerProject",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "librepm",
+          "associago",
+          "bandi"
+        ],
+        "description": "LibrePM returns ProjectContext. AssociaGo and Bandi return PeerSnapshot (see x-suite-response-schemas).",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeerProjectResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-suite-response-schemas": {
+          "librepm": "ProjectContext",
+          "associago": "PeerSnapshot",
+          "bandi": "PeerSnapshot"
+        }
+      },
+      "put": {
+        "operationId": "upsertPeerProject",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "associago",
+          "bandi"
+        ],
+        "description": "Only LibrePM may call. Body ID and organization must match path/header/configuration. Lower sourceVersion is a conflict. No duplicate local project on retry; currency must be EUR in AssociaGo.",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeerSnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind. AssociaGo also rejects currencies other than EUR and nonzero fractions below a cent (CURRENCY_UNSUPPORTED / AMOUNT_PRECISION), without rounding.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectProjection"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/peer/projects/{suiteProjectId}/sync": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "syncPeerProject",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/integrations/v1/peer/projects/{suiteProjectId}/instances": {
+      "parameters": [
+        {
+          "name": "suiteProjectId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      ],
+      "post": {
+        "operationId": "linkPeerInstance",
+        "tags": [
+          "Peer"
+        ],
+        "x-suite-systems": [
+          "librepm"
+        ],
+        "description": "Register only the authenticated peer own instance for this configured organization, with no silent rebind. Does not import or duplicate the LibrePM project.",
+        "security": [
+          {
+            "SuitePeer": [],
+            "SuiteKey": [],
+            "SuiteOrganization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful, including repeated idempotent imports/upserts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload, UUID, version or local mapping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication missing or invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden project, peer identity or organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or permitted local record absent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, conflicting mapping or attempted rebind.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Integration disabled, configuration incomplete or peer unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectInstanceRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Existing Clerk/API authentication where applicable."
+      },
+      "BrowserSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "ets_session",
+        "description": "Bandi existing local operator session. Other local authentication may remain provider-specific."
+      },
+      "SuitePeer": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Suite-Peer"
+      },
+      "SuiteKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Suite-Key",
+        "description": "At least 32 characters. Never log, persist in browser or put in a URL."
+      },
+      "SuiteOrganization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Suite-Organization",
+        "description": "Configured organization UUID; body/header/configuration must agree."
+      }
+    },
+    "schemas": {
+      "Uuid": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "OpaqueId": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "DecimalString": {
+        "type": "string",
+        "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+        "maxLength": 128
+      },
+      "NonnegativeDecimalString": {
+        "type": "string",
+        "pattern": "^[0-9]+(\\.[0-9]+)?$",
+        "maxLength": 128
+      },
+      "Money": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/NonnegativeDecimalString"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          }
+        }
+      },
+      "ProjectSource": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId",
+              "revision"
+            ],
+            "properties": {
+              "system": {
+                "const": "associago"
+              },
+              "entity": {
+                "const": "project"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "description": "Opaque source revision. No lexical or numeric ordering is implied."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId",
+              "revision"
+            ],
+            "properties": {
+              "system": {
+                "const": "bandi"
+              },
+              "entity": {
+                "const": "preparation"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "description": "Opaque source revision. No lexical or numeric ordering is implied."
+              }
+            }
+          }
+        ]
+      },
+      "ProjectLinks": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "librepm",
+          "associago",
+          "bandi"
+        ],
+        "properties": {
+          "librepm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048,
+                "description": "Configured application URL, optionally containing suiteProject. No credentials or tokens."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "associago": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048,
+                "description": "Configured application URL, optionally containing suiteProject. No credentials or tokens."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bandi": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 2048,
+                "description": "Configured application URL, optionally containing suiteProject. No credentials or tokens."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ProjectSeed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "organizationId",
+          "source",
+          "title"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ProjectSource"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plannedBudget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projectDeadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "actorSubject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ProjectProjection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "organizationId",
+          "suiteProjectId",
+          "sourceVersion",
+          "title",
+          "description",
+          "plannedBudget",
+          "projectDeadline",
+          "targetLocalId",
+          "links"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "suiteProjectId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plannedBudget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projectDeadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "targetLocalId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "links": {
+            "$ref": "#/components/schemas/ProjectLinks"
+          }
+        }
+      },
+      "Financial": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "currency",
+          "income",
+          "expense",
+          "balance"
+        ],
+        "properties": {
+          "currency": {
+            "const": "EUR"
+          },
+          "income": {
+            "$ref": "#/components/schemas/NonnegativeDecimalString"
+          },
+          "expense": {
+            "$ref": "#/components/schemas/NonnegativeDecimalString"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/DecimalString"
+          }
+        }
+      },
+      "Workforce": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assignedCount",
+          "completedHours"
+        ],
+        "properties": {
+          "assignedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "completedHours": {
+            "$ref": "#/components/schemas/NonnegativeDecimalString"
+          }
+        }
+      },
+      "Preparation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "localId",
+          "version",
+          "title",
+          "status",
+          "reviewDecision",
+          "requestedGrant"
+        ],
+        "properties": {
+          "localId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reviewDecision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "requestedGrant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PeerSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "organizationId",
+          "suiteProjectId",
+          "system",
+          "localId",
+          "sourceVersion",
+          "financial",
+          "workforce",
+          "preparation"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "suiteProjectId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "system": {
+            "enum": [
+              "associago",
+              "bandi"
+            ]
+          },
+          "localId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sourceVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "financial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Financial"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workforce": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Workforce"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preparation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preparation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ProjectInstance": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId"
+            ],
+            "properties": {
+              "system": {
+                "const": "librepm"
+              },
+              "entity": {
+                "const": "project"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId"
+            ],
+            "properties": {
+              "system": {
+                "const": "associago"
+              },
+              "entity": {
+                "const": "project"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId"
+            ],
+            "properties": {
+              "system": {
+                "const": "bandi"
+              },
+              "entity": {
+                "const": "preparation"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              }
+            }
+          }
+        ]
+      },
+      "SyncState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "system",
+          "status",
+          "lastSuccessAt",
+          "errorCode",
+          "errorMessage"
+        ],
+        "properties": {
+          "system": {
+            "enum": [
+              "associago",
+              "bandi"
+            ]
+          },
+          "status": {
+            "enum": [
+              "unlinked",
+              "pending",
+              "synced",
+              "error",
+              "disabled"
+            ]
+          },
+          "lastSuccessAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errorMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ProjectContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "organizationId",
+          "suiteProjectId",
+          "title",
+          "description",
+          "version",
+          "instances",
+          "links",
+          "sync",
+          "financial",
+          "workforce",
+          "preparation"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "suiteProjectId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectInstance"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/ProjectLinks"
+          },
+          "sync": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncState"
+            }
+          },
+          "financial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Financial"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "workforce": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Workforce"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "preparation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Preparation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ProjectContextList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProjectContext"
+        }
+      },
+      "RegisterProjectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "librepmProjectId"
+        ],
+        "properties": {
+          "librepmProjectId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      },
+      "LocalProjectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "localId"
+        ],
+        "properties": {
+          "localId": {
+            "$ref": "#/components/schemas/OpaqueId"
+          }
+        }
+      },
+      "Selection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "suiteProjectId"
+        ],
+        "properties": {
+          "suiteProjectId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "SelectionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "suiteProjectId"
+        ],
+        "properties": {
+          "suiteProjectId": {
+            "$ref": "#/components/schemas/Uuid"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message",
+          "code"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ProjectInstanceRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId",
+              "revision"
+            ],
+            "properties": {
+              "system": {
+                "const": "associago"
+              },
+              "entity": {
+                "const": "project"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "description": "Opaque source revision. No lexical or numeric ordering is implied."
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "system",
+              "entity",
+              "localId",
+              "revision"
+            ],
+            "properties": {
+              "system": {
+                "const": "bandi"
+              },
+              "entity": {
+                "const": "preparation"
+              },
+              "localId": {
+                "$ref": "#/components/schemas/OpaqueId"
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "description": "Opaque source revision. No lexical or numeric ordering is implied."
+              }
+            }
+          }
+        ]
+      },
+      "PeerProjectResponse": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ProjectContext"
+          },
+          {
+            "$ref": "#/components/schemas/PeerSnapshot"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -20,6 +20,9 @@ public class VolunteerShift {
     
     @Column(name = "activity_id")
     private Long activityId;
+
+    @Column(name = "project_id")
+    private Long projectId;
     
     @Column(name = "start_time")
     private LocalDateTime startTime;
@@ -52,6 +55,8 @@ public class VolunteerShift {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getVolunteerId() { return volunteerId; }
+    public Long getProjectId() { return projectId; }
+    public void setProjectId(Long value) { projectId = value; }
     public void setVolunteerId(Long volunteerId) { this.volunteerId = volunteerId; }
     public Long getEventId() { return eventId; }
     public void setEventId(Long eventId) { this.eventId = eventId; }

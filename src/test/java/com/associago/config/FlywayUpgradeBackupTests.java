@@ -36,7 +36,7 @@ class FlywayUpgradeBackupTests {
         Flyway upgraded = new FlywayConfig().flyway(dataSource, backupService);
         upgraded.migrate();
 
-        assertThat(upgraded.info().current().getVersion().getVersion()).isEqualTo("42");
+        assertThat(upgraded.info().current().getVersion().getVersion()).isEqualTo("44");
         Path backup;
         try (var backups = Files.list(directory.resolve("backups"))) {
             var files = backups.toList();

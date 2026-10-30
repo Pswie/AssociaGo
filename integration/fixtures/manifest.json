@@ -1,0 +1,70 @@
+[
+  {
+    "file": "context-disabled.json",
+    "schema": "ProjectContext"
+  },
+  {
+    "file": "context-linked.json",
+    "schema": "ProjectContext"
+  },
+  {
+    "file": "context-partial-failure.json",
+    "schema": "ProjectContext"
+  },
+  {
+    "file": "catalog-empty.json",
+    "schema": "ProjectContextList"
+  },
+  {
+    "file": "catalog-linked.json",
+    "schema": "ProjectContextList"
+  },
+  {
+    "file": "projection-minimal.json",
+    "schema": "ProjectProjection"
+  },
+  {
+    "file": "projection-linked.json",
+    "schema": "ProjectProjection"
+  },
+  {
+    "file": "snapshot-associago.json",
+    "schema": "PeerSnapshot"
+  },
+  {
+    "file": "snapshot-bandi-unlinked.json",
+    "schema": "PeerSnapshot"
+  },
+  {
+    "file": "snapshot-bandi-linked.json",
+    "schema": "PeerSnapshot"
+  },
+  {
+    "file": "seed-associago.json",
+    "schema": "ProjectSeed"
+  },
+  {
+    "file": "seed-bandi.json",
+    "schema": "ProjectSeed"
+  },
+  {
+    "file": "selection-none.json",
+    "schema": "Selection"
+  },
+  {
+    "file": "selection-linked.json",
+    "schema": "Selection"
+  },
+  {
+    "file": "register-project.json",
+    "schema": "RegisterProjectRequest"
+  },
+  {
+    "file": "local-project.json",
+    "schema": "LocalProjectRequest"
+  },
+  {
+    "file": "error-unavailable.json",
+    "schema": "Error"
+  }
+]

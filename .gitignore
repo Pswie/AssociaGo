@@ -92,6 +92,7 @@ local.properties
 .env.development.local
 .env.test.local
 .env.production.local
+.env.suite.local
 *.keystore
 *.jks
 *.p12

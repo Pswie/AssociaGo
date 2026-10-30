@@ -1,0 +1,24 @@
+{
+  "projectRef": "tfeplskriazdybiampgg",
+  "revisionSuffix": "pg-initial-20261030",
+  "organizationId": "REPLACE_WITH_PREPARED_SUITE_UUID",
+  "associationId": 1,
+  "librepmOwnerId": "REPLACE_WITH_BOOTSTRAP_OWNER_UUID",
+  "nodeId": "REPLACE_WITH_ACTUAL_PC_NODE_ID",
+  "backendOrigins": {
+    "associago": "https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app",
+    "librepm": "https://adf-bandi-collaudo-y5sbh5kxpa-oc.a.run.app",
+    "bandiPortal": "REPLACE_WITH_VERIFIED_GATEWAY_HTTPS_ORIGIN"
+  },
+  "runtimeServiceAccounts": {
+    "associago": "adf-as-pg-runtime@flawless-star-503422-q3.iam.gserviceaccount.com",
+    "librepm": "adf-lp-pg-runtime@flawless-star-503422-q3.iam.gserviceaccount.com",
+    "bandiPortal": "adf-portal-pg-runtime@flawless-star-503422-q3.iam.gserviceaccount.com"
+  },
+  "runtimeBundles": {
+    "associago": {"name": "adf-associago-pg-runtime-v1", "version": 1, "sourceFile": "REPLACE_PRIVATE_DIRECTORY/associago-runtime.private.json"},
+    "librepm": {"name": "adf-librepm-pg-runtime-v1", "version": 1, "sourceFile": "REPLACE_PRIVATE_DIRECTORY/librepm-runtime.private.json"},
+    "bandiPortal": {"name": "adf-portal-pg-runtime-v1", "version": 1, "sourceFile": "REPLACE_PRIVATE_DIRECTORY/bandiPortal-runtime.private.json"}
+  },
+  "initialServices": {"associago": false, "librepm": false, "bandiPortal": true}
+}

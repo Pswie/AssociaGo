@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -23,6 +24,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Object> handleMissingResource(Exception ex, WebRequest request) {
+        return new ResponseEntity<>(buildBody(HttpStatus.NOT_FOUND, "Resource not found", request), HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationErrors(MethodArgumentNotValidException ex, WebRequest request) {
         List<Map<String, String>> validationErrors = ex.getBindingResult().getFieldErrors().stream()
@@ -37,6 +43,17 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = buildBody(HttpStatus.BAD_REQUEST, "Validation failed", request);
         body.put("validationErrors", validationErrors);
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Object> handleUnreadableBody(HttpMessageNotReadableException ex, WebRequest request) {
+        if (request instanceof ServletWebRequest servlet
+                && servlet.getRequest().getRequestURI().startsWith("/api/integrations/v1/")) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "code", "INVALID_JSON", "message", "Dati JSON non validi per il protocollo progetti."));
+        }
+        return ResponseEntity.badRequest().body(buildBody(
+                HttpStatus.BAD_REQUEST, "Malformed JSON or invalid field types", request));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -65,6 +82,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleDataIntegrityViolation(DataIntegrityViolationException ex, WebRequest request) {
+        if (request instanceof ServletWebRequest servlet
+                && servlet.getRequest().getRequestURI().startsWith("/api/integrations/v1/")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "code", "LINK_CONFLICT", "message", "Collegamento modificato da un'altra richiesta. Ricaricare e riprovare."));
+        }
         logger.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
         Map<String, Object> body = buildBody(HttpStatus.CONFLICT, "Data integrity violation", request);
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
