@@ -17,6 +17,46 @@ import time
 import uuid
 
 
+def gateway_modules(repository: Path) -> list[str]:
+    """Explicit serving modules only; no exporter, publisher, operator or AI runtime."""
+    modules = ["apps/__init__.py", "apps/api/__init__.py", "apps/api/main.py", "apps/api/config.py",
+               "apps/api/suite/__init__.py", "apps/api/suite/schemas.py"]
+    modules += ["apps/api/collaboration/" + name + ".py" for name in (
+        "__init__", "gateway", "router", "security", "store", "models", "results",
+        "schemas", "errors", "maintenance", "migrate", "suite_adapter",
+        "native_contract", "native_router", "native_store", "native_binding",
+    )]
+    modules.append("apps/api/collaboration/native_catalog.json")
+    modules += ["apps/api/official_sources/" + name + ".py" for name in (
+        "__init__", "schemas", "http", "service", "router", "runts", "catalogues",
+    )]
+    modules += ["apps/api/cloud_catalog/" + name for name in (
+        "__init__.py", "manager.py", "store.py", "router.py", "reader.py", "duckdb_backend.py",
+        "formats.py",
+        "read_operations.json", "adapters/__init__.py", "adapters/public_sources.py",
+    )]
+    modules += ["apps/api/" + name + ".py" for name in (
+        "database", "models", "schemas", "auth", "domain_schemas", "domain_service",
+        "project_catalog_schemas", "project_catalog_service", "awards_schemas", "awards_service",
+        "organisation_identifiers_schemas", "organisation_identifiers_service",
+    )]
+    modules += ["apps/api/routes/" + name + ".py" for name in (
+        "__init__", "auth", "domain", "project_catalog", "runts_profiles", "awards",
+        "money_map", "organisation_identifiers",
+    )]
+    for package, names in (
+        ("money_map", ("__init__", "schemas", "service")),
+        ("runts_profiles", ("__init__", "schemas", "service")),
+        ("organisation_financial_observations", ("__init__", "router", "schemas", "service")),
+        ("opportunity_radar", ("__init__", "models", "source_registry")),
+        ("search", ("__init__", "derived_triggers")),
+    ):
+        modules += [f"apps/api/{package}/{name}.py" for name in names]
+    modules += [str(p.relative_to(repository)).replace("\\", "/") for p in
+                (repository / "apps/api/collaboration/migrations").glob("*.sql")]
+    return sorted(set(modules))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--application", required=True, choices=("associago", "librepm", "bandi-portal"))
@@ -35,20 +75,7 @@ def main():
     shutil.copyfile(certificate, context / "supabase-root-2021.crt")
     if app == "bandi-portal":
         repository = root.parent / "Bandi"
-        modules = ["apps/__init__.py", "apps/api/__init__.py", "apps/api/main.py", "apps/api/config.py",
-                   "apps/api/suite/__init__.py", "apps/api/suite/schemas.py"]
-        modules += ["apps/api/collaboration/" + name + ".py" for name in (
-            "__init__", "gateway", "router", "security", "store", "models", "results",
-            "schemas", "errors", "maintenance", "migrate", "suite_adapter",
-            "native_contract", "native_router", "native_store", "native_binding",
-        )]
-        modules.append("apps/api/collaboration/native_catalog.json")
-        modules += ["apps/api/official_sources/" + name + ".py" for name in (
-            "__init__", "schemas", "http", "service", "router", "runts", "catalogues",
-        )]
-        modules += [str(p.relative_to(repository)).replace("\\", "/") for p in
-                    (repository / "apps/api/collaboration/migrations").glob("*.sql")]
-        for relative in modules:
+        for relative in gateway_modules(repository):
             target = context / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(repository / relative, target)

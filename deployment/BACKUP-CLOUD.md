@@ -2,6 +2,8 @@
 
 `backup_cloud_schemas.py` salva `associago`, `librepm` e `bandi_portal` in un archivio PostgreSQL custom. L'archivio completo di Bandi, i documenti e i modelli rimasti sul PC richiedono un backup separato: non sono compresi in questi tre schemi.
 
+Le sole tabelle cache `bandi_portal.catalog_snapshots`, `catalog_chunks` e `catalog_active` conservano lo schema ma escludono i dati: il manifest elenca `cacheExcludedData` e richiede la rigenerazione. Dopo un ripristino tutte e tre sono vuote, incluso il puntatore attivo; prima di usare l'archivio online occorre ripubblicare uno snapshot verificato dall'export locale conservato. Bozze, revisioni, lavori, collegamenti suite e tutti gli altri dati dei tre schemi restano inclusi.
+
 Il comando usa `pg_dump` e `pg_restore` PostgreSQL 17 nell'immagine Docker ufficiale `postgres:17`. Docker Desktop deve essere avviato e l'immagine deve essere disponibile. Non avvia alcuna generazione AI. Il primo backup Supabase reale è stato completato il 30 ottobre 2026; il task Windows è stato successivamente collaudato e abilitato.
 
 ## Configurazione privata

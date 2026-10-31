@@ -165,6 +165,11 @@ def prepare(config, public, directory):
             official_enabled = config.get("bandiOfficialSourcesEnabled", False)
             if type(official_enabled) is not bool or official_enabled and not native_enabled:
                 raise PreparationError("Official sources require explicit native and source booleans")
+            catalog_enabled = config.get("bandiCloudCatalogEnabled", False)
+            if type(catalog_enabled) is not bool or catalog_enabled and not (
+                native_enabled and official_enabled
+            ):
+                raise PreparationError("Online catalogue requires the explicit native/source flags")
             env.update(
                 BANDI_MODE="gateway",
                 APP_ENV="production",
@@ -182,6 +187,8 @@ def prepare(config, public, directory):
                 env["COLLAB_NATIVE_ENABLED"] = "true"
             if official_enabled:
                 env["COLLAB_OFFICIAL_SOURCES_ENABLED"] = "true"
+            if catalog_enabled:
+                env["COLLAB_CLOUD_CATALOG_ENABLED"] = "true"
             if config.get("allowedOrganizationId"):
                 env["COLLAB_ALLOWED_ORGANIZATION_ID"] = config["allowedOrganizationId"]
         else:
@@ -237,7 +244,10 @@ def prepare(config, public, directory):
             "--min=0",
             "--min-instances=0",
             "--cpu=1",
-            "--memory=" + ("512Mi" if app == "bandiPortal" else "1Gi"),
+            "--memory=" + (
+                ("2Gi" if config.get("bandiCloudCatalogEnabled") is True else "512Mi")
+                if app == "bandiPortal" else "1Gi"
+            ),
             "--concurrency=" + ("8" if app == "bandiPortal" else "20"),
             "--port=8080",
             "--timeout=300s",

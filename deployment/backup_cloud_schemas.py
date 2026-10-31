@@ -26,6 +26,12 @@ import uuid
 
 SCHEMAS = ("associago", "librepm", "bandi_portal")
 IMAGE = "postgres:17"
+# Regenerable metadata cache: keep its schema, never duplicate snapshot payloads.
+CACHE_EXCLUDED_DATA = (
+    "bandi_portal.catalog_snapshots",
+    "bandi_portal.catalog_chunks",
+    "bandi_portal.catalog_active",
+)
 
 
 class BackupError(Exception):
@@ -375,6 +381,10 @@ def run_backup(
             "--file=/out/archive.dump",
         ]
         args += ["--schema=" + value for value in schemas]
+        cache_excluded_data = (
+            list(CACHE_EXCLUDED_DATA) if "bandi_portal" in schemas else []
+        )
+        args += ["--exclude-table-data=" + value for value in cache_excluded_data]
         if snapshot:
             if not re.fullmatch(r"[0-9A-Fa-f-]+", snapshot):
                 raise BackupError("BACKUP_SNAPSHOT_INVALID")
@@ -412,6 +422,16 @@ def run_backup(
             "sha256": sha256(archive),
             "list_sha256": sha256(listing),
             "restore_tested": False,
+            "cacheExcludedData": cache_excluded_data,
+            "cacheRegenerationRequired": bool(cache_excluded_data),
+            "cacheRestoreInstructions": (
+                "These cache tables restore empty, including the active pointer. "
+                "Rebuild and publish a verified metadata snapshot from the retained "
+                "local export before using archive catalogue reads. "
+                "Authoritative application data remains included in this backup."
+                if cache_excluded_data
+                else ""
+            ),
         }
         (root / "manifest.json").write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8"

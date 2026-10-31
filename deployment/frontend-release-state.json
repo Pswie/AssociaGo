@@ -1,6 +1,6 @@
 {
-  "status": "published_official_sources_and_native_tools",
-  "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+  "status": "published_cloud_catalog_and_native_tools",
+  "stagingManifest": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
   "customDomainsAssigned": 3,
   "dnsChangesPerformed": 0,
@@ -39,20 +39,22 @@
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_Eh2bsaS1kQriCLF4QU9XdcmzrFDo",
-      "url": "https://adf-bandi-portale-nau9wftdj-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_AwATKBUPkkYvAG31sfery4xmfHrQ",
+      "url": "https://adf-bandi-portale-3xaotzfcl-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "publicUrl": "https://bandi.angelidelfuturoaps.com",
-      "previousProductionDeploymentId": "dpl_DUbZo5kvZAro9DCSxB85DXFRbKcH",
-      "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+      "previousProductionDeploymentId": "dpl_Eh2bsaS1kQriCLF4QU9XdcmzrFDo",
+      "stagingManifest": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
       "nativeModeEnabled": true,
-      "runtimeRevision": "adf-bandi-portale-api-sources-20261030-a",
-      "sourceCommit": "269190371b20bc4baa21c09e686149d874b176f0",
+      "runtimeRevision": "adf-bandi-portale-api-catalog-20261031-c",
       "functionRegion": "fra1",
       "officialSourcesEnabled": true,
       "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
-      "sourceBaseCommit": "309e90eb1935e844d6d2e6097d5d57a85d9bf8ea"
+      "sourceBaseCommit": "269190371b20bc4baa21c09e686149d874b176f0",
+      "cloudCatalogEnabled": true,
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:713f757555a9457102b73e78157e6a24f46eb5bd2af27ba5bdf188c9cd04b064",
+      "sourceCommit": "ee128728b8f1de10b973939cdc9ba641388b23a6"
     },
     "primary": {
       "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
@@ -104,7 +106,20 @@
     "Primarypublicadmin matches candidate after normalizing only the two occurrences of the per-requestClerkSignInwidgetID; authenticatedchooser remains a real-session check.",
     "Gateway sources-20261030-a promoted100percent after seven candidateHTTPchecks; native-c retained as rollback with the same pinnedruntimebundleversion1.",
     "53offline deployment/helper tests pass, including explicit source/nativeflags and fail-fast frontend prerequisites.",
-    "Final three-service read-only audit:27configuration checks and18HTTPchecks passed; obsolete native-b removed after a fresh zero-traffic/untagged check; five suite revisions remain and temporarysourcejob is absent."
+    "Final three-service read-only audit:27configuration checks and18HTTPchecks passed; obsolete native-b removed after a fresh zero-traffic/untagged check; five suite revisions remain and temporarysourcejob is absent.",
+    "Cloud metadata verified:36 tables and3136705 rows;493891584 raw bytes and202583336 XZ bytes in194 verified chunks, published atomically with matching complete hashes.",
+    "Final API regression:422 tests and141 subtests passed with zero skips across26 modules, including10 PostgreSQL publisher cases and8 binary wire cases; temporary database and processes removed.",
+    "Final frontend regression:743 tests passed in90 files, zero skips, TypeScript and scoped ESLint passed,287 source hashes unchanged; corrected the estimate without rerunning tests.",
+    "The pinned Linux image passed34 checks on Google, including28 original reads,151462 owner RUNTS profiles,265692 public projects,957 funding calls and zero restricted RUNTS profiles for collaborators; temporary job removed.",
+    "Pinned pytz2026.6 fixes DuckDB TIMESTAMPTZ loading; the minimal Linux image build verifies UTC timestamp and JSON before publication.",
+    "Editable original views use the live PC when the authenticated node supports native.v1; otherwise they read the immutable cloud copy. Metadata errors fail closed and a cloud failure never falls back to the PC.",
+    "Bandi candidate READY in fra1 promoted;10 public page and authentication checks match the candidate, and the Vercel custom alias resolves to the exact AwAT deployment.",
+    "Gateway catalog-c receives100 percent of traffic with source-a retained for rollback,2GiB memory,min0,max1 and the isolated version1 bundle;27 configuration and18 HTTP checks passed after promotion.",
+    "Read-only capacity check:230823603 database bytes;441472691 bytes for a second generation is an estimate, not a second upload. The205MB compressed and460MB total guards protect the500MB budget.",
+    "Cloud backups exclude the data of three regenerable catalogue cache tables while keeping their DDL;8 unit tests and an isolated PostgreSQL restore drill preserve all7 authoritative test rows.",
+    "After a fresh global reference audit,3 obsolete gateway revisions and exactly15 authorized OCI digests were removed;5 suite revisions and zero jobs remain, with production and rollback preserved.",
+    "All56 deployment and backup helper tests passed after recording the verified release.",
+    "Bandi source commit ee128728b8f1de10b973939cdc9ba641388b23a6 pushed and read back from the reviewed private branch;62 exact source files and no credentials."
   ],
   "qaPending": [
     "A real file over4.5MiB through the production Vercel/Clerk session remains unverified.",
@@ -121,15 +136,15 @@
   "legacyDomainRedirects": 4,
   "knownIssues": [
     "Legacy Python global Ruff/Black/mypy debt remains documented in Bandi/integration/CI-DEBITO-TECNICO.md.",
-    "Five direct public sources have different supported filters; RUNTS name search is partial and has no WebForms pagination."
+    "Five live public sources have different supported filters; RUNTS name search is partial and has no WebForms pagination."
   ],
   "primaryStagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
   "operationsInFlight": false,
-  "updatedAt": "2026-10-30T20:33:39.698790+00:00",
+  "updatedAt": "2026-10-31T04:09:01.781427+00:00",
   "stagingManifests": {
     "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
     "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
-    "bandi": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+    "bandi": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
     "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
   },
   "userConfirmedAccess": {
@@ -139,5 +154,27 @@
     "bandiOriginalRunts": true
   },
   "workInProgress": [],
-  "promotionsPerformedBeforeFinalAudits": 17
+  "promotionsPerformedBeforeFinalAudits": 19,
+  "cloudCatalog": {
+    "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
+    "databaseBytes": 230823603,
+    "compressedBytes": 202583336,
+    "chunks": 194,
+    "formatVersion": 3,
+    "databaseFormat": "duckdb",
+    "compression": "xz",
+    "tableCount": 36,
+    "rows": 3136705,
+    "runtimeMemory": "2Gi",
+    "maxCompressedBytes": 205000000,
+    "maxDatabaseBytes": 460000000
+  },
+  "googleCleanup": {
+    "removedRevisionsThisRelease": 3,
+    "removedOciDigestsThisRelease": 15,
+    "retainedSuiteRevisions": 5,
+    "temporaryJobs": 0,
+    "registryBytes": 502710003,
+    "productionAndRollbackRetained": true
+  }
 }

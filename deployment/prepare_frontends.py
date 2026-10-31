@@ -129,8 +129,11 @@ def main() -> None:
     parser.add_argument("--gateway-url")
     parser.add_argument("--bandi-native", action="store_true", help="Enable the reviewed native Bandi UI; requires the PC transport release")
     parser.add_argument("--official-sources", action="store_true", help="Enable bounded official-source consultation; requires the native gateway")
+    parser.add_argument("--cloud-catalog", action="store_true", help="Enable verified online metadata; requires native and official sources")
     parser.add_argument("--bandi-project-id", required=True)
     args = parser.parse_args()
+    if args.cloud_catalog and not (args.bandi_native and args.official_sources):
+        parser.error("--cloud-catalog requires --bandi-native and --official-sources")
     if args.official_sources and not args.bandi_native:
         parser.error("--official-sources requires --bandi-native")
     if args.bandi_native and not args.gateway_url:
@@ -171,6 +174,9 @@ def main() -> None:
             write_json(bandi / "public-env.json", bandi_environment)
         if args.official_sources:
             bandi_environment["NEXT_PUBLIC_OFFICIAL_SOURCES"] = "1"
+            write_json(bandi / "public-env.json", bandi_environment)
+        if args.cloud_catalog:
+            bandi_environment["NEXT_PUBLIC_CLOUD_CATALOG"] = "1"
             write_json(bandi / "public-env.json", bandi_environment)
         state["projects"]["bandi"] = {"kind": "source-nextjs", "projectId": args.bandi_project_id, "path": str(bandi), "publicEnvironment": bandi_environment, "state": "prepared" if args.gateway_url else "awaiting-gateway", "nodeVersion": "22.x"}
         primary = output / "primary"

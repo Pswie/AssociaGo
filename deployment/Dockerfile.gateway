@@ -6,6 +6,9 @@ RUN update-ca-certificates
 COPY requirements-gateway.txt ./
 RUN pip install --no-cache-dir --disable-pip-version-check -r requirements-gateway.txt \
     && useradd --uid 1001 --no-create-home --shell /usr/sbin/nologin app
+# DuckDB fetches TIMESTAMPTZ values through pytz, which it does not require at install time.
+# Exercise the minimal Linux environment before a broken image can be published.
+RUN python -c "import duckdb; c=duckdb.connect(config={'enable_external_access':False,'autoload_known_extensions':False,'autoinstall_known_extensions':False}); c.execute(\"SET TimeZone='UTC'\"); t=c.execute('SELECT CURRENT_TIMESTAMP').fetchone()[0]; assert t.tzinfo is not None and t.utcoffset().total_seconds()==0; assert c.execute('SELECT json_valid(?)',['{}']).fetchone()[0]; c.close()"
 COPY --chown=1001:1001 apps ./apps
 USER 1001:1001
 EXPOSE 8080

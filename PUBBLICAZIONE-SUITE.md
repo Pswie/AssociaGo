@@ -1,14 +1,17 @@
 # Lavori sulla suite Angeli del Futuro
 
-Aggiornato il 30 ottobre 2026. Questo è il resoconto operativo corrente.
+Aggiornato il 31 ottobre 2026. Questo è il resoconto operativo corrente.
 [LAVORI-INTEGRAZIONE.md](LAVORI-INTEGRAZIONE.md) descrive la prima integrazione;
 [MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md) la conversione dei database.
 
-La consultazione leggera è pubblicata in [Bandi → Fonti ufficiali](https://bandi.angelidelfuturoaps.com/fonti):
-RUNTS, OpenCoesione, CON IL SUD, Repubblica Digitale e Funding & Tenders UE
-vengono letti dalle fonti, senza il PC o l'AI. Non è stato trasferito o eliminato
-l'archivio locale. Il dettaglio di uso, copertura e limiti è in
-[FONTI-ONLINE.md](../Bandi/integration/FONTI-ONLINE.md).
+In [Bandi → Fonti](https://bandi.angelidelfuturoaps.com/fonti) è ora pubblicata
+anche una copia generale dei metadati: enti, progetti, bandi, graduatorie,
+relazioni e dati economici. Comprende **36 tabelle e 3.136.705 righe** in
+**202.583.336 byte compressi**. Il progetto Supabase Free esistente occupa
+complessivamente circa **231 MB**. Gli originali, i PDF, i testi integrali e
+le lavorazioni locali restano sul PC. Le cinque fonti ufficiali live rimangono
+disponibili. Copertura, misure, permessi, limiti e comandi di aggiornamento
+sono in [ARCHIVIO-CLOUD.md](../Bandi/integration/ARCHIVIO-CLOUD.md).
 
 ## Stato effettivo
 
@@ -21,7 +24,7 @@ ed esclusione dalla Data API. Il precedente progetto Tabaccheria non è stato
 modificato. Aiven era vuoto e non serve recuperarlo.
 
 Le migrazioni applicative sono state applicate: tre per AssociaGo, quattro per
-LibrePM e quattro per il portale Bandi. Il tuo utente Clerk verificato è collegato
+LibrePM e cinque per il portale Bandi. Il tuo utente Clerk verificato è collegato
 ai gestionali; non sono stati inventati soci, progetti o movimenti contabili.
 Il collegamento usa il Session pooler verificato
 `aws-0-eu-west-1.pooler.supabase.com:5432`, con controllo completo TLS e CA
@@ -73,7 +76,7 @@ Un progetto Supabase dedicato ospita tre schemi privati:
 | --- | --- | --- |
 | `associago` | Soci, volontari, progetti e contabilità | `associago_app` |
 | `librepm` | Progetti operativi e registro comune | `librepm_app` |
-| `bandi_portal` | Bozze, revisioni, coda e progetti comuni | `bandi_portal_app` |
+| `bandi_portal` | Bozze, revisioni, coda, progetti comuni e copia privata dei metadati | `bandi_portal_app` |
 
 Le migrazioni usano account proprietari distinti. Gli account applicativi non
 possono creare tabelle, leggere gli altri schemi o modificare la storia delle
@@ -85,6 +88,10 @@ rimane sui server: il modello Next.js con Supabase Auth e un secondo middleware
 di sessione non serve per questa architettura.
 
 L'archivio completo Bandi, PDF, indici vettoriali, Ollama e Agno rimangono sul PC.
+Una proiezione compatta e immutabile dei metadati è ora consultabile dal cloud.
+Il ruolo applicativo può soltanto leggere le tre tabelle della copia; la
+pubblicazione usa il proprietario separato sul PC. Queste tabelle rimangono
+private e non sono esposte dalla Data API.
 La variante opzionale con tutto Bandi su PostgreSQL è collaudata, ma non è il
 modello scelto per questa pubblicazione. Il collegamento fra app è versionato:
 segnala indisponibilità e conflitti, senza promettere transazioni distribuite
@@ -245,7 +252,60 @@ stati fermati e la loro chiusura è stata verificata indipendentemente.
 Matrice, priorità, riproduzioni e limiti:
 [CHECK-COMPLETO-BANDI.md](../Bandi/integration/CHECK-COMPLETO-BANDI.md).
 
-## Consultazione dalle fonti: implementazione pubblicata
+## Archivio generale: aggiornamento del 31 ottobre
+
+La consultazione non dipende più soltanto dalle API delle fonti. Una copia
+DuckDB con compressione XZ conserva le relazioni e i tipi dei 36 gruppi di
+metadati, senza record grezzi, vettori o testo integrale dei documenti. Il
+database originale misurato era 12,7 GB; la proiezione nativa è 493.891.584 byte
+e la copia compressa è 202.583.336 byte. Sono verificati tutti i conteggi,
+la precisione degli importi e i digest dell'intero file decompresso.
+
+Il tuo account vede **151.462 profili RUNTS** dell'ultima pubblicazione
+presente, del 6 agosto 2026; sono conservati anche 151.173 profili della
+pubblicazione precedente. I CSV originali mantengono il vincolo riservato:
+la vista proprietario è scelta dal server, non da un parametro del browser.
+I collaboratori continuano a vedere soltanto le proiezioni ammesse e possono
+usare la ricerca RUNTS ufficiale. L'archivio consultabile contiene anche
+**265.692 progetti e 957 bandi**, dopo i filtri di pubblicabilità.
+
+Le schermate originali riusano 28 letture esistenti. Quando il PC è disponibile
+e supporta il trasporto nativo, le schermate modificabili leggono i dati
+aggiornati dal PC: una modifica non viene nascosta dalla copia precedente.
+Quando è offline usano la copia cloud per quelle letture. La pagina Fonti
+rimane una vista datata della copia e delle fonti live. AI, scritture e altre
+operazioni native continuano a usare il PC; non tutte le 31 schermate sono
+diventate autonome.
+
+La copia usa 194 blocchi nello stesso progetto Supabase Free: nessun nuovo
+account, bucket o piano. Il caricatore limita ogni copia a 205 MB e controlla
+il database complessivo a 460 MB, mantenendo l'attiva durante la preparazione
+della successiva. La misura successiva alla pubblicazione è **230.823.603
+byte**; due generazioni dello stesso contenuto sono stimate a circa 441 MB,
+non verificate con un secondo caricamento. La quota mensile di egress resta
+condivisa: 5 GB equivalgono a circa 24 caricamenti completi a freddo prima
+degli altri consumi. Il trasferimento PostgreSQL binario evita la duplicazione
+in esadecimale. I backup conservano le strutture della cache, escludendone
+i dati rigenerabili e mantenendo i dati applicativi.
+
+Il rilascio è verificato con **422 test backend e 141 sottocasi**, **743 test
+frontend**, TypeScript e lint. La stessa immagine Linux pubblicata ha superato
+34 controlli reali dal server Google, incluse tutte le 28 letture, senza
+usare la coda del PC. Il controllo nella costruzione dell'immagine verifica
+JSON e timestamp, prevenendo la dipendenza `pytz` mancante individuata sul
+container minimale. Il frontend pubblico corrisponde alla candidata verificata;
+le API senza autenticazione restituiscono 401. Il controllo successivo dei tre
+servizi ha superato 27 verifiche di configurazione e 18 verifiche HTTP.
+
+Sono pubblicati `dpl_AwATKBUPkkYvAG31sfery4xmfHrQ` e la revisione gateway
+`adf-bandi-portale-api-catalog-20261031-c`; il precedente gateway delle fonti
+rimane disponibile per il rollback. I sorgenti Bandi corrispondenti sono
+pubblicati nel commit `ee128728b8f1de10b973939cdc9ba641388b23a6` del ramo
+`agent/phase-4-structured-extraction`. La navigazione delle 31 schermate nella
+sessione reale del proprietario resta non verificata perché Opera richiede
+riautorizzazione; nessun account è stato impersonato.
+
+## Consultazione dalle fonti: fase del 30 ottobre
 
 Il requisito aggiornato evita di trasferire tutto l'archivio. Sono state
 verificate risposte reali delle API OpenCoesione, CON IL SUD, Repubblica
@@ -333,7 +393,7 @@ I collaboratori futuri vanno autorizzati tramite identificativo o organizzazione
 | Principale | [www.angelidelfuturoaps.com](https://www.angelidelfuturoaps.com) | Vercel esistente |
 | AssociaGo | [gestionale.angelidelfuturoaps.com](https://gestionale.angelidelfuturoaps.com) | Vercel + Cloud Run `adf-gestionale-collaudo` |
 | LibrePM | [progetti.angelidelfuturoaps.com](https://progetti.angelidelfuturoaps.com) | Vercel + Cloud Run `adf-bandi-collaudo` |
-| Bandi | [bandi.angelidelfuturoaps.com](https://bandi.angelidelfuturoaps.com) | Frontend originale Vercel + gateway Cloud Run `adf-bandi-portale-api` + nodo PC |
+| Bandi | [bandi.angelidelfuturoaps.com](https://bandi.angelidelfuturoaps.com) | Frontend originale Vercel + gateway Cloud Run + metadati Supabase + nodo PC |
 
 Il servizio Google chiamato `adf-bandi-collaudo` ospita LibrePM, non Bandi Python/Next.js.
 Il dominio principale usa già DNS Vercel. Le immagini aggiornate sono nel
@@ -346,7 +406,9 @@ digest e risultato terminale delle costruzioni.
 Nella prima pulizia sono state rimosse **18 revisioni Google obsolete** senza
 traffico o tag; dopo l'aggiornamento sono state eliminate anche una candidata
 AssociaGo scartata, la precedente revisione del portale limitato Bandi e due
-revisioni native sostituite: **22 revisioni rimosse complessivamente**.
+revisioni native sostituite: 22 revisioni rimosse fino al 30 ottobre. Con
+questo rilascio sono state eliminate altre tre revisioni gateway superate:
+**25 revisioni rimosse complessivamente**.
 L'inventario globale successivo
 conta **3 servizi, 0 job e 5 revisioni**: tre in servizio e le precedenti revisioni
 AssociaGo/gateway conservate per il ripristino. Solo le nuove ricevono traffico.
@@ -365,6 +427,14 @@ finale esatto. Le ricevute intermedie sono conservate insieme a
 `deployment/.artifacts/cleanup-final-verified-20261030.json`. Non è stato
 eseguito un prune generale del registro. I container locali e i volumi con i
 dati Bandi sono conservati.
+
+La pulizia del 31 ottobre ha inoltre rimosso soltanto cinque immagini superate
+e i relativi 15 digest OCI, rileggendo riferimenti, traffico e tag prima e dopo
+ogni operazione. Restano cinque revisioni della suite e zero job temporanei;
+le tre API rispondono 200. Il registro riporta 502.710.003 byte, circa 0,468
+GiB: la quota gratuita è aggregata sull'account e questa misura non costituisce
+una garanzia di costo mensile zero. Non è stato eseguito alcun prune generale
+né eliminato un volume o un originale sul PC.
 
 È stata disconnessa la sola vecchia sorgente Git automatica del frontend
 AssociaGo, che puntava alla copia nel monorepo precedente. La rilettura ha

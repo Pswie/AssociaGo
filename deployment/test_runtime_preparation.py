@@ -274,6 +274,37 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaises(deploy.PreparationError):
             environment()
 
+    def test_cloud_catalog_explicit_flag_scopes_memory_and_environment(self):
+        config = copy.deepcopy(self.config)
+        config.update(bandiNativeEnabled=True, bandiOfficialSourcesEnabled=True)
+        for enabled in (False, True):
+            config["bandiCloudCatalogEnabled"] = enabled
+            plan = deploy.prepare(config, self.public, self.root)
+            for app in deploy.APPS:
+                environment = json.loads((self.root / (app + "-runtime-env.json")).read_text())
+                service = next(item for item in plan["services"] if item["application"] == app)
+                self.assertEqual(
+                    environment.get("COLLAB_CLOUD_CATALOG_ENABLED"),
+                    "true" if app == "bandiPortal" and enabled else None,
+                )
+                expected = "2Gi" if app == "bandiPortal" and enabled else (
+                    "512Mi" if app == "bandiPortal" else "1Gi"
+                )
+                self.assertIn("--memory=" + expected, service["command"])
+                self.assertIn("--min=0", service["command"])
+                self.assertIn("--max=1", service["command"])
+
+    def test_cloud_catalog_flag_rejects_missing_prerequisites_and_non_booleans(self):
+        for native, official, enabled in (
+            (False, False, True), (True, False, True),
+            (True, True, "true"), (True, True, 1),
+        ):
+            config = copy.deepcopy(self.config)
+            config.update(bandiNativeEnabled=native, bandiOfficialSourcesEnabled=official,
+                          bandiCloudCatalogEnabled=enabled)
+            with self.assertRaises(deploy.PreparationError):
+                deploy.prepare(config, self.public, self.root)
+
     def test_official_sources_flag_is_opt_in_and_only_reaches_the_gateway(self):
         for enabled in (None, False, True):
             with self.subTest(enabled=enabled):

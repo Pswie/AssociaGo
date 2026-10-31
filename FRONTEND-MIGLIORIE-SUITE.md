@@ -1,8 +1,17 @@
 # Revisione frontend e Bandi completo online
 
-30 ottobre 2026. Piano operativo e registro degli interventi richiesti dopo
+31 ottobre 2026. Piano operativo e registro degli interventi richiesti dopo
 la conferma dell'utente che Gestionale e Progetti si aprono correttamente.
 Il resoconto generale rimane [PUBBLICAZIONE-SUITE.md](PUBBLICAZIONE-SUITE.md).
+
+L'ultimo rilascio aggiunge la copia generale dei metadati in Supabase Free:
+36 tabelle, 3.136.705 righe, circa 203 MB compressi. Fonti mostra gli archivi
+bandi, progetti e RUNTS, conservando le cinque fonti live e i permessi Clerk.
+Le 28 letture originali previste usano la copia quando il PC è offline;
+nelle schermate modificabili preferiscono il PC disponibile, evitando di
+nascondere una modifica appena salvata. Sono passati 743 test frontend e
+422 test backend, oltre alle letture reali del server Google. Copertura e
+limiti sono in [ARCHIVIO-CLOUD.md](../Bandi/integration/ARCHIVIO-CLOUD.md).
 
 ## Obiettivo e confini
 

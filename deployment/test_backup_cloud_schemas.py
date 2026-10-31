@@ -180,6 +180,76 @@ class BackupTests(unittest.TestCase):
         self.assertNotIn(self.source().password, " ".join(seen))
         self.assertNotIn("PGPASSWORD", " ".join(seen))
 
+    def test_only_catalog_cache_data_is_excluded_and_all_three_schemas_remain(self):
+        expected = [
+            "bandi_portal.catalog_snapshots",
+            "bandi_portal.catalog_chunks",
+            "bandi_portal.catalog_active",
+        ]
+        for schemas in (backup.SCHEMAS, ("bandi_portal",), ("associago", "librepm")):
+            with (
+                self.subTest(schemas=schemas),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                commands = []
+
+                def fake_command(output, args, state, **kwargs):
+                    commands.append(list(args))
+                    if args[0] == "pg_dump":
+                        (output / "archive.dump").write_bytes(
+                            b"PGDMP-synthetic-fixture"
+                        )
+                        return output / "command.stdout"
+                    listing = output / "archive.list"
+                    listing.write_text("synthetic TOC")
+                    return listing
+
+                with (
+                    patch.object(backup, "protect_directory"),
+                    patch.object(backup, "docker_command", side_effect=fake_command),
+                ):
+                    output = backup.run_backup(
+                        self.source(), Path(directory), schemas=schemas
+                    )
+                dump = commands[0]
+                exclusions = [
+                    arg.split("=", 1)[1]
+                    for arg in dump
+                    if arg.startswith("--exclude-table-data=")
+                ]
+                self.assertEqual(
+                    exclusions, expected if "bandi_portal" in schemas else []
+                )
+                self.assertEqual(
+                    [arg for arg in dump if arg.startswith("--schema=")],
+                    ["--schema=" + schema for schema in schemas],
+                )
+                self.assertFalse(
+                    any(arg.startswith("--exclude-table=") for arg in dump)
+                )
+                self.assertNotIn("--schema-only", dump)
+                self.assertNotIn("--data-only", dump)
+                self.assertEqual(
+                    commands[1], ["pg_restore", "--list", "/out/archive.dump"]
+                )
+                manifest = json.loads((output / "manifest.json").read_text())
+                self.assertEqual(manifest["cacheExcludedData"], exclusions)
+                self.assertEqual(
+                    manifest["cacheRegenerationRequired"], bool(exclusions)
+                )
+                self.assertFalse(manifest["restore_tested"])
+                if exclusions:
+                    self.assertIn(
+                        "restore empty, including the active pointer",
+                        manifest["cacheRestoreInstructions"],
+                    )
+                    self.assertIn(
+                        "verified metadata snapshot",
+                        manifest["cacheRestoreInstructions"],
+                    )
+                else:
+                    self.assertEqual(manifest["cacheRestoreInstructions"], "")
+
 
 if __name__ == "__main__":
     unittest.main()
