@@ -1,6 +1,6 @@
 {
-  "status": "published_cloud_catalog_and_native_tools",
-  "stagingManifest": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
+  "status": "published_cloudflare_archive_and_daily_discovery",
+  "stagingManifest": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
   "customDomainsAssigned": 3,
   "dnsChangesPerformed": 0,
@@ -39,22 +39,33 @@
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_AwATKBUPkkYvAG31sfery4xmfHrQ",
-      "url": "https://adf-bandi-portale-3xaotzfcl-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_A7fNLX4ygPifSKS4izrbYFryeQZR",
+      "url": "https://adf-bandi-portale-f8795xyhd-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "publicUrl": "https://bandi.angelidelfuturoaps.com",
-      "previousProductionDeploymentId": "dpl_Eh2bsaS1kQriCLF4QU9XdcmzrFDo",
-      "stagingManifest": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
+      "previousProductionDeploymentId": "dpl_7mKGGr32kPV1p2s1cLtoJCT9bGn4",
+      "stagingManifest": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
       "nativeModeEnabled": true,
-      "runtimeRevision": "adf-bandi-portale-api-catalog-20261031-c",
+      "runtimeRevision": "adf-bandi-portale-api-cf-20261101-b",
       "functionRegion": "fra1",
       "officialSourcesEnabled": true,
       "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
       "sourceBaseCommit": "269190371b20bc4baa21c09e686149d874b176f0",
       "cloudCatalogEnabled": true,
       "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:713f757555a9457102b73e78157e6a24f46eb5bd2af27ba5bdf188c9cd04b064",
-      "sourceCommit": "ee128728b8f1de10b973939cdc9ba641388b23a6"
+      "sourceCommit": "2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6",
+      "cloudCatalogStore": "cloudflare",
+      "runtimeSecretVersion": "2",
+      "nodeVersion": "22.x",
+      "discoveryEnabled": true,
+      "discoveryEntry": "https://bandi.angelidelfuturoaps.com/novita",
+      "retainedUnpromotedDeployments": [
+        "dpl_8RzpzXDnBpdzxqjGBFzo5iXfLdUt",
+        "dpl_Ckf6rqcccKyBwjGJ2BcjVK8vYwPG"
+      ],
+      "sourceBranch": "agent/phase-4-structured-extraction",
+      "sourcePublicationVerified": true
     },
     "primary": {
       "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
@@ -70,6 +81,104 @@
     }
   },
   "qaCompleted": [
+    "Cloudflare archive:13 authenticated chunks,202583336 packed bytes and493891584 expanded bytes have exact complete SHA256; anonymous/internal-asset/wrong-key requests denied.",
+    "Final API image2efd9f2ab6181f9004dff36586bdb21c5e81b06e6d2efad9a6c0c43461b6a6bf differs from the first candidate only by the actual ASGI event-loop fix, proven by regression tests.",
+    "Final focused API regression:115 tests,zero skips; local daily runner99 distinct cases and no unreviewed historical domain-writer restart.",
+    "Frontend208 focused tests,TypeScript,ESLint,Node22 actual Vercel build;17 frozen source hashes verified.",
+    "Frontend promoted once to A7fNL;13 public response statuses,bytes and raw SHA256 match direct candidate reads exactly; custom alias read back exact.",
+    "Actual Google runtime35 checks passed:28 native operations,three public catalogues,restricted RUNTS excluded for collaborators,discovery four-source contract;no PC queue or PostgreSQL snapshot reads.",
+    "Google cold RUNTS17.238s,subsequent projects1.065s and funding0.195s;process peak RSS411544KiB,not total instance memory.",
+    "Gateway cf-20261101-b promoted100 percent after verified image,secret2 and six public health/auth checks;secret1 retained; obsolete Docker revisions removed later at the user's express request.",
+    "Old PostgreSQL publisher paused by changing only publishEnabled=false;before configuration preserved and existing catalogue cache untouched.",
+    "Discovery cron-job.org8766630 created and read back,POSTevery5minutes with15-minute Worker gate,one source per check with24-hour source minimum;maintenance8758073 and other jobs unchanged.",
+    "CI workflow includes native workerd/D1,archive Node and Python tests,plus remote catalogue/discovery API modules;actionlint and local39Node+11Python contracts passed,no GitHub scheduler added or remote Actions run claimed.",
+    "All four official sources succeeded through legitimate cron-job.org invocations:87 references;4/4 source states verified,observer and tail processes closed.",
+    "Obsolete Docker cleanup completed after fresh global reference and OCI-closure checks:20 approved versions absent,4 zero-traffic revisions removed,only3 current builds remain;all3 service health checks200.",
+    "Bandi sources published and remote-ref verified:2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6,59 reviewed files;no credentials or user data."
+  ],
+  "qaPending": [
+    "A real file over4.5MiB through the production Vercel/Clerk session remains unverified.",
+    "New Fonti record interactions and every original business operation have not been exercised in the real owner session; Opera still requires reauthentication."
+  ],
+  "notes": [
+    "No DNS records were modified; three custom domains were assigned and verified.",
+    "Only the AssociaGo old monorepo Git link was disconnected via ordinary interactive confirmation; the primary Git link remains intact.",
+    "No user credentials or personal tokens were requested or inspected, and no user was impersonated.",
+    "Clerk development instance is retained; the server-controlled role mapping is documented in clerk-role-applied.json.",
+    "Intermediate protected deployments are retained separately and are not the current public production.",
+    "New Bandi runtime bundle version2 preserves the prior application credentials and adds distinct archive/discovery read keys;all prior versions and files remain retained."
+  ],
+  "legacyDomainRedirects": 4,
+  "knownIssues": [
+    "Legacy Python global Ruff/Black/mypy debt remains documented in Bandi/integration/CI-DEBITO-TECNICO.md.",
+    "Five live public sources have different supported filters; RUNTS name search is partial and has no WebForms pagination."
+  ],
+  "primaryStagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
+  "operationsInFlight": false,
+  "updatedAt": "2026-11-01T03:18:49.295986+00:00",
+  "stagingManifests": {
+    "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
+    "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
+    "bandi": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
+    "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
+  },
+  "userConfirmedAccess": {
+    "associago": true,
+    "librepm": true,
+    "primaryInternalService": true,
+    "bandiOriginalRunts": true
+  },
+  "workInProgress": [],
+  "promotionsPerformedBeforeFinalAudits": 19,
+  "cloudCatalog": {
+    "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
+    "databaseBytes": 230823603,
+    "compressedBytes": 202583336,
+    "chunks": 13,
+    "formatVersion": 3,
+    "databaseFormat": "duckdb",
+    "compression": "xz",
+    "tableCount": 36,
+    "rows": 3136705,
+    "runtimeMemory": "2Gi",
+    "maxCompressedBytes": 205000000,
+    "maxDatabaseBytes": 460000000,
+    "provider": "cloudflare-static-assets",
+    "retainedPostgresChunks": 194,
+    "worker": "angeli-del-futuro-archivio",
+    "workerVersion": "9b9e66b0-7ebd-4132-8054-b117e55f7a2a",
+    "supabasePayloadsRetained": true,
+    "supabaseSpaceFreedBytes": 0
+  },
+  "googleCleanup": {
+    "status": "succeeded",
+    "userExplicitlyAuthorizedObsoleteDockerDeletion": true,
+    "obsoleteBuildsRemoved": 6,
+    "obsoleteOciVersionsAbsent": 20,
+    "sdkVersionDeleteCommands": 14,
+    "relatedAttestationsRemovedByProvider": 6,
+    "zeroTrafficRevisionsRemoved": 4,
+    "obsoleteTagsRemoved": 2,
+    "retainedActiveSuiteRevisions": 3,
+    "retainedCurrentOciManifests": 9,
+    "retainedJobs": 1,
+    "retainedSecretVersions": 5,
+    "registryFilesBefore": 87,
+    "registryFilesAfter": 67,
+    "registryBytesBefore": 453904007,
+    "registryBytesAfter": 453876143,
+    "physicallyReclaimedManifestBytes": 27864,
+    "exclusiveBlobBytesAwaitingProviderGc": 52196016,
+    "genericCleanupPolicyDryRun": true,
+    "localDockerOrDatabaseOrUserFileDeletionPerformed": false,
+    "healthChecksAfterCleanup": [
+      200,
+      200,
+      200
+    ],
+    "receipt": "deployment\\.artifacts\\obsolete-suite-continuation-20261101-f2cd6193939e4ad1b97f35972fcda357\\receipt.json"
+  },
+  "historicalQaCompleted20261031": [
     "Four final production deployments READY and verified by project.targets.production.",
     "Four public HTTPS entry points return200; Bandi custom domain is not gated by Vercel Authentication.",
     "Real anonymous browser: all three applications automatically reach the central login and preserve the selected project in Clerk return parameters.",
@@ -119,57 +228,34 @@
     "Cloud backups exclude the data of three regenerable catalogue cache tables while keeping their DDL;8 unit tests and an isolated PostgreSQL restore drill preserve all7 authoritative test rows.",
     "After a fresh global reference audit,3 obsolete gateway revisions and exactly15 authorized OCI digests were removed;5 suite revisions and zero jobs remain, with production and rollback preserved.",
     "All56 deployment and backup helper tests passed after recording the verified release.",
-    "Bandi source commit ee128728b8f1de10b973939cdc9ba641388b23a6 pushed and read back from the reviewed private branch;62 exact source files and no credentials."
+    "Bandi source commit ee128728b8f1de10b973939cdc9ba641388b23a6 pushed and read back from the reviewed private branch;62 exact source files and no credentials.",
+    "Bandi source-browser copy cleanup:15 focused component tests,TypeScript and ESLint passed; only one deployed component changed,10 candidate and10 public HTTP/auth checks passed with identical bytes,custom domain exactdeployment verified. No database or gateway runtime change."
   ],
-  "qaPending": [
-    "A real file over4.5MiB through the production Vercel/Clerk session remains unverified.",
-    "New Fonti record interactions and every original business operation have not been exercised in the real owner session; Opera still requires reauthentication."
-  ],
-  "notes": [
-    "No DNS records were modified; three custom domains were assigned and verified.",
-    "Only the AssociaGo old monorepo Git link was disconnected via ordinary interactive confirmation; the primary Git link remains intact.",
-    "Primary and Bandi public configuration persisted for production/preview; existing server secrets were not decrypted, copied or changed.",
-    "No user credentials or personal tokens were requested or inspected, and no user was impersonated.",
-    "Clerk development instance is retained; the server-controlled role mapping is documented in clerk-role-applied.json.",
-    "Intermediate protected deployments are retained separately and are not the current public production."
-  ],
-  "legacyDomainRedirects": 4,
-  "knownIssues": [
-    "Legacy Python global Ruff/Black/mypy debt remains documented in Bandi/integration/CI-DEBITO-TECNICO.md.",
-    "Five live public sources have different supported filters; RUNTS name search is partial and has no WebForms pagination."
-  ],
-  "primaryStagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
-  "operationsInFlight": false,
-  "updatedAt": "2026-10-31T04:09:01.781427+00:00",
-  "stagingManifests": {
-    "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
-    "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
-    "bandi": "deployment/.artifacts/catalog-frontends-20261031-b/state.json",
-    "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
+  "dailyDiscovery": {
+    "provider": "cloudflare-d1",
+    "database": "angeli-del-futuro-bandi-quotidiani",
+    "databaseId": "18aa5abd-d6c0-4d3a-a81b-a454cf8eb1df",
+    "workerVersion": "d83121d1-600c-41a1-9996-0d76972d2583",
+    "cronProvider": "cron-job.org",
+    "cronJobId": 8766630,
+    "sources": 4,
+    "maxItems": 5000,
+    "observedCompleteSources": 4,
+    "observedTotalItems": 87,
+    "cycleVerified": true,
+    "observedCpuSpikesMs": [
+      14,
+      15,
+      8,
+      14
+    ],
+    "guaranteedCpuHeadroom": false,
+    "paidPlanActivated": false,
+    "cronPollMinutes": 5,
+    "workerFetchMinMinutes": 15,
+    "sourceMinHours": 24
   },
-  "userConfirmedAccess": {
-    "associago": true,
-    "librepm": true,
-    "primaryInternalService": true,
-    "bandiOriginalRunts": true
-  },
-  "workInProgress": [],
-  "promotionsPerformedBeforeFinalAudits": 19,
-  "cloudCatalog": {
-    "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
-    "databaseBytes": 230823603,
-    "compressedBytes": 202583336,
-    "chunks": 194,
-    "formatVersion": 3,
-    "databaseFormat": "duckdb",
-    "compression": "xz",
-    "tableCount": 36,
-    "rows": 3136705,
-    "runtimeMemory": "2Gi",
-    "maxCompressedBytes": 205000000,
-    "maxDatabaseBytes": 460000000
-  },
-  "googleCleanup": {
+  "historicalGoogleCleanup20261031": {
     "removedRevisionsThisRelease": 3,
     "removedOciDigestsThisRelease": 15,
     "retainedSuiteRevisions": 5,

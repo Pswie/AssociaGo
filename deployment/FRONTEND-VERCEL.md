@@ -1,13 +1,13 @@
 # Frontend pubblicati e accesso della suite
 
-31 ottobre 2026. I quattro frontend sono pubblicati sui domini dell'associazione.
+1 novembre 2026. I quattro frontend sono pubblicati sui domini dell'associazione.
 Il dubbio sul progetto Supabase è stato chiarito e la sospensione temporanea è
 terminata. Il sito principale mantiene tutte e cinque le aree con pari visibilità.
 Sono stati rimossi slogan, statistiche e spiegazioni tecniche dal percorso di accesso.
 
-Il Bandi corrente è `dpl_AwATKBUPkkYvAG31sfery4xmfHrQ`, regione `fra1`,
-con `NEXT_PUBLIC_CLOUD_CATALOG=1` e gateway `catalog-20261031-c` su Google.
-La variante include 743 test frontend superati, TypeScript e lint; dieci
+Il Bandi corrente è `dpl_A7fNLX4ygPifSKS4izrbYFryeQZR`, regione `fra1`,
+con `NEXT_PUBLIC_CLOUD_CATALOG=1` e gateway `cf-20261101-b` su Google.
+La base del catalogo aveva superato 743 test frontend, TypeScript e lint; dieci
 verifiche pubbliche corrispondono alla candidata e il dominio è associato
 allo stesso deployment. Le letture native previste interrogano lo stato
 autenticato del nodo: PC disponibile per le viste modificabili, altrimenti
@@ -16,6 +16,17 @@ Il limite BFF di queste letture è 90 secondi, comprensivo della scelta della
 fonte; un errore della copia non avvia richieste al PC. Gli altri frontend,
 il sito principale e i segreti server non sono stati ripubblicati o sostituiti
 in questa fase. Dettagli in [ARCHIVIO-CLOUD.md](../../Bandi/integration/ARCHIVIO-CLOUD.md).
+
+La nuova pagina [Novità bandi](https://bandi.angelidelfuturoaps.com/novita)
+usa lo stesso Clerk ed è disponibile anche ai collaboratori, senza richiedere
+il PC. BFF e gateway espongono soltanto la lettura autenticata dell'indice.
+Fonte, rilevamento, ultimo controllo riuscito ed errori sono distinti.
+
+Il rilascio finale usa Node 22: 208 regressioni mirate, TypeScript e lint
+riusciti, build reale Vercel e 13 confronti esatti dei corpi pubblici contro
+la candidata. Il dominio è stato riletto sul deployment preciso. Sono
+conservati il precedente `dpl_7mKGGr32kPV1p2s1cLtoJCT9bGn4` e le candidate
+intermedie. Nessun cambio DNS, piano o segreto frontend.
 
 **L'utente ha confermato l'apertura di Gestionale e Progetti dopo le correzioni.**
 Anche il funzionamento dei servizi interni sul sito principale era stato

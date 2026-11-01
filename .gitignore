@@ -93,6 +93,7 @@ local.properties
 .env.test.local
 .env.production.local
 .env.suite.local
+/.wrangler/
 *.keystore
 *.jks
 *.p12

@@ -1,8 +1,37 @@
 # Lavori sulla suite Angeli del Futuro
 
-Aggiornato il 31 ottobre 2026. Questo è il resoconto operativo corrente.
+Aggiornato il 1 novembre 2026. Questo è il resoconto operativo corrente.
 [LAVORI-INTEGRAZIONE.md](LAVORI-INTEGRAZIONE.md) descrive la prima integrazione;
 [MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md) la conversione dei database.
+
+Il controllo successivo su spazio e rischio di spesa è in
+[COSTI-E-ARCHIVIAZIONE.md](COSTI-E-ARCHIVIAZIONE.md): circa 211 MB degli
+attuali 231 MB sono la copia rigenerabile del catalogo. Lo spostamento su
+Cloudflare è ora pubblicato e verificato integralmente; il gateway aggiornato
+è in produzione dopo 35 letture reali riuscite da Google. Il vincolo resta nessun passaggio automatico a piani a pagamento.
+
+È stata pubblicata anche la pulizia della pagina Fonti: rimossi gli avvisi
+tecnici ripetitivi, mantenuti date, filtri e messaggi utili. Deployment Bandi
+`dpl_7mKGGr32kPV1p2s1cLtoJCT9bGn4`, con 15 test del componente, TypeScript,
+lint e dieci controlli pubblici superati. La ricerca quotidiana dei bandi è
+un requisito distinto: il controllo ha trovato un problema nell'avvio locale,
+non una ricerca cloud già attiva; esiti e copertura sono nella guida dedicata
+[RICERCA-QUOTIDIANA.md](../Bandi/integration/RICERCA-QUOTIDIANA.md).
+
+Il 1 novembre è stata riparata anche l'API locale: immagine riallineata alla
+migrazione `0033_suite_projects` già applicata, salute HTTP200 e database,
+container PostgreSQL e volumi invariati. Il flusso quotidiano ha superato
+99 verifiche mirate dopo l'isolamento del dispatch dei bandi; non è stata
+dichiarata una scansione remota mai avviata. Il collegamento Cloudflare è ora
+autenticato. L'utente ha precisato di volere una cartella «Angeli del Futuro»,
+non un nuovo account: è stata creata la cartella organizzativa
+`C:\Users\lange\Desktop\Github\Angeli del Futuro`, con i riferimenti ai
+repository e ai resoconti; l'account Cloudflare esistente è stato riutilizzato.
+Nessun nuovo account è stato creato. Da questa indicazione dell'utente in poi
+i file locali, gli originali e la copia Supabase restano conservati. La
+successiva richiesta esplicita «le vecchie immagini vanno cancellate» ha
+autorizzato la sola pulizia dei Docker Google obsoleti, conclusa dopo
+controllo globale dei riferimenti; non autorizza la pulizia Supabase.
 
 In [Bandi → Fonti](https://bandi.angelidelfuturoaps.com/fonti) è ora pubblicata
 anche una copia generale dei metadati: enti, progetti, bandi, graduatorie,
@@ -12,6 +41,71 @@ complessivamente circa **231 MB**. Gli originali, i PDF, i testi integrali e
 le lavorazioni locali restano sul PC. Le cinque fonti ufficiali live rimangono
 disponibili. Copertura, misure, permessi, limiti e comandi di aggiornamento
 sono in [ARCHIVIO-CLOUD.md](../Bandi/integration/ARCHIVIO-CLOUD.md).
+
+## Aggiornamento del 1 novembre: archivio e novità
+
+- [x] Cartella organizzativa «Angeli del Futuro», senza account cloud nuovi.
+- [x] Copia privata Cloudflare: 13 blocchi, hash completi verificati da remoto.
+- [x] Worker obbligatorio; accessi anonimi e chiavi errate rifiutati.
+- [x] Vecchio publisher PostgreSQL disabilitato, configurazione precedente conservata.
+- [x] API locale recuperata senza cambiare schema o volumi del database.
+- [x] Vecchio evento fermo prima dell'apply conservato e superato con ricevuta,
+  senza dichiararlo artificiosamente completato.
+- [x] Nuovo indice D1 e job cron-job.org `8766630`, ogni 5 minuti, con limiti interni di 15 minuti e 24 ore per fonte.
+- [x] Nuova pagina `/novita`, con lo stesso Clerk e accesso dei collaboratori.
+- [x] Completare 35 letture reali da Google e promuovere il gateway al 100%.
+- [x] Pubblicare il frontend Node 22: 208 regressioni e 13 confronti HTTP esatti.
+- [x] Verificare il primo giro reale: quattro fonti riuscite, 87 riferimenti, nessuna chiamata manuale.
+
+Le quattro fonti online sono CON IL SUD, Fondo per la Repubblica Digitale,
+Politiche Giovanili e PN Inclusione. Il controllo conserva riferimenti e
+metadati, senza scaricare PDF o avviare AI. «Rilevato il» non significa
+«pubblicato il»; stato aperto e scadenze vanno verificati sulla fonte.
+Il primo giro reale ha raccolto 50 schede CON IL SUD, 25 PN Inclusione,
+4 Politiche Giovanili e 8 Repubblica Digitale. Esiti tutti riusciti. I picchi
+CPU 14/15/8/14 ms sono stati accettati dal runtime; non sono un margine
+garantito rispetto ai 10 ms nominali Free. Nessun piano Paid attivato.
+
+La copia Supabase di circa 211 MB resta conservata secondo il divieto di
+cancellazione. Il database occupa ancora circa 231 MB: lo spazio non è
+stato recuperato. Soci, volontari, progetti propri, contabilità e bozze
+restano nei tre schemi privati.
+
+Le due immagini Docker di Gestionale e Progetti, richieste successivamente,
+sono state controllate in sola lettura: digest e JAR corrispondono agli
+originali pubblicati, entrambi i servizi sono sani. Il primo timeout del
+Gestionale dipendeva dall'avvio a freddo: 43,288 secondi di startup e prima
+risposta 47,097; a caldo 0,574 secondi. Progetti 0,428 secondi. Nessun
+riavvio o cambio di configurazione per questo controllo. Le dimensioni
+compresse sono circa 224,64 e 200,30 MB; i dieci layer comuni non vanno
+contati due volte. [Verifica delle immagini Google](deployment/VERIFICA-IMMAGINI-GOOGLE.md).
+
+Il gateway corrente legge l'archivio da Cloudflare, senza riusare le tabelle
+cache PostgreSQL. È stato corretto anche un errore asincrono intercettato
+nelle prove ASGI; la nuova immagine è stata collaudata dal runtime Google.
+Il bundle runtime Bandi è ora versione 2, con le credenziali applicative
+precedenti conservate e due chiavi di lettura distinte aggiunte.
+[Come aggiornare il rilascio corrente](deployment/AGGIORNARE-BANDI-CLOUDFLARE.md).
+
+Sono state eliminate **sei build Docker obsolete**, corrispondenti a
+20 versioni OCI, e quattro revisioni senza traffico. Restano le tre build
+in uso, con i nove manifest necessari, il job di collaudo e i segreti
+precedenti. Tutti i servizi rispondono 200 dopo la pulizia. Dei 20 elementi,
+14 sono stati rimossi con comandi SDK e sei attestazioni correlate dal
+provider; nessuna cancellazione di file locali, database o dati Cloudflare.
+
+Il registro misura ora **453.876.143 byte in 67 file**. La rimozione dei
+manifest ha liberato 27.864 byte; circa 52,20 MB di livelli non più usati
+attendono la raccolta automatica del provider. Non sono presentati come
+spazio già recuperato. Le regole generiche di cancellazione automatica
+restano in simulazione; le immagini sono state eliminate con una lista
+esplicita verificata, proteggendo quelle attive.
+
+I sorgenti Bandi di questo rilascio sono pubblicati e verificati su GitHub:
+commit `2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6`, 59 file nel ramo
+`agent/phase-4-structured-extraction` della repository privata
+`Pswie/ets-intelligence-graph`. La CI include i test del runtime Cloudflare;
+la ricerca quotidiana resta su cron-job.org, non su GitHub.
 
 ## Stato effettivo
 
@@ -89,9 +183,10 @@ di sessione non serve per questa architettura.
 
 L'archivio completo Bandi, PDF, indici vettoriali, Ollama e Agno rimangono sul PC.
 Una proiezione compatta e immutabile dei metadati è ora consultabile dal cloud.
-Il ruolo applicativo può soltanto leggere le tre tabelle della copia; la
-pubblicazione usa il proprietario separato sul PC. Queste tabelle rimangono
-private e non sono esposte dalla Data API.
+Il ruolo applicativo conserva la sola lettura delle tre tabelle della copia
+precedente; il gateway attuale usa invece la chiave privata Cloudflare. Il
+vecchio publisher PostgreSQL sul PC è disabilitato. Le tabelle conservate
+rimangono private e non sono esposte dalla Data API.
 La variante opzionale con tutto Bandi su PostgreSQL è collaudata, ma non è il
 modello scelto per questa pubblicazione. Il collegamento fra app è versionato:
 segnala indisponibilità e conflitti, senza promettere transazioni distribuite

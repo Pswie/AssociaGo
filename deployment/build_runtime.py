@@ -30,9 +30,12 @@ def gateway_modules(repository: Path) -> list[str]:
     modules += ["apps/api/official_sources/" + name + ".py" for name in (
         "__init__", "schemas", "http", "service", "router", "runts", "catalogues",
     )]
+    modules += ["apps/api/discovery/" + name + ".py" for name in (
+        "__init__", "service", "router",
+    )]
     modules += ["apps/api/cloud_catalog/" + name for name in (
         "__init__.py", "manager.py", "store.py", "router.py", "reader.py", "duckdb_backend.py",
-        "formats.py",
+        "formats.py", "remote_store.py",
         "read_operations.json", "adapters/__init__.py", "adapters/public_sources.py",
     )]
     modules += ["apps/api/" + name + ".py" for name in (
@@ -110,7 +113,14 @@ def main():
                 return
             except OSError:
                 if attempt == 5:
-                    raise
+                    # A transient heartbeat/log failure must not stop an active build.
+                    # The independent supervisor still owns the real process handle.
+                    try:
+                        with (directory / "state-fallback.log").open("a", encoding="utf-8") as output:
+                            output.write(datetime.now(timezone.utc).isoformat() + " STATE_WRITE_FAILED\n")
+                    except OSError:
+                        pass
+                    return
                 time.sleep(0.1 * (attempt + 1))
 
     def run(command, stage, limit):
