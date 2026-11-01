@@ -63,6 +63,7 @@ riavviate per far passare un test.
 | Manutenzione cron-job.org | Sei esecuzioni pianificate recenti, ogni 30 minuti, fino alle 04:00 UTC: tutte HTTP 200 nei log Google | Verificata senza chiamare manualmente il cron |
 | Backup notturno | Archivio dei tre schemi del 1 novembre: 492.454 byte, hash archivio e indice | Corretti |
 | API Docker del PC | Nuova immagine, scheda reale con riferimenti strutturati 200, salute 200 e richieste anonime 401 | Superati; database e impostazioni invariati |
+| AI locale | Ollama raggiungibile dall'API Docker; modelli configurati per generazione ed embedding già installati | Verificato senza generare testi o scaricare modelli |
 
 I test della sincronizzazione coprono identità comune del progetto, versioni,
 idempotenza, recupero degli errori, claim concorrenti, bozze private,
@@ -127,6 +128,9 @@ garantisce esecuzione quando Cloud Run scala a zero.
   backend ho eseguito le suite pertinenti e i controlli statici dei file
   modificati: non dichiaro risolto il debito statico generale già documentato
   in `Bandi/integration/CI-DEBITO-TECNICO.md`.
+- Il browser anonimo ha coperto dieci casi: sito principale, Gestionale e
+  Progetti a 375/768/1440 pixel, Bandi a 1440 pixel. Nessun overflow nei casi
+  provati; il controllo mobile di Bandi nella sessione reale rimane distinto.
 
 Un primo test sintetico del nodo aveva un percorso temporaneo di 261
 caratteri, oltre il limite Windows: conservata la prova, gli stessi 23 test

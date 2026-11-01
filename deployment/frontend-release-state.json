@@ -301,6 +301,12 @@
     "frontendDeploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
     "frontendPublicChecks": 15,
     "frontendReceipt": "deployment/.artifacts/provenance-ui-production-20261101-3413c210d2904d7a8b7bad2e8d2e8bf8/receipt.json",
-    "operationsInFlight": false
+    "operationsInFlight": false,
+    "localAiReadiness": {
+      "ollamaReachable": true,
+      "generationModelInstalled": true,
+      "embeddingModelInstalled": true,
+      "generationCalls": 0
+    }
   }
 }
