@@ -1,6 +1,6 @@
 {
-  "status": "published_cloudflare_archive_and_daily_discovery",
-  "stagingManifest": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
+  "status": "published_bandi_operational_catalogue",
+  "stagingManifest": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
   "customDomainsAssigned": 3,
   "dnsChangesPerformed": 0,
@@ -39,34 +39,46 @@
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
-      "url": "https://adf-bandi-portale-fabfj2jd6-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb",
+      "url": "https://adf-bandi-portale-o7zzzmkzk-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "publicUrl": "https://bandi.angelidelfuturoaps.com",
-      "previousProductionDeploymentId": "dpl_A7fNLX4ygPifSKS4izrbYFryeQZR",
-      "stagingManifest": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
+      "previousProductionDeploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
+      "stagingManifest": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/state.json",
       "nativeModeEnabled": true,
-      "runtimeRevision": "adf-bandi-portale-api-cf-20261101-c",
+      "runtimeRevision": "adf-bandi-portale-api-operativi-20261101-b",
       "functionRegion": "fra1",
       "officialSourcesEnabled": true,
       "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
-      "sourceBaseCommit": "2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6",
+      "sourceBaseCommit": "ead581a5ea68c1b3b6eb263e36a4551938b6caa7",
       "cloudCatalogEnabled": true,
-      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:455e63ece0f6080452a90d866f5e53425d661c4dd793739398a36a6b69f4176c",
-      "sourceCommit": "ead581a5ea68c1b3b6eb263e36a4551938b6caa7",
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc",
+      "sourceCommit": "fd7976c26244b7160e8aa7d0f839a2e720d32c08",
       "cloudCatalogStore": "cloudflare",
-      "runtimeSecretVersion": "2",
+      "runtimeSecretVersion": "3",
       "nodeVersion": "22.x",
       "discoveryEnabled": true,
       "discoveryEntry": "https://bandi.angelidelfuturoaps.com/novita",
       "retainedUnpromotedDeployments": [
         "dpl_8RzpzXDnBpdzxqjGBFzo5iXfLdUt",
         "dpl_Ckf6rqcccKyBwjGJ2BcjVK8vYwPG",
-        "dpl_7xREzBay5AmbwckD2xnt1hDoUX1N"
+        "dpl_7xREzBay5AmbwckD2xnt1hDoUX1N",
+        "dpl_9sy4PERtTsWQHA9fQGcdUeP4ghof"
       ],
       "sourceBranch": "agent/phase-4-structured-extraction",
-      "sourcePublicationVerified": true
+      "sourcePublicationVerified": true,
+      "sourceHashManifest": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/source-review.json",
+      "sourceHashesVerified": 47,
+      "sourcePackageFilesVerified": 244,
+      "operationalBandiEnabled": true,
+      "operationalBandiEntry": "https://bandi.angelidelfuturoaps.com/bandi",
+      "defaultReadMode": "online",
+      "pageSize": 5,
+      "localCompanionOrigin": "http://127.0.0.1:8768",
+      "publicVerificationReceipt": "deployment/.artifacts/bandi-operativi-ui-production-20261101-699bab7bdab44db5a4d7d86093a06797/receipt.json",
+      "gatewayVerificationReceipt": "deployment/.artifacts/bandi-operativi-gcp-cursor-20261101-ec8ab0a1895049f28ee14b2abba3f5fd/promotion-run/receipt.json",
+      "sourcePublicationProof": "deployment/.artifacts/bandi-operativi-git-publication-20261101-4803d2be8e8f4ea7ba5d78da78508f7f/frontend47-normalized-source-proof.json"
     },
     "primary": {
       "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
@@ -98,12 +110,17 @@
     "Bandi sources published and remote-ref verified:2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6,59 reviewed files;no credentials or user data.",
     "Fresh full-suite audit:210 backend/database/node tests,17 domain regressions,820 Bandi web tests and58 other frontend auth/API tests passed;18 live GET-only peer probes passed.",
     "Structured project provenance now renders correctly;new Google revision-c/455e and local Docker6701 verified with real read-only project responses;node restarted gracefully and old images/logs preserved.",
-    "Final Bandi frontend H6qXR:15 public HTTP status/body SHA checks passed,actual favicon307 to official PNG200 and HTML icons verified;sourceead581 remote-ref verified."
+    "Final Bandi frontend H6qXR:15 public HTTP status/body SHA checks passed,actual favicon307 to official PNG200 and HTML icons verified;sourceead581 remote-ref verified.",
+    "Bandi operational catalogue: genuine five-record cursor pagination, lifecycle/profile/analysis filters, lazy detail and advanced radar; no global node polling.",
+    "907 full web tests passed before the final manual-probe timeout delta;23 focused browser/device tests,TypeScript and scopedESLint passed after it. Browser fixtures at390/768/1440 passed with zero axe violations;real owner browser session and local-network permission remain unverified.",
+    "Gateway operativi-20261101-b serves100 percent with pinned runtime3;22 actual cloud image/read checks, including signed cursor pagination, then9 public health/auth checks passed;runtimeTTL180 verified.",
+    "Frontend4zhag promoted once;19 public statuses,body bytes and SHA256 match the READY Node22 candidate exactly;custom alias/project and47 source/244 package hashes verified."
   ],
   "qaPending": [
     "Real owner Clerk session and navigation remain unverified because Opera still requires reauthentication.",
     "A real file over4.5MiB through production Vercel/Clerk remains unverified;transfer logic has automated tests.",
-    "AI generations,submissions and a full local daily-writer rerun were not started for this audit;isolated logic and online four-source cron were checked."
+    "AI generations,submissions and a full local daily-writer rerun were not started for this audit;isolated logic and online four-source cron were checked.",
+    "Real browser local-network permission for Usa questo PC remains unverified;automatic pairing uses1.5s,explicit choice allows30s and denial falls back online."
   ],
   "notes": [
     "No DNS records were modified; three custom domains were assigned and verified.",
@@ -120,11 +137,11 @@
   ],
   "primaryStagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
   "operationsInFlight": false,
-  "updatedAt": "2026-11-01T03:18:49.295986+00:00",
+  "updatedAt": "2026-11-01T19:57:16.548756+00:00",
   "stagingManifests": {
     "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
     "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
-    "bandi": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
+    "bandi": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/state.json",
     "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
   },
   "userConfirmedAccess": {
@@ -308,5 +325,55 @@
       "embeddingModelInstalled": true,
       "generationCalls": 0
     }
-  }
+  },
+  "bandiOperationalRelease": {
+    "recordedAt": "2026-11-01T18:45:20.197562+00:00",
+    "frontendDeploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb",
+    "frontendPublicChecks": 19,
+    "frontendSourceHashes": 47,
+    "frontendFullTestsBeforeFinalDelta": 907,
+    "frontendFocusedTestsAfterFinalDelta": 23,
+    "gatewayRevision": "adf-bandi-portale-api-operativi-20261101-b",
+    "gatewayImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc",
+    "runtimeSecretVersion": "3",
+    "runtimePayloadSha256": "a1fcc26484020b79bc36250de0df0fe8fc5d542dabcfd4beb637290e1f982983",
+    "nodeOnlineSeconds": 180,
+    "cloudReadChecks": 22,
+    "signedCursorRoundTripVerified": true,
+    "googleRegistryBytes": 402254357,
+    "googleNonDestroyedSecretVersions": 6,
+    "googleFreeSecretVersionAllowanceRemaining": 0,
+    "oldImagesRevisionsDeploymentsRetained": true,
+    "paidPlanActivated": false,
+    "publicReceipt": "deployment/.artifacts/bandi-operativi-ui-production-20261101-699bab7bdab44db5a4d7d86093a06797/receipt.json",
+    "gatewayReceipt": "deployment/.artifacts/bandi-operativi-gcp-cursor-20261101-ec8ab0a1895049f28ee14b2abba3f5fd/promotion-run/receipt.json",
+    "cloudReadReceipt": "deployment/.artifacts/bandi-operativi-gcp-cursor-20261101-ec8ab0a1895049f28ee14b2abba3f5fd/readproof-fixed-run/receipt.json",
+    "sourcePublicationVerified": true,
+    "report": "deployment/BANDI-INTERVENTI-20261101.md",
+    "gatewayAndNodeTests": 95,
+    "localCatalogAndQueueTests": 109,
+    "sourceParserAndSyncTests": 82,
+    "workerNativeTests": 29,
+    "localCatalogColdSeconds": 0.833,
+    "operationalWorkerVersion": "e5693862-4387-47a3-9dc3-3c048714bf21",
+    "localReaderPid": 28700,
+    "nodeRunnerPid": 11524,
+    "nodeSupervisorPid": 62420,
+    "catalogTimerEnabled": true,
+    "catalogTimerSeconds": 300,
+    "catalogControllerMaxSeconds": 1200,
+    "catalogTaskMaxSeconds": 1320,
+    "sourceSyncEnabled": true,
+    "analysisQueuePaused": false,
+    "activeAnalysisRequests": 0,
+    "validRealPreview": "Intrapresa Sociale 2026",
+    "explicitUnvalidatedCases": [
+      "Campania: packet exceeds native context",
+      "CIS: reader admission-route validation failed"
+    ],
+    "sourceCommit": "fd7976c26244b7160e8aa7d0f839a2e720d32c08",
+    "sourcePublicationProof": "deployment/.artifacts/bandi-operativi-git-publication-20261101-4803d2be8e8f4ea7ba5d78da78508f7f/frontend47-normalized-source-proof.json"
+  },
+  "latestReviewReport": "deployment/BANDI-INTERVENTI-20261101.md",
+  "latestQaIsEarlierFullSuiteBaseline": true
 }

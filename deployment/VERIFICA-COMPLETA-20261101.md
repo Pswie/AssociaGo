@@ -1,3 +1,5 @@
+> Aggiornamento successivo del 1 novembre 2026: [nuovo resoconto Bandi](BANDI-INTERVENTI-20261101.md). Le misure e i PID nel documento seguente appartengono al collaudo precedente; il registro Google ora misura circa 402,3 MB e i livelli da 52 MB sono stati recuperati.
+
 # Verifica della suite Angeli del Futuro
 
 Controllo del 1 novembre 2026. Questo documento distingue le prove sui servizi

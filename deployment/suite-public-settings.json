@@ -8,8 +8,10 @@
     "preparedImages": {
       "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:1b5e8a2d6163cc5876e5b18b459919459443de9eb3874495677ad6155fc51f41",
       "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:18981e863362d3a15a7a278e29577a1e1c05b2f646a73d96de878f0ec8447b3c",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:455e63ece0f6080452a90d866f5e53425d661c4dd793739398a36a6b69f4176c"
-    }
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc"
+    },
+    "bandiGatewayRevision": "adf-bandi-portale-api-operativi-20261101-b",
+    "bandiGatewayRuntimeSecretVersion": "3"
   },
   "vercel": {
     "teamId": "team_IO082y04OBhGW2doFuF6qYcy",
@@ -17,7 +19,8 @@
     "librepmProjectId": "prj_4oEizJdNAACf5Xfc0v9SnKTYjVln",
     "mainSiteProjectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
     "bandiPortalProjectName": "adf-bandi-portale",
-    "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO"
+    "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
+    "bandiPortalDeploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb"
   },
   "origins": {
     "primary": "https://www.angelidelfuturoaps.com",
@@ -52,7 +55,7 @@
   "supabaseCertificateSha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
   "supabasePlan": "free",
   "allowPaidSupabase": false,
-  "status": "published-cloud-catalog-and-native-tools",
+  "status": "published-bandi-operational-catalogue",
   "supabaseProjectName": "Angeli del futuro",
   "cloudCatalog": {
     "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
@@ -73,5 +76,14 @@
     "legacyPostgresMaxDatabaseBytes": 460000000,
     "worker": "angeli-del-futuro-archivio",
     "workerVersion": "9b9e66b0-7ebd-4132-8054-b117e55f7a2a"
+  },
+  "bandiOperationalCatalogue": {
+    "entry": "https://bandi.angelidelfuturoaps.com/bandi",
+    "pageSize": 5,
+    "origin": "https://angeli-del-futuro-bandi-quotidiani.render-keepalive.workers.dev",
+    "defaultReadMode": "online",
+    "ownerLocalCompanionOrigin": "http://127.0.0.1:8768",
+    "onlineDataStore": "cloudflare-d1",
+    "nodeOnlineSeconds": 180
   }
 }

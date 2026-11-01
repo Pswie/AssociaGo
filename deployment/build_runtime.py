@@ -33,6 +33,9 @@ def gateway_modules(repository: Path) -> list[str]:
     modules += ["apps/api/discovery/" + name + ".py" for name in (
         "__init__", "service", "router",
     )]
+    modules += ["apps/api/bandi_catalog/" + name for name in (
+        "__init__.py", "contracts.py", "service.py", "router.py", "schema.json",
+    )]
     modules += ["apps/api/cloud_catalog/" + name for name in (
         "__init__.py", "manager.py", "store.py", "router.py", "reader.py", "duckdb_backend.py",
         "formats.py", "remote_store.py",

@@ -229,8 +229,14 @@ class CloudflareGatewayTests(unittest.TestCase):
     def test_gateway_context_includes_remote_reader_but_no_exporter_or_publisher(self):
         modules = build_runtime.gateway_modules(runtime.ROOT.parent.parent / "Bandi")
         self.assertIn("apps/api/cloud_catalog/remote_store.py", modules)
+        self.assertEqual(
+            [name for name in modules if name.startswith("apps/api/bandi_catalog/")],
+            ["apps/api/bandi_catalog/" + name for name in (
+                "__init__.py", "contracts.py", "router.py", "schema.json", "service.py",
+            )],
+        )
         self.assertFalse(
-            any("publisher" in name or "exporter" in name for name in modules)
+            any(any(part in name for part in ("publisher", "exporter", "local_reader", "projection", "analysis_loop")) for name in modules)
         )
 
     def test_archive_gate_needs_exact_byte_hash_full_verification_and_private_routing(
