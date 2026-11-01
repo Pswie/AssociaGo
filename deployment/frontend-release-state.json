@@ -1,6 +1,6 @@
 {
   "status": "published_cloudflare_archive_and_daily_discovery",
-  "stagingManifest": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
+  "stagingManifest": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
   "customDomainsAssigned": 3,
   "dnsChangesPerformed": 0,
@@ -39,22 +39,22 @@
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_A7fNLX4ygPifSKS4izrbYFryeQZR",
-      "url": "https://adf-bandi-portale-f8795xyhd-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
+      "url": "https://adf-bandi-portale-fabfj2jd6-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "publicUrl": "https://bandi.angelidelfuturoaps.com",
-      "previousProductionDeploymentId": "dpl_7mKGGr32kPV1p2s1cLtoJCT9bGn4",
-      "stagingManifest": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
+      "previousProductionDeploymentId": "dpl_A7fNLX4ygPifSKS4izrbYFryeQZR",
+      "stagingManifest": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
       "nativeModeEnabled": true,
-      "runtimeRevision": "adf-bandi-portale-api-cf-20261101-b",
+      "runtimeRevision": "adf-bandi-portale-api-cf-20261101-c",
       "functionRegion": "fra1",
       "officialSourcesEnabled": true,
       "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
-      "sourceBaseCommit": "269190371b20bc4baa21c09e686149d874b176f0",
+      "sourceBaseCommit": "2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6",
       "cloudCatalogEnabled": true,
-      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:713f757555a9457102b73e78157e6a24f46eb5bd2af27ba5bdf188c9cd04b064",
-      "sourceCommit": "2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6",
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:455e63ece0f6080452a90d866f5e53425d661c4dd793739398a36a6b69f4176c",
+      "sourceCommit": "ead581a5ea68c1b3b6eb263e36a4551938b6caa7",
       "cloudCatalogStore": "cloudflare",
       "runtimeSecretVersion": "2",
       "nodeVersion": "22.x",
@@ -62,7 +62,8 @@
       "discoveryEntry": "https://bandi.angelidelfuturoaps.com/novita",
       "retainedUnpromotedDeployments": [
         "dpl_8RzpzXDnBpdzxqjGBFzo5iXfLdUt",
-        "dpl_Ckf6rqcccKyBwjGJ2BcjVK8vYwPG"
+        "dpl_Ckf6rqcccKyBwjGJ2BcjVK8vYwPG",
+        "dpl_7xREzBay5AmbwckD2xnt1hDoUX1N"
       ],
       "sourceBranch": "agent/phase-4-structured-extraction",
       "sourcePublicationVerified": true
@@ -94,11 +95,15 @@
     "CI workflow includes native workerd/D1,archive Node and Python tests,plus remote catalogue/discovery API modules;actionlint and local39Node+11Python contracts passed,no GitHub scheduler added or remote Actions run claimed.",
     "All four official sources succeeded through legitimate cron-job.org invocations:87 references;4/4 source states verified,observer and tail processes closed.",
     "Obsolete Docker cleanup completed after fresh global reference and OCI-closure checks:20 approved versions absent,4 zero-traffic revisions removed,only3 current builds remain;all3 service health checks200.",
-    "Bandi sources published and remote-ref verified:2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6,59 reviewed files;no credentials or user data."
+    "Bandi sources published and remote-ref verified:2705d3d6f3ad36862c0baf03a2ec0f9798bd7ac6,59 reviewed files;no credentials or user data.",
+    "Fresh full-suite audit:210 backend/database/node tests,17 domain regressions,820 Bandi web tests and58 other frontend auth/API tests passed;18 live GET-only peer probes passed.",
+    "Structured project provenance now renders correctly;new Google revision-c/455e and local Docker6701 verified with real read-only project responses;node restarted gracefully and old images/logs preserved.",
+    "Final Bandi frontend H6qXR:15 public HTTP status/body SHA checks passed,actual favicon307 to official PNG200 and HTML icons verified;sourceead581 remote-ref verified."
   ],
   "qaPending": [
-    "A real file over4.5MiB through the production Vercel/Clerk session remains unverified.",
-    "New Fonti record interactions and every original business operation have not been exercised in the real owner session; Opera still requires reauthentication."
+    "Real owner Clerk session and navigation remain unverified because Opera still requires reauthentication.",
+    "A real file over4.5MiB through production Vercel/Clerk remains unverified;transfer logic has automated tests.",
+    "AI generations,submissions and a full local daily-writer rerun were not started for this audit;isolated logic and online four-source cron were checked."
   ],
   "notes": [
     "No DNS records were modified; three custom domains were assigned and verified.",
@@ -119,7 +124,7 @@
   "stagingManifests": {
     "associago": "deployment/.artifacts/frontend-associago-brand-20261030T162845Z/state.json",
     "librepm": "deployment/.artifacts/frontend-librepm-brand-20261030T160627Z/state.json",
-    "bandi": "deployment/.artifacts/discovery-ui-node22-20261101-1cc1220d8524452291d94c9b205afc44/state.json",
+    "bandi": "deployment/.artifacts/provenance-ui-redirect-20261101-612411915e5a40229ea3353650d3d2fd/state.json",
     "primary": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json"
   },
   "userConfirmedAccess": {
@@ -132,7 +137,7 @@
   "promotionsPerformedBeforeFinalAudits": 19,
   "cloudCatalog": {
     "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
-    "databaseBytes": 230823603,
+    "databaseBytes": 493891584,
     "compressedBytes": 202583336,
     "chunks": 13,
     "formatVersion": 3,
@@ -142,13 +147,15 @@
     "rows": 3136705,
     "runtimeMemory": "2Gi",
     "maxCompressedBytes": 205000000,
-    "maxDatabaseBytes": 460000000,
+    "maxDatabaseBytes": 1073741824,
     "provider": "cloudflare-static-assets",
     "retainedPostgresChunks": 194,
     "worker": "angeli-del-futuro-archivio",
     "workerVersion": "9b9e66b0-7ebd-4132-8054-b117e55f7a2a",
     "supabasePayloadsRetained": true,
-    "supabaseSpaceFreedBytes": 0
+    "supabaseSpaceFreedBytes": 0,
+    "supabaseDatabaseBytes": 230856371,
+    "legacyPostgresMaxDatabaseBytes": 460000000
   },
   "googleCleanup": {
     "status": "succeeded",
@@ -262,5 +269,38 @@
     "temporaryJobs": 0,
     "registryBytes": 502710003,
     "productionAndRollbackRetained": true
+  },
+  "latestQa": {
+    "date": "2026-11-01",
+    "report": "deployment/VERIFICA-COMPLETA-20261101.md",
+    "applicationTests": 210,
+    "domainTests": 17,
+    "bandiWebTests": 820,
+    "associagoWebAuthTests": 27,
+    "librepmWebAuthTests": 31,
+    "peerLiveGets": 18,
+    "pcCatalogReads": 28,
+    "googleCloudReadChecks": 35,
+    "realClerkSessionVerified": false,
+    "googleRegistryBytes": 454063160,
+    "googleRegistryFiles": 73,
+    "previousGatewayRevisionRetained": "adf-bandi-portale-api-cf-20261101-b",
+    "frontendPublication": "passed",
+    "pcRuntimeRefresh": "passed",
+    "localApiImage": "sha256:6701d9f3ee864281c5f699f1b78a4695a45b34f56626a2fe5ac449949f3cade2",
+    "nodeRunnerPid": 60204,
+    "nodeSupervisorPid": 59052,
+    "maintenanceRecentScheduledHttpStatuses": [
+      200,
+      200,
+      200,
+      200,
+      200,
+      200
+    ],
+    "frontendDeploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
+    "frontendPublicChecks": 15,
+    "frontendReceipt": "deployment/.artifacts/provenance-ui-production-20261101-3413c210d2904d7a8b7bad2e8d2e8bf8/receipt.json",
+    "operationsInFlight": false
   }
 }

@@ -1,5 +1,14 @@
 # Verifica dei Docker di Gestionale e Progetti
 
+Il [collaudo successivo della suite](VERIFICA-COMPLETA-20261101.md) conferma
+nuovamente i due servizi. Il Gestionale ha risposto 200 dopo 48,176 secondi
+di avvio a freddo. La correzione successiva di Bandi è pubblicata nella
+revisione `cf-20261101-c`, immagine `455e63ece0f6080452a90d866f5e53425d661c4dd793739398a36a6b69f4176c`;
+la precedente `cf-20261101-b` è conservata per ripristino. La nuova misura
+del registro è 454.063.160 byte, dopo l'aggiunta di 187.017 byte.
+I conteggi della pulizia più sotto descrivono l'operazione già completata,
+prima di questo aggiornamento correttivo.
+
 Controllo del **1 novembre 2026**, aggiornato dopo la pulizia delle 04:15,
 fuso Europe/Rome. Entrambi i servizi sono operativi. Il timeout osservato sul
 Gestionale dipendeva dall'avvio a freddo: la richiesta è poi terminata con

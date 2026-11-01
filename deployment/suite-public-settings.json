@@ -8,7 +8,7 @@
     "preparedImages": {
       "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:1b5e8a2d6163cc5876e5b18b459919459443de9eb3874495677ad6155fc51f41",
       "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:18981e863362d3a15a7a278e29577a1e1c05b2f646a73d96de878f0ec8447b3c",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:2efd9f2ab6181f9004dff36586bdb21c5e81b06e6d2efad9a6c0c43461b6a6bf"
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:455e63ece0f6080452a90d866f5e53425d661c4dd793739398a36a6b69f4176c"
     }
   },
   "vercel": {
@@ -56,9 +56,9 @@
   "supabaseProjectName": "Angeli del futuro",
   "cloudCatalog": {
     "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
-    "databaseBytes": 230823603,
+    "databaseBytes": 493891584,
     "compressedBytes": 202583336,
-    "chunks": 194,
+    "chunks": 13,
     "formatVersion": 3,
     "databaseFormat": "duckdb",
     "compression": "xz",
@@ -66,6 +66,12 @@
     "rows": 3136705,
     "runtimeMemory": "2Gi",
     "maxCompressedBytes": 205000000,
-    "maxDatabaseBytes": 460000000
+    "maxDatabaseBytes": 1073741824,
+    "provider": "cloudflare-static-assets",
+    "supabaseDatabaseBytes": 230856371,
+    "retainedPostgresChunks": 194,
+    "legacyPostgresMaxDatabaseBytes": 460000000,
+    "worker": "angeli-del-futuro-archivio",
+    "workerVersion": "9b9e66b0-7ebd-4132-8054-b117e55f7a2a"
   }
 }

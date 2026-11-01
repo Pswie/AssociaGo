@@ -4,6 +4,16 @@ Aggiornato il 1 novembre 2026. Questo è il resoconto operativo corrente.
 [LAVORI-INTEGRAZIONE.md](LAVORI-INTEGRAZIONE.md) descrive la prima integrazione;
 [MIGRAZIONE-SUPABASE.md](MIGRAZIONE-SUPABASE.md) la conversione dei database.
 
+Il successivo [collaudo completo del 1 novembre](deployment/VERIFICA-COMPLETA-20261101.md)
+ha trovato e corretto il nodo PC fermo e l'errore sulle schede progetto con
+riferimenti alle fonti strutturati. Il gateway pubblicato è ora
+`adf-bandi-portale-api-cf-20261101-c`; la precedente revisione è conservata.
+Le prove nuove comprendono 210 test di database/sincronizzazione/nodo,
+17 test di dominio, 820 test frontend Bandi, 58 test degli altri frontend,
+18 GET peer reali, 28 consultazioni PC e 35 verifiche dall'immagine Google.
+Il collaudo del login nella sessione reale resta distinto: Opera continua
+a richiedere una nuova autenticazione. I dettagli e i limiti sono nel rapporto.
+
 Il controllo successivo su spazio e rischio di spesa è in
 [COSTI-E-ARCHIVIAZIONE.md](COSTI-E-ARCHIVIAZIONE.md): circa 211 MB degli
 attuali 231 MB sono la copia rigenerabile del catalogo. Lo spostamento su

@@ -1,5 +1,16 @@
 # Spazio, costi e aggiornamento dei bandi
 
+Nel successivo [collaudo completo](deployment/VERIFICA-COMPLETA-20261101.md)
+è stata pubblicata una correzione del gateway Bandi. Il registro Google
+misura ora **454.063.160 byte**, inclusi i livelli non ancora raccolti da
+Google. I **52.196.016 byte** indicati come recupero in attesa sono livelli
+non più utilizzati delle build già eliminate: Google documenta la raccolta
+giornaliera dei livelli senza riferimenti nella
+[guida alla rimozione delle immagini](https://docs.cloud.google.com/artifact-registry/docs/docker/manage-images#deleting_images).
+Non sono file dell'associazione; non sottraggo questi byte prima del recupero
+effettivo. La revisione precedente del nuovo gateway è conservata per il
+ritorno alla versione precedente; nessun piano o impostazione di spesa è cambiato.
+
 Aggiornamento del **1 novembre 2026**: l'utente ha autorizzato il collegamento
 ufficiale Cloudflare e precisato che vuole una **cartella Angeli del Futuro**,
 non un nuovo account. La cartella organizzativa è stata creata in
