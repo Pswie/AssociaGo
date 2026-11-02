@@ -85,5 +85,62 @@
     "ownerLocalCompanionOrigin": "http://127.0.0.1:8768",
     "onlineDataStore": "cloudflare-d1",
     "nodeOnlineSeconds": 180
+  },
+  "bandiFrontendRelease20261102": {
+    "status": "published_verified",
+    "recordedAt": "2026-11-02T00:05:23.335627+00:00",
+    "frontendDeploymentId": "dpl_CM5dfKUcxVeHHhni8nYnabztvWCs",
+    "deploymentUrl": "https://adf-bandi-portale-b5scatxx3-villa-langellottis-projects.vercel.app",
+    "publicUrl": "https://bandi.angelidelfuturoaps.com/bandi",
+    "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
+    "nodeVersion": "22.x",
+    "functionRegion": "fra1",
+    "previousDeploymentRetained": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb",
+    "sourceBaseCommit": "fd7976c26244b7160e8aa7d0f839a2e720d32c08",
+    "sourceCommit": "f380315a37fb6ddbb40abc65ab066312e2cfa3f6",
+    "sourcePublicationVerified": true,
+    "sourceHashes": 47,
+    "changedSourceFiles": [
+      "apps/web/src/app/bandi/bandi.css",
+      "apps/web/src/components/bandi-browser.test.tsx",
+      "apps/web/src/components/bandi-browser.tsx"
+    ],
+    "sourceReview": "deployment/.artifacts/bandi-pagination-candidate-20261102-b32b23e5d91c42b8abff109ba253811b/source-review.json",
+    "sourceReviewSha256": "f8f56b21ca0f58c484f25863253cf90d6b90be05bc104ca9c7ebec6eefc35235",
+    "packageFiles": 244,
+    "frontendTests": 916,
+    "frontendTestFiles": 100,
+    "typecheck": "passed",
+    "eslintAllWeb": "passed",
+    "browserWidths": [
+      375,
+      768,
+      1440
+    ],
+    "browserOverflowDetected": false,
+    "automatedAxeViolations": 0,
+    "syntheticOnlineAndLocalPaginationVerified": true,
+    "realOwnerSessionVerified": false,
+    "realBrowserLocalNetworkPermissionVerified": false,
+    "candidateHttpChecks": 19,
+    "publicHttpChecks": 19,
+    "compiledAssetsChecks": 2,
+    "allPublicBodyBytesAndShaMatchCandidate": true,
+    "sourceBaselineRecordPreserved": "deployments.bandi",
+    "runtimeUnchanged": {
+      "revision": "adf-bandi-portale-api-operativi-20261101-b",
+      "image": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc",
+      "secretVersion": "3",
+      "trafficPercent": 100
+    },
+    "deployCalls": 1,
+    "promotionCalls": 1,
+    "dnsChanges": 0,
+    "secretWrites": 0,
+    "newPaidPlans": 0,
+    "filesDeleted": false,
+    "receipt": "deployment/.artifacts/bandi-pagination-production-20261102-af24a104ea1f4bc98ba2ab3f3cb16baa/receipt.json",
+    "compiledAssetsReceipt": "deployment/.artifacts/bandi-pagination-candidate-20261102-b32b23e5d91c42b8abff109ba253811b/assets-public/receipt.json",
+    "validationReceipt": "deployment/.artifacts/bandi-pagination-ui-20261102-b800faf497d04d94ac432d8c127de77a/final-verification-receipt.json"
   }
 }
