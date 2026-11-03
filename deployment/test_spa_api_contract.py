@@ -14,6 +14,7 @@ class JavaSpaApiContract(unittest.TestCase):
         settings = {
             "clerk": {"publishableKey": "synthetic-public-key"},
             "origins": {"primary": "https://primary.example"},
+            "apiOrigins": {"associago": "https://associago.example"},
         }
         source_root = Path(__file__).resolve().parents[2]
         payload = {
@@ -24,6 +25,7 @@ class JavaSpaApiContract(unittest.TestCase):
             "librepm": {
                 "environment": preparation.spa_environment("https://librepm.example", settings),
                 "source": (source_root / "LibrePM/desktop/src/api/librepm.js").read_text(encoding="utf-8"),
+                "accessHelper": (source_root / "LibrePM/desktop/src/suite-access.js").read_text(encoding="utf-8"),
             },
         }
         script = r"""
@@ -40,7 +42,11 @@ global.fetch = async (url, options) => {
   });
 };
 async function load(entry) {
-  const source = entry.source.replaceAll('import.meta.env', '(' + JSON.stringify(entry.environment) + ')');
+  let source = entry.source.replaceAll('import.meta.env', '(' + JSON.stringify(entry.environment) + ')');
+  if (entry.accessHelper) {
+    const helper = 'data:text/javascript;base64,' + Buffer.from(entry.accessHelper).toString('base64');
+    source = source.replace("'../suite-access.js'", JSON.stringify(helper));
+  }
   return import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
 }
 (async () => {

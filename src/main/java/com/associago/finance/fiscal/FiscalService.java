@@ -42,6 +42,8 @@ public class FiscalService {
 
     @Transactional
     public FiscalYearClosure closeFiscalYear(Long associationId, Integer year, Long userId) {
+        if (associationId == null || associationId <= 0)
+            throw new IllegalArgumentException("An association is required for fiscal closure.");
         Optional<FiscalYearClosure> existing = closureRepository.findByAssociationIdAndYear(associationId, year);
         if (existing.isPresent() && "CLOSED".equals(existing.get().getStatus())) {
             throw new IllegalStateException("Fiscal year " + year + " is already closed.");
@@ -50,8 +52,8 @@ public class FiscalService {
         LocalDate startDate = LocalDate.of(year, 1, 1);
         LocalDate endDate = LocalDate.of(year, 12, 31);
 
-        BigDecimal income = transactionRepository.sumByTypeAndDateRange(TransactionType.INCOME, startDate, endDate);
-        BigDecimal expenses = transactionRepository.sumByTypeAndDateRange(TransactionType.EXPENSE, startDate, endDate);
+        BigDecimal income = transactionRepository.sumScoped(associationId, TransactionType.INCOME, startDate, endDate);
+        BigDecimal expenses = transactionRepository.sumScoped(associationId, TransactionType.EXPENSE, startDate, endDate);
         
         if (income == null) income = BigDecimal.ZERO;
         if (expenses == null) expenses = BigDecimal.ZERO;

@@ -63,8 +63,8 @@ if (!isDesktop && (!clerkKey || clerkConfigurationError)) {
               {...clerkSatelliteProps}
             >
               <WebAuthGate isSatellite={clerkSatelliteProps.isSatellite === true}>
-                {({ association, localUserId, user, role, signOut }) => (
-                  <App webSession={{ association, localUserId, user, role, signOut }} />
+                {({ association, localUserId, user, role, access, signOut }) => (
+                  <App webSession={{ association, localUserId, user, role, access, signOut }} />
                 )}
               </WebAuthGate>
             </ClerkProvider>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Card, Button, Row, Col, Spinner, Table, Badge, Image } from 'react-bootstrap';
 import { associago } from '../api';
 import { ORG_LOGO, ORG_NAME } from '../branding';
+import { accessAllows } from '../suite-access';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, TrendingDown, DollarSign, Download, Calendar, Users, Activity, Building } from 'lucide-react';
 
@@ -13,6 +14,7 @@ const Dashboard = ({ shell, associationId }) => {
   const [loading, setLoading] = useState(true);
   const [logoUrl, setLogoUrl] = useState(ORG_LOGO);
   const [error, setError] = useState('');
+  const canWrite = module => !shell?.currentUser?.access || accessAllows(shell.currentUser.access, module, 'write');
 
   useEffect(() => {
     loadDashboard();
@@ -85,9 +87,10 @@ const Dashboard = ({ shell, associationId }) => {
       </div>
 
       {/* KPI Cards */}
+      {Object.keys(stats).length === 0 && <Alert variant="info">Il riepilogo non contiene sezioni autorizzate per questo account. Usa il menu per aprire le aree disponibili.</Alert>}
       <Row className="g-4 mb-5">
         {/* Members KPI */}
-        <Col md={4}>
+        {stats.members && <Col md={4}>
             <Card className="border-0 shadow-sm h-100 overflow-hidden">
                 <Card.Body className="position-relative">
                     <div className="d-flex justify-content-between align-items-start mb-4">
@@ -107,10 +110,10 @@ const Dashboard = ({ shell, associationId }) => {
                         <Users size={120} className="position-absolute text-primary" aria-hidden="true" style={{right: -20, bottom: -20, opacity: 0.06, pointerEvents: 'none'}} />
                 </Card.Body>
             </Card>
-        </Col>
+        </Col>}
 
         {/* Treasury KPI */}
-        <Col md={4}>
+        {stats.treasury && <Col md={4}>
             <Card className="border-0 shadow-sm h-100 overflow-hidden">
                 <Card.Body className="position-relative">
                     <div className="d-flex justify-content-between align-items-start mb-4">
@@ -135,10 +138,10 @@ const Dashboard = ({ shell, associationId }) => {
                     </div>
                 </Card.Body>
             </Card>
-        </Col>
+        </Col>}
 
         {/* Events KPI */}
-        <Col md={4}>
+        {stats.events && <Col md={4}>
             <Card className="border-0 shadow-sm h-100 overflow-hidden">
                 <Card.Body className="position-relative">
                     <div className="d-flex justify-content-between align-items-start mb-4">
@@ -161,12 +164,12 @@ const Dashboard = ({ shell, associationId }) => {
                     )}
                 </Card.Body>
             </Card>
-        </Col>
+        </Col>}
       </Row>
 
       {/* Recent Activity & Quick Actions */}
       <Row className="g-4">
-        <Col lg={8}>
+        {stats.recentActivity && <Col lg={8}>
             <Card className="border-0 shadow-sm h-100">
                 <Card.Header className="bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 className="mb-0 fw-bold">{t('Recent Activity')}</h5>
@@ -201,7 +204,7 @@ const Dashboard = ({ shell, associationId }) => {
                     </div>
                 </Card.Body>
             </Card>
-        </Col>
+        </Col>}
 
         <Col lg={4}>
             {/* Il gradiente era blu cablato: sotto il tema di Angeli del Futuro
@@ -214,15 +217,15 @@ const Dashboard = ({ shell, associationId }) => {
                     <div className="d-grid gap-3">
                         {/* text-white e text-primary insieme si annullavano a
                             vicenda: sul fondo scuro serve solo il primo. */}
-                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId, associationType: shell.currentAssociation?.tipo, onSuccess: loadDashboard })}>
+                        {canWrite('members') && <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4 shadow-sm" onClick={() => shell.openModal('member-form', { associationId, associationType: shell.currentAssociation?.tipo, onSuccess: loadDashboard })}>
                             <Users size={18} className="me-2" /> {t('Register New Member')}
-                        </Button>
-                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.openModal('event-form', { associationId, onSuccess: loadDashboard })}>
+                        </Button>}
+                        {canWrite('events') && <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.openModal('event-form', { associationId, onSuccess: loadDashboard })}>
                             <Calendar size={18} className="me-2" /> {t('Create Event')}
-                        </Button>
-                        <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.navigate('fiscal')}>
+                        </Button>}
+                        {canWrite('finance') && <Button variant="outline-light" className="text-white fw-bold text-start py-3 px-4" onClick={() => shell.navigate('fiscal')}>
                             <DollarSign size={18} className="me-2" /> {t('Record Payment')}
-                        </Button>
+                        </Button>}
                     </div>
                 </Card.Body>
             </Card>

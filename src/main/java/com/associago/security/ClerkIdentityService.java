@@ -42,9 +42,16 @@ public class ClerkIdentityService {
     private static final String EMAIL_VERIFIED_CLAIM = "email_verified";
 
     private final UserRepository userRepository;
+    private final com.associago.access.SuiteAccessService suiteAccess;
 
     public ClerkIdentityService(UserRepository userRepository) {
+        this(userRepository, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ClerkIdentityService(UserRepository userRepository, com.associago.access.SuiteAccessService suiteAccess) {
         this.userRepository = userRepository;
+        this.suiteAccess = suiteAccess;
     }
 
     /**
@@ -67,6 +74,9 @@ public class ClerkIdentityService {
             return linked;
         }
 
+        if (suiteAccess != null && suiteAccess.enabled()) {
+            return suiteAccess.localIdentity(clerkUserId);
+        }
         return linkByVerifiedEmail(jwt, clerkUserId);
     }
 

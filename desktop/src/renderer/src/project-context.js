@@ -20,8 +20,10 @@ export function localProjectForContext(context, projects) {
   return projects.find((item) => String(item.id) === String(instance.localId)) ?? null
 }
 
-export function mayViewProjectFinance(role, desktop = false) {
+export function mayViewProjectFinance(role, desktop = false, access = null) {
   if (desktop) return true
+  if (access) return access.status === 'active' && access.applications?.associago?.enabled === true
+    && access.permissions?.includes('associago.finance.read') === true
   const normalized = String(role || '')
     .trim()
     .toLowerCase()

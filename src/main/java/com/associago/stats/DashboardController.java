@@ -13,6 +13,8 @@ import java.util.Map;
 public class DashboardController {
 
     private final StatsService statsService;
+    @org.springframework.beans.factory.annotation.Value("${SUITE_ACCESS_ENABLED:false}")
+    private boolean suiteAccessEnabled;
 
     public DashboardController(StatsService statsService) {
         this.statsService = statsService;
@@ -27,7 +29,17 @@ public class DashboardController {
      */
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getDashboardStats(
-            @RequestParam(required = false) Integer anno) {
-        return ResponseEntity.ok(statsService.getDashboardStats(anno));
+            @RequestParam(required = false) Integer anno,
+            org.springframework.security.core.Authentication actor) {
+        Map<String, Object> stats = new java.util.LinkedHashMap<>(statsService.getDashboardStats(anno));
+        if (suiteAccessEnabled) {
+            if (!com.associago.access.SuiteAccessService.permits(actor, "associago.members.read")) stats.remove("members");
+            if (!com.associago.access.SuiteAccessService.permits(actor, "associago.finance.read")) stats.remove("treasury");
+            if (!com.associago.access.SuiteAccessService.permits(actor, "associago.events.read")) stats.remove("events");
+            // The mixed activity feed contains payment and member details: require both grants.
+            if (!com.associago.access.SuiteAccessService.permits(actor, "associago.members.read") ||
+                    !com.associago.access.SuiteAccessService.permits(actor, "associago.finance.read")) stats.remove("recentActivity");
+        }
+        return ResponseEntity.ok(stats);
     }
 }

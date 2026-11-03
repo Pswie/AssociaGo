@@ -2,19 +2,30 @@ package com.associago.stats;
 
 import com.associago.esercizio.Esercizio;
 import com.associago.activity.Activity;
+import com.associago.activity.ActivityAccess;
+import com.associago.activity.ActivityParticipant;
+import com.associago.activity.ActivityCost;
+import com.associago.access.SuiteAssociationScope;
 import com.associago.activity.repository.ActivityCostRepository;
 import com.associago.activity.repository.ActivityParticipantRepository;
 import com.associago.activity.repository.ActivityRepository;
 import com.associago.assembly.repository.AssemblyRepository;
+import com.associago.assembly.repository.AssemblyParticipantRepository;
+import com.associago.assembly.repository.AssemblyMotionRepository;
 import com.associago.event.Event;
 import com.associago.event.repository.EventRepository;
 import com.associago.finance.TransactionType;
 import com.associago.finance.repository.TransactionRepository;
 import com.associago.member.repository.MemberRepository;
+import com.associago.membership.repository.UserAssociationRepository;
 import com.associago.stats.dto.ActivityStatsDTO;
 import com.associago.stats.dto.AssemblyStatsDTO;
 import com.associago.stats.dto.FinancialStatsDTO;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.associago.suite.SuiteException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -36,6 +47,11 @@ public class StatsService {
     private final ActivityParticipantRepository activityParticipantRepository;
     private final ActivityCostRepository activityCostRepository;
     private final AssemblyRepository assemblyRepository;
+    private final UserAssociationRepository memberships;
+    private final Environment environment;
+    private final ActivityAccess activityAccess;
+    private final AssemblyParticipantRepository assemblyParticipants;
+    private final AssemblyMotionRepository assemblyMotions;
 
     public StatsService(MemberRepository memberRepository,
                         EventRepository eventRepository,
@@ -44,6 +60,17 @@ public class StatsService {
                         ActivityParticipantRepository activityParticipantRepository,
                         ActivityCostRepository activityCostRepository,
                         AssemblyRepository assemblyRepository) {
+        this(memberRepository, eventRepository, transactionRepository, activityRepository,
+                activityParticipantRepository, activityCostRepository, assemblyRepository, null, null, null, null, null);
+    }
+
+    @Autowired
+    public StatsService(MemberRepository memberRepository, EventRepository eventRepository,
+                        TransactionRepository transactionRepository, ActivityRepository activityRepository,
+                        ActivityParticipantRepository activityParticipantRepository,
+                        ActivityCostRepository activityCostRepository, AssemblyRepository assemblyRepository,
+                        UserAssociationRepository memberships, Environment environment, ActivityAccess activityAccess,
+                        AssemblyParticipantRepository assemblyParticipants, AssemblyMotionRepository assemblyMotions) {
         this.memberRepository = memberRepository;
         this.eventRepository = eventRepository;
         this.transactionRepository = transactionRepository;
@@ -51,6 +78,11 @@ public class StatsService {
         this.activityParticipantRepository = activityParticipantRepository;
         this.activityCostRepository = activityCostRepository;
         this.assemblyRepository = assemblyRepository;
+        this.memberships = memberships;
+        this.environment = environment;
+        this.activityAccess = activityAccess;
+        this.assemblyParticipants = assemblyParticipants;
+        this.assemblyMotions = assemblyMotions;
     }
 
     public Map<String, Object> getDashboardStats() {
@@ -74,6 +106,7 @@ public class StatsService {
      * @param anno l'esercizio, oppure {@code null} per l'intera storia.
      */
     public Map<String, Object> getDashboardStats(Integer anno) {
+        if (central()) return scopedDashboard(anno);
         Map<String, Object> stats = new HashMap<>();
         LocalDateTime now = LocalDateTime.now();
         LocalDate today = LocalDate.now();
@@ -139,6 +172,7 @@ public class StatsService {
     public ActivityStatsDTO getActivityStats(Long activityId) {
         Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));
+        if (central()) activityAccess.require(activity.getAssociationId());
 
         ActivityStatsDTO stats = new ActivityStatsDTO();
         stats.setActivityId(activity.getId());
@@ -148,6 +182,25 @@ public class StatsService {
         // Participants
         Integer totalParticipants = activityParticipantRepository.countByActivityId(activityId);
         stats.setTotalParticipants(totalParticipants);
+
+        if (central()) {
+            if (activityAccess.mayReadFinancial()) {
+                BigDecimal revenue = activityParticipantRepository.findByActivityId(activityId).stream()
+                        .filter(ActivityParticipant::isPaid).map(ActivityParticipant::getAmountPaid)
+                        .filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal costs = activityCostRepository.findByActivityId(activityId).stream()
+                        .map(ActivityCost::getAmount).filter(java.util.Objects::nonNull)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                stats.setTotalRevenue(revenue);
+                stats.setTotalCosts(costs);
+                stats.setNetProfit(revenue.subtract(costs));
+                if (revenue.signum() > 0)
+                    stats.setProfitMargin(revenue.subtract(costs).divide(revenue, 4, RoundingMode.HALF_UP).doubleValue() * 100);
+            }
+            if (activity.getMaxParticipants() != null && activity.getMaxParticipants() > 0)
+                stats.setOccupancyRate((double) totalParticipants / activity.getMaxParticipants() * 100);
+            return stats;
+        }
 
         // Revenue (Sum of payments from participants)
         // Note: Assuming we have a method to sum payments. If not, we iterate or use a custom query.
@@ -183,12 +236,93 @@ public class StatsService {
     }
 
     public AssemblyStatsDTO getAssemblyStats(Long assemblyId) {
+        if (central()) {
+            var assembly = assemblyRepository.findById(assemblyId)
+                    .orElseThrow(() -> new SuiteException(404, "ASSEMBLY_NOT_FOUND", "Assemblea non trovata."));
+            SuiteAssociationScope.require(environment, SecurityContextHolder.getContext().getAuthentication(),
+                    assembly.getAssociationId(), "associago.assemblies.read");
+            var stats = new AssemblyStatsDTO();
+            stats.setAssemblyId(assembly.getId());
+            stats.setTitle(assembly.getTitle());
+            stats.setTotalParticipants((int) assemblyParticipants.findByAssemblyId(assemblyId).stream()
+                    .filter(p -> "PRESENT".equals(p.getParticipationType()) || "PROXY".equals(p.getParticipationType())).count());
+            stats.setTotalMotions(assemblyMotions.findByAssemblyId(assemblyId).size());
+            stats.setQuorumReached(assembly.isQuorumReached());
+            // Historical voting eligibility is not reconstructed from today's global member table.
+            return stats;
+        }
         // Placeholder implementation
         return new AssemblyStatsDTO();
     }
 
     public FinancialStatsDTO getFinancialStats(Long associationId, int year) {
+        if (central()) {
+            SuiteAssociationScope.require(environment, SecurityContextHolder.getContext().getAuthentication(),
+                    associationId, "associago.finance.read");
+            var stats = new FinancialStatsDTO();
+            LocalDate start = LocalDate.of(year, 1, 1), end = LocalDate.of(year, 12, 31);
+            BigDecimal income = amount(transactionRepository.sumScoped(associationId, TransactionType.INCOME, start, end));
+            BigDecimal expenses = amount(transactionRepository.sumScoped(associationId, TransactionType.EXPENSE, start, end));
+            stats.setTotalIncome(income);
+            stats.setTotalExpenses(expenses);
+            stats.setNetBalance(income.subtract(expenses));
+            Map<String, BigDecimal> incomeCategories = new HashMap<>(), expenseCategories = new HashMap<>(), paymentMethods = new HashMap<>();
+            for (var transaction : transactionRepository.findByAssociationIdAndDateBetween(associationId, start, end)) {
+                String category = transaction.getCategory() == null || transaction.getCategory().isBlank() ? "Senza categoria" : transaction.getCategory();
+                if (transaction.getType() == TransactionType.INCOME) {
+                    incomeCategories.merge(category, amount(transaction.getAmount()), BigDecimal::add);
+                    String method = transaction.getPaymentMethod() == null || transaction.getPaymentMethod().isBlank() ? "Non indicato" : transaction.getPaymentMethod();
+                    paymentMethods.merge(method, amount(transaction.getAmount()), BigDecimal::add);
+                } else if (transaction.getType() == TransactionType.EXPENSE)
+                    expenseCategories.merge(category, amount(transaction.getAmount()), BigDecimal::add);
+            }
+            stats.setIncomeByCategory(incomeCategories);
+            stats.setExpensesByCategory(expenseCategories);
+            stats.setIncomeByPaymentMethod(paymentMethods);
+            return stats;
+        }
         // Placeholder implementation
         return new FinancialStatsDTO();
+    }
+
+    private boolean central() { return environment != null && SuiteAssociationScope.enabled(environment); }
+    private static BigDecimal amount(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
+
+    private Map<String, Object> scopedDashboard(Integer anno) {
+        Long association = environment.getProperty("SUITE_ASSOCIATION_ID", Long.class, 0L);
+        if (association <= 0) throw new SuiteException(503, "ASSOCIATION_CONFIGURATION", "Associazione non configurata.");
+        LocalDate today = LocalDate.now();
+        LocalDate startOfMonth = today.with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate endOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
+        Map<String, Object> stats = new HashMap<>();
+        var rows = memberships.findByAssociationId(association);
+        Map<String, Object> members = new HashMap<>();
+        members.put("total", (long) rows.size());
+        members.put("active", rows.stream().filter(row -> "ACTIVE".equals(row.getStatus())).count());
+        members.put("newThisMonth", rows.stream().filter(row -> row.getJoinDate() != null &&
+                !row.getJoinDate().isBefore(startOfMonth) && !row.getJoinDate().isAfter(endOfMonth)).count());
+        stats.put("members", members);
+        LocalDate start = Esercizio.valido(anno) ? Esercizio.inizio(anno) : LocalDate.of(1900, 1, 1);
+        LocalDate end = Esercizio.valido(anno) ? Esercizio.fine(anno) : LocalDate.of(2100, 12, 31);
+        Map<String, Object> treasury = new HashMap<>();
+        treasury.put("balance", amount(transactionRepository.sumScoped(association, TransactionType.INCOME, start, end))
+                .subtract(amount(transactionRepository.sumScoped(association, TransactionType.EXPENSE, start, end))));
+        treasury.put("incomeMonth", amount(transactionRepository.sumScoped(association, TransactionType.INCOME, startOfMonth, endOfMonth)));
+        treasury.put("expenseMonth", amount(transactionRepository.sumScoped(association, TransactionType.EXPENSE, startOfMonth, endOfMonth)));
+        stats.put("treasury", treasury);
+        Map<String, Object> events = new HashMap<>();
+        LocalDateTime now = LocalDateTime.now();
+        events.put("upcoming", eventRepository.countByAssociationIdAndStartDatetimeAfter(association, now));
+        Event next = eventRepository.findFirstByAssociationIdAndStartDatetimeAfterOrderByStartDatetimeAsc(association, now);
+        Map<String, Object> nextView = null;
+        if (next != null) {
+            nextView = new HashMap<>();
+            nextView.put("title", next.getName());
+            nextView.put("date", next.getStartDatetime());
+        }
+        events.put("nextEvent", nextView);
+        stats.put("events", events);
+        stats.put("recentActivity", List.of());
+        return stats;
     }
 }

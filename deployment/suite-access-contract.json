@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "authority": "associago",
+  "basePath": "/api/access/v1",
+  "ownerSubjectConfiguration": "SUITE_ACCESS_OWNER_SUBJECT",
+  "ownerIsPinned": true,
+  "accessManagementOwnerOnly": true,
+  "statuses": ["pending", "active", "suspended"],
+  "roles": ["none", "viewer", "editor", "manager", "custom"],
+  "applications": {
+    "associago": {
+      "label": "Gestionale",
+      "modules": {
+        "dashboard": "Riepilogo", "finance": "Contabilita", "members": "Soci e anagrafiche",
+        "activities": "Attivita", "events": "Eventi", "attendance": "Presenze",
+        "volunteers": "Volontari", "projects": "Progetti", "inventory": "Magazzino",
+        "communications": "Comunicazioni", "certificates": "Attestati", "assemblies": "Assemblee",
+        "personal": "Area personale", "settings": "Impostazioni"
+      }
+    },
+    "librepm": {
+      "label": "Progetti",
+      "modules": {
+        "dashboard": "Riepilogo", "inbox": "Posta in arrivo", "charter": "Scheda progetto",
+        "projects": "Progetti", "templates": "Modelli", "team": "Gruppo di lavoro",
+        "resources": "Risorse", "connections": "Contatti", "calendar": "Calendario",
+        "planner": "Pianificazione", "gantt": "Gantt", "kanban": "Kanban", "notes": "Note",
+        "time-tracking": "Tempi di lavoro", "finance": "Contabilita", "grants": "Finanziamenti",
+        "stakeholders": "Portatori di interesse", "change-control": "Gestione modifiche",
+        "portfolio": "Portafoglio progetti", "guides": "Guide", "analytics": "Analisi e report",
+        "integrations": "Collegamenti", "sync-conflicts": "Conflitti di sincronizzazione", "settings": "Impostazioni"
+      }
+    },
+    "bandi": {
+      "label": "Bandi",
+      "modules": {
+        "catalog": "Elenco bandi e analisi pubblicate", "sources": "Fonti, enti e dati pubblici",
+        "drafts": "Bozze personali", "projects": "Progetti condivisi", "settings": "Impostazioni"
+      },
+      "localOperationsOwnerOnly": true
+    }
+  },
+  "permissionFormat": "<application>.<module>.<read|write>",
+  "writeImpliesRead": true,
+  "presets": {
+    "none": "No application permissions",
+    "viewer": "All read permissions except settings",
+    "editor": "All read/write permissions except settings",
+    "manager": "All finite module permissions; never grants owner/local operations or access management",
+    "custom": "Explicit finite permissions; reject unknown application/module/action"
+  },
+  "endpoints": {
+    "GET /me": "Verified Clerk JWT, all signed users including pending; returns AccessView, no application data",
+    "GET /catalog": "Owner only; returns this application/module catalog, role presets and directoryConfigured",
+    "GET /users?offset=0&limit=20&q=": "Owner only; paginated local registration/access list",
+    "POST /users/sync": "Owner only; synchronizes registered users from Clerk Backend API, never overwrites grants",
+    "PUT /users/{subject}": "Owner only; optimistic version required; owner row immutable; audited update"
+  },
+  "accessViewShape": {
+    "schemaVersion": 1,
+    "subject": "user_...",
+    "displayName": "Display label from verified directory or subject",
+    "email": null,
+    "status": "pending|active|suspended",
+    "owner": false,
+    "canManageAccess": false,
+    "version": 0,
+    "applications": {
+      "associago": {"enabled": false, "role": "none", "permissions": []},
+      "librepm": {"enabled": false, "role": "none", "permissions": []},
+      "bandi": {"enabled": false, "role": "none", "permissions": []}
+    },
+    "permissions": [],
+    "configuredApplications": "Stored per-app role and permissions; owner editors use this while effective grants are empty for pending/suspended"
+  },
+  "userUpdateShape": {
+    "version": 0,
+    "status": "active",
+    "applications": {
+      "associago": {"role": "none", "permissions": []},
+      "librepm": {"role": "viewer", "permissions": []},
+      "bandi": {"role": "custom", "permissions": ["bandi.catalog.read", "bandi.sources.read"]}
+    }
+  },
+  "behavior": {
+    "newUser": "pending with no permissions; cryptographic JWT auth only for /me",
+    "owner": "Configured exact subject only, active with finite full permissions; no first-user/email/org-role fallback",
+    "revocation": "Fetch authoritative access on each API request, per-request reuse only, no stale-token role fallback",
+    "authorityFailure": "503 fail closed; never fallback to JWT org/admin or legacy allowlist",
+    "peerIntegrations": "Keep separately authenticated service peer routes; never accept user-supplied peer headers as user grants",
+    "rowOwnership": "Keep existing draft/project membership and ownership constraints; a module grant alone does not replace them",
+    "unknownRoutes": "Owner only until explicitly mapped; frontend hiding does not grant API access",
+    "localDesktop": "Existing local-only desktop flow unchanged"
+  }
+}

@@ -7,12 +7,14 @@ import PaymentMethodForm from './PaymentMethodForm';
 import AssociationRegistryPanel from './AssociationRegistryPanel';
 import SignaturePanel from './SignaturePanel';
 import RowActions from './common/RowActions';
+import SuiteAccessPanel from './SuiteAccessPanel';
+import { accessAllows } from '../suite-access';
 import { ORG_NAME, MODULE_NAME, SOURCE_CODE_URL } from '../branding';
 
 const SettingsDashboard = ({ shell }) => {
   const { t, i18n } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState('association');
+  const [activeTab, setActiveTab] = useState(() => shell?.currentUser?.access?.canManageAccess ? 'access' : 'association');
   const [isEditing, setIsEditing] = useState(false);
   const [appVersion, setAppVersion] = useState(''); // Loaded from Electron
   const [backendVersion, setBackendVersion] = useState('');
@@ -49,7 +51,7 @@ const SettingsDashboard = ({ shell }) => {
   const setTheme = shell?.setTheme || setLocalTheme;
 
   useEffect(() => {
-    if (shell.currentAssociationId) {
+    if (shell.currentAssociationId && activeTab !== 'access') {
         loadData();
         if (activeTab === 'finance') loadPaymentMethods();
     }
@@ -721,16 +723,19 @@ const SettingsDashboard = ({ shell }) => {
       <Card className="border-0 shadow-sm">
         <Card.Header className="bg-white border-bottom-0 pt-0 px-0">
             <Nav variant="tabs" className="px-3 pt-3" activeKey={activeTab} onSelect={k => setActiveTab(k)}>
+                {shell?.currentUser?.access?.canManageAccess === true && <Nav.Item>
+                    <Nav.Link eventKey="access">Utenti e accessi</Nav.Link>
+                </Nav.Item>}
                 <Nav.Item>
                     <Nav.Link eventKey="association" className="d-flex align-items-center gap-2">
                         <Building size={18} /> {t('Association Profile')}
                     </Nav.Link>
                 </Nav.Item>
-                <Nav.Item>
+                {(!shell.currentUser?.access || accessAllows(shell.currentUser.access, 'finance')) && <Nav.Item>
                     <Nav.Link eventKey="finance" className="d-flex align-items-center gap-2">
                         <CreditCard size={18} /> {t('Finance')}
                     </Nav.Link>
-                </Nav.Item>
+                </Nav.Item>}
                 <Nav.Item>
                     <Nav.Link eventKey="general" className="d-flex align-items-center gap-2">
                         <Globe size={18} /> {t('General')}
@@ -746,14 +751,15 @@ const SettingsDashboard = ({ shell }) => {
                         <PenTool size={18} /> {t('Signatures')}
                     </Nav.Link>
                 </Nav.Item>
-                <Nav.Item>
+                {Boolean(window.api) && <Nav.Item>
                     <Nav.Link eventKey="database" className="d-flex align-items-center gap-2">
                         <Database size={18} /> {t('Database')}
                     </Nav.Link>
-                </Nav.Item>
+                </Nav.Item>}
             </Nav>
         </Card.Header>
         <Card.Body className="p-4">
+            {activeTab === 'access' && <SuiteAccessPanel user={shell.currentUser} api={associago} />}
             {activeTab === 'association' && renderAssociationTab()}
             {activeTab === 'finance' && renderFinanceTab()}
             {activeTab === 'general' && renderGeneralTab()}

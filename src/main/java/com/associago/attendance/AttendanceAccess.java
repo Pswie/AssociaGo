@@ -37,6 +37,10 @@ public class AttendanceAccess {
             throw new SuiteException(403, "ASSOCIATION_FORBIDDEN", "L'attività non appartiene all'associazione selezionata.");
         }
         if (!cloud()) return;
+        if (com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, actor, actualAssociation, "associago.attendance.read");
+            return;
+        }
         if (!(actor instanceof JwtAuthenticationToken) || !actor.isAuthenticated()) {
             throw new SuiteException(401, "USER_UNAUTHORIZED", "Accesso autenticato richiesto.");
         }

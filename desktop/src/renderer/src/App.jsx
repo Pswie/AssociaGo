@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { associago } from './api';
 import { pagesForRole, isPersonalOnly } from './roles';
+import { accessAllows, pagesForAccess } from './suite-access';
 
 // Layout Components
 import LeftNav from "./components/LeftNav";
@@ -165,7 +166,8 @@ function App({ webSession }) {
           clerkId: user?.id,
           displayName: user?.fullName || user?.primaryEmailAddress?.emailAddress || association.nome || association.name,
           username: user?.primaryEmailAddress?.emailAddress ?? '',
-          role: role ?? user?.publicMetadata?.role ?? 'socio'
+          role: role ?? user?.publicMetadata?.role ?? 'socio',
+          access: webSession.access
         });
         setAppState('DASHBOARD');
         return;
@@ -318,8 +320,22 @@ function App({ webSession }) {
    */
   const visiblePages = useMemo(() => {
     if (!webSession) return PAGES;
+    if (currentUser?.access) {
+      const allowed = pagesForAccess(PAGES, currentUser.access);
+      if (accessAllows(currentUser.access, 'personal'))
+        return [{ id: 'personal', label: 'Area personale', icon: 'bi-person', component: PersonalArea }, ...allowed];
+      return allowed;
+    }
     return pagesForRole(PAGES, currentUser?.role);
-  }, [PAGES, webSession, currentUser?.role]);
+  }, [PAGES, webSession, currentUser?.role, currentUser?.access]);
+
+  useEffect(() => {
+    if (webSession?.access) setCurrentUser(previous => previous ? { ...previous, access: webSession.access } : previous);
+  }, [webSession?.access]);
+
+  useEffect(() => {
+    if (webSession && visiblePages.length && !visiblePages.some(page => page.id === activeId)) setActiveId(visiblePages[0].id);
+  }, [webSession, visiblePages, activeId]);
 
   const activePage = visiblePages.find(p => p.id === activeId)
       || visiblePages[0]
@@ -352,7 +368,7 @@ function App({ webSession }) {
   }), [currentUser, currentAssociation, visiblePages, anno, theme, i18n.language, requestedSuiteProjectId, selectSuiteProject]);
 
   const profileItems = [
-    { id: "settings", label: t('nav.settings'), icon: "bi-gear", onClick: () => setActiveId("settings") },
+    ...(!webSession || visiblePages.some(page => page.id === 'settings') ? [{ id: "settings", label: t('nav.settings'), icon: "bi-gear", onClick: () => setActiveId("settings") }] : []),
     { id: "info", label: t('App Info'), icon: "bi-info-circle" },
     { type: "sep" },
     { id: "logout", label: t('Logout'), icon: "bi-box-arrow-right", danger: true, onClick: handleLogout }
@@ -366,7 +382,7 @@ function App({ webSession }) {
 
   // Soci e volontari non entrano nel gestionale: la loro schermata è un'altra.
   // Il backend risponderebbe comunque 403 su tutto il resto.
-  if (webSession && isPersonalOnly(currentUser?.role)) {
+  if (webSession && !currentUser?.access && isPersonalOnly(currentUser?.role)) {
     return <>{requestedSuiteProjectId !== null && <div className="alert alert-warning m-3" role="alert">Il tuo ruolo non consente di aprire il progetto richiesto. Chiedi al responsabile di verificare i permessi.</div>}<PersonalArea /></>;
   }
 

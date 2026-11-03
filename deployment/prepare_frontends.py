@@ -10,6 +10,7 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
@@ -74,10 +75,47 @@ def spa_environment(api: str, settings: dict) -> dict:
     # only origins, so the deployment must supply the shared /api prefix.
     return {
         "VITE_API_BASE_URL": public_origin(api) + "/api",
+        "VITE_SUITE_ACCESS_API_URL": public_origin(settings["apiOrigins"]["associago"]),
         "VITE_CLERK_PUBLISHABLE_KEY": settings["clerk"]["publishableKey"],
         "VITE_CLERK_PRIMARY_URL": public_origin(settings["origins"]["primary"]),
         "VITE_BASE_PATH": "/",
     }
+
+
+def verify_spa_csp(entry: str, environment: dict) -> None:
+    """Check the emitted policy itself, rather than origins elsewhere in HTML."""
+    class PolicyParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.policies = []
+
+        def handle_starttag(self, tag, attributes):
+            values = dict(attributes)
+            if tag.lower() == "meta" and values.get("http-equiv", "").lower() == "content-security-policy":
+                self.policies.append(values.get("content", ""))
+
+    parser = PolicyParser()
+    parser.feed(entry)
+    if len(parser.policies) != 1:
+        raise RuntimeError("Expected exactly one emitted SPA CSP")
+    policy = parser.policies[0]
+    if any(token in entry for token in ("%PRIMARY_ORIGIN%", "%API_ORIGIN%", "%CLERK_HOSTS%", "%ACCESS_ORIGIN%")):
+        raise RuntimeError("Unresolved SPA CSP placeholders")
+    directives = {}
+    for item in policy.split(";"):
+        parts = item.split()
+        if parts:
+            if parts[0] in directives:
+                raise RuntimeError("Duplicate SPA CSP directive")
+            directives[parts[0]] = set(parts[1:])
+    connect = directives.get("connect-src", set())
+    expected = {
+        public_origin(environment["VITE_API_BASE_URL"].removesuffix("/api")),
+        public_origin(environment["VITE_CLERK_PRIMARY_URL"]),
+        public_origin(environment["VITE_SUITE_ACCESS_API_URL"]),
+    }
+    if not expected.issubset(connect) or connect.intersection({"*", "https:", "http:"}):
+        raise RuntimeError("SPA connect-src does not pin the configured API, primary and access origins")
 
 
 def build_spa(name: str, repository: str, project_id: str, api: str, settings: dict, output: Path) -> dict:
@@ -86,15 +124,18 @@ def build_spa(name: str, repository: str, project_id: str, api: str, settings: d
     target = output / name
     target.mkdir()
     write_json(target / "public-env.json", environment)
+    # Vite empties outDir. Allocate it beneath this new run, preserving every
+    # existing repository dist-web and every previous candidate output.
+    built = output / "_spa-builds" / (name + "-" + uuid.uuid4().hex)
+    built.mkdir(parents=True, exist_ok=False)
     with (target / "build.log").open("w", encoding="utf-8") as log:
         command = ["cmd", "/c", "npm", "run", "build:web"] if os.name == "nt" else ["npm", "run", "build:web"]
+        command += ["--", "--outDir", str(built.resolve())]
         result = subprocess.run(command, cwd=desktop, env={**os.environ, **environment}, stdout=log, stderr=subprocess.STDOUT, timeout=180, check=False)
     if result.returncode:
         raise RuntimeError(f"{name}: build failed; inspect its build.log")
-    built = desktop / "dist-web"
     entry = (built / "index.web.html").read_text(encoding="utf-8")
-    if api not in entry or settings["origins"]["primary"] not in entry or "%PRIMARY_ORIGIN%" in entry or "%API_ORIGIN%" in entry or "%CLERK_HOSTS%" in entry:
-        raise RuntimeError(f"{name}: CSP does not match the configured public origins")
+    verify_spa_csp(entry, environment)
     static_output(built, target)
     project_link(target, project_id, settings["vercel"]["teamId"])
     if name == "associago":

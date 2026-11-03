@@ -10,7 +10,7 @@ import { mayViewProjectFinance } from '../project-context';
 
 const ActivityList = ({ associationId, shell }) => {
     const { t } = useTranslation();
-    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api));
+    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api), shell?.currentUser?.access);
     /*
      * Un'attività dura nel tempo: quella cominciata a ottobre e finita a marzo
      * appartiene a due esercizi, e un corso senza data di fine è ancora in

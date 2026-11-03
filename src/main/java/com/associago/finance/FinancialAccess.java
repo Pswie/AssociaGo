@@ -19,6 +19,12 @@ public class FinancialAccess {
     }
 
     public void requireRecord(Authentication actor, Long actualAssociation, Long selectedAssociation) {
+        if (environment.matchesProfiles("cloud") && com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, actor, actualAssociation, "associago.finance.read");
+            if (selectedAssociation != null && !Objects.equals(actualAssociation, selectedAssociation))
+                throw new SuiteException(403, "ASSOCIATION_FORBIDDEN", "Associazione non autorizzata.");
+            return;
+        }
         access.requireAssociation(actor, actualAssociation);
         if (!access.mayReadFinancial(actor)) {
             throw new SuiteException(403, "FINANCIAL_FORBIDDEN", "Il ruolo non consente di gestire i movimenti contabili.");

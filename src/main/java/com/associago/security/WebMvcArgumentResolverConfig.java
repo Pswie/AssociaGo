@@ -8,9 +8,11 @@ import java.util.List;
 
 @Configuration
 public class WebMvcArgumentResolverConfig implements WebMvcConfigurer {
+    private final ClerkIdentityService identities;
+    public WebMvcArgumentResolverConfig(ClerkIdentityService identities) { this.identities = identities; }
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(new CurrentUserArgumentResolver());
+        resolvers.add(new CurrentUserArgumentResolver(identities));
     }
 }

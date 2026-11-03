@@ -24,6 +24,10 @@ public class MembershipAccess {
         if (!cloud()) return;
         if (association == null || association <= 0) throw new SuiteException(400, "ASSOCIATION_REQUIRED", "Indicare l'associazione.");
         if (selected != null && !Objects.equals(selected, association)) denied();
+        if (com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, actor, association, "associago.members.read");
+            return;
+        }
         if (!(actor instanceof JwtAuthenticationToken) || !actor.isAuthenticated()) {
             throw new SuiteException(401, "USER_UNAUTHORIZED", "Accesso autenticato richiesto.");
         }

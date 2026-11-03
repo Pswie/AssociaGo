@@ -22,6 +22,9 @@ import org.springframework.web.method.support.ModelAndViewContainer;
  * @updated 0.3.1 - Aggiunto supporto header X-User-Id
  */
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
+    private final ClerkIdentityService identities;
+    public CurrentUserArgumentResolver() { this.identities = null; }
+    public CurrentUserArgumentResolver(ClerkIdentityService identities) { this.identities = identities; }
 
     /**
      * Header HTTP per identificare l'utente corrente
@@ -41,6 +44,13 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             @NonNull NativeWebRequest webRequest,
             WebDataBinderFactory binderFactory
     ) {
+        // A verified web identity always wins over an arbitrary desktop header.
+        var actor = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (actor instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken) {
+            if (identities == null) throw new IllegalStateException("Resolver identita web non configurato.");
+            return identities.resolve(actor).map(com.associago.user.User::getId)
+                    .orElseThrow(() -> new com.associago.suite.SuiteException(403, "IDENTITY_NOT_LINKED", "Accesso non collegato all'anagrafica."));
+        }
         // 1. Prima prova a leggere l'header X-User-Id (per client desktop/mobile)
         String headerUserId = webRequest.getHeader(USER_ID_HEADER);
         if (headerUserId != null && !headerUserId.isBlank()) {

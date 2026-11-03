@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import time
@@ -25,8 +26,10 @@ def gateway_modules(repository: Path) -> list[str]:
         "__init__", "gateway", "router", "security", "store", "models", "results",
         "schemas", "errors", "maintenance", "migrate", "suite_adapter",
         "native_contract", "native_router", "native_store", "native_binding",
+        "access", "access_router",
     )]
     modules.append("apps/api/collaboration/native_catalog.json")
+    modules.append("apps/api/collaboration/access_catalog.json")
     modules += ["apps/api/official_sources/" + name + ".py" for name in (
         "__init__", "schemas", "http", "service", "router", "runts", "catalogues",
     )]
@@ -63,14 +66,49 @@ def gateway_modules(repository: Path) -> list[str]:
     return sorted(set(modules))
 
 
+def select_jar(repository: Path, explicit_path: Path | None = None,
+               expected_sha256: str | None = None) -> tuple[Path, str]:
+    """Select a bootJar; explicit inputs are paired and pinned before packaging."""
+    if (explicit_path is None) != (expected_sha256 is None):
+        raise ValueError("--jar-path and --jar-sha256 must be supplied together")
+    if explicit_path is None:
+        jars = [p for p in (repository / "build/libs").glob("*.jar") if "-plain" not in p.name]
+        if len(jars) != 1:
+            raise RuntimeError("Build one current bootJar before packaging")
+        selected = jars[0].resolve()
+    else:
+        if not re.fullmatch(r"[a-fA-F0-9]{64}", expected_sha256 or ""):
+            raise ValueError("--jar-sha256 must be an exact SHA-256 digest")
+        selected = explicit_path.resolve(strict=True)
+    if not selected.is_file() or selected.suffix.lower() != ".jar" or "-plain" in selected.name:
+        raise ValueError("Select a bootJar file, not a plain JAR or directory")
+    digest = hashlib.sha256(selected.read_bytes()).hexdigest()
+    if expected_sha256 is not None and digest != expected_sha256.lower():
+        raise ValueError("Selected bootJar differs from --jar-sha256")
+    return selected, digest
+
+
+def copy_jar(source: Path, destination: Path, expected_sha256: str) -> None:
+    """A second check pins the actual bytes copied into the Docker context."""
+    shutil.copyfile(source, destination)
+    if hashlib.sha256(destination.read_bytes()).hexdigest() != expected_sha256:
+        raise RuntimeError("BootJar changed while preparing its Docker context")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--application", required=True, choices=("associago", "librepm", "bandi-portal"))
     parser.add_argument("--run-directory", required=True, type=Path)
     parser.add_argument("--push", action="store_true")
+    parser.add_argument("--jar-path", type=Path, help="Exact tested bootJar, paired with --jar-sha256")
+    parser.add_argument("--jar-sha256", help="SHA-256 of the tested bootJar")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     app = args.application
+    if app == "bandi-portal" and (args.jar_path is not None or args.jar_sha256 is not None):
+        parser.error("JAR options apply only to the two Java applications")
+    repository = root if app == "associago" else root.parent / ("LibrePM" if app == "librepm" else "Bandi")
+    selected_jar = None if app == "bandi-portal" else select_jar(repository, args.jar_path, args.jar_sha256)
     directory = args.run_directory.resolve()
     directory.mkdir(parents=True, exist_ok=False)
     context = directory / "context"
@@ -80,7 +118,6 @@ def main():
         raise RuntimeError("Supabase CA differs from the reviewed official certificate")
     shutil.copyfile(certificate, context / "supabase-root-2021.crt")
     if app == "bandi-portal":
-        repository = root.parent / "Bandi"
         for relative in gateway_modules(repository):
             target = context / relative
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -88,11 +125,8 @@ def main():
         shutil.copyfile(Path(__file__).with_name("requirements-gateway.txt"), context / "requirements-gateway.txt")
         shutil.copyfile(Path(__file__).with_name("Dockerfile.gateway"), context / "Dockerfile")
     else:
-        repository = root if app == "associago" else root.parent / "LibrePM"
-        jars = [p for p in (repository / "build/libs").glob("*.jar") if "-plain" not in p.name]
-        if len(jars) != 1:
-            raise RuntimeError("Build one current bootJar before packaging")
-        shutil.copyfile(jars[0], context / "app.jar")
+        assert selected_jar is not None
+        copy_jar(selected_jar[0], context / "app.jar", selected_jar[1])
         shutil.copyfile(Path(__file__).with_name("Dockerfile.runtime"), context / "Dockerfile")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:6]
     service = {"associago": "adf-gestionale-collaudo", "librepm": "adf-bandi-collaudo",

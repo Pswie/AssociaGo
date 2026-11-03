@@ -31,4 +31,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     long countByStartDatetimeAfter(LocalDateTime now);
     Event findFirstByStartDatetimeAfterOrderByStartDatetimeAsc(LocalDateTime now);
+    long countByAssociationIdAndStartDatetimeAfter(Long associationId, LocalDateTime now);
+    Event findFirstByAssociationIdAndStartDatetimeAfterOrderByStartDatetimeAsc(Long associationId, LocalDateTime now);
 }

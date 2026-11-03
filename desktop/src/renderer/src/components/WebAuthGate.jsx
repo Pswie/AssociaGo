@@ -40,6 +40,7 @@ export default function WebAuthGate({ children, isSatellite = false }) {
   const [retryAttempt, setRetryAttempt] = useState(0)
   const [availableAssociations, setAvailableAssociations] = useState([])
   const [associationChoice, setAssociationChoice] = useState('')
+  const [access, setAccess] = useState(null)
 
   // Il provider va registrato prima di qualunque chiamata: getToken() rinnova
   // da solo il token quando sta per scadere.
@@ -54,6 +55,7 @@ export default function WebAuthGate({ children, isSatellite = false }) {
   useEffect(() => {
     if (!isSignedIn) {
       setAssociation(null)
+      setAccess(null)
       setLocalUserId(null)
       setError(null)
       setAvailableAssociations([])
@@ -69,15 +71,22 @@ export default function WebAuthGate({ children, isSatellite = false }) {
     setAvailableAssociations([])
     setAssociationChoice('')
     associago.setCurrentAssociation(null)
-    Promise.all([
+    associago.accessMe().then(currentAccess => {
+      if (cancelled) return null
+      if (currentAccess?.schemaVersion !== 1 || currentAccess.subject !== user?.id) throw new Error('Risposta accessi non valida.')
+      setAccess(currentAccess)
+      if (currentAccess.status !== 'active' || currentAccess.applications?.associago?.enabled !== true) return null
+      return Promise.all([
       associago.listAssociations(),
       associago.getCurrentProfile().catch((err) => {
         if (err.status === 404) return null
         throw err
       })
-    ])
-      .then(([list, profile]) => {
-        if (cancelled) return
+      ])
+    })
+      .then(result => {
+        if (cancelled || !result) return
+        const [list, profile] = result
         const current = initialWebAssociation(list, import.meta.env.VITE_ASSOCIATION_ID)
         setAvailableAssociations(list)
         setLocalUserId(Number.isSafeInteger(profile?.id) && profile.id > 0 ? profile.id : null)
@@ -93,6 +102,24 @@ export default function WebAuthGate({ children, isSatellite = false }) {
       cancelled = true
     }
   }, [isSignedIn, user?.id, retryAttempt])
+
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) return
+    let cancelled = false
+    const refresh = async () => {
+      if (document.visibilityState === 'hidden') return
+      try {
+        const next = await associago.accessMe()
+        if (cancelled) return
+        if (next?.schemaVersion !== 1 || next.subject !== user.id) throw new Error('Risposta accessi non valida.')
+        setAccess(next)
+        if (next.status === 'active' && next.applications?.associago?.enabled && !association) setRetryAttempt(value => value + 1)
+      } catch (problem) { if (!cancelled) { setAccess(null); setError(problem) } }
+    }
+    const timer = setInterval(refresh, 30000)
+    window.addEventListener('focus', refresh)
+    return () => { cancelled = true; clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [isSignedIn, user?.id, association?.id])
 
   if (!isLoaded) {
     return <CenteredMessage>Verifica dell’accesso…</CenteredMessage>
@@ -173,6 +200,14 @@ export default function WebAuthGate({ children, isSatellite = false }) {
     )
   }
 
+  if (access && (access.status !== 'active' || access.applications?.associago?.enabled !== true)) {
+    const message = access.status === 'pending' ? 'Il tuo account è in attesa di approvazione.'
+      : access.status === 'suspended' ? 'Il tuo accesso è stato sospeso.' : 'Il tuo account non è abilitato al Gestionale.'
+    return <CenteredMessage><div role="status"><h1 className="h5">{message}</h1><p>L’amministratore può assegnarti gli accessi dalle impostazioni dei servizi.</p></div>
+      <button type="button" className="btn btn-primary me-2" onClick={() => setRetryAttempt(value => value + 1)}>Controlla accesso</button>
+      <button type="button" className="btn btn-outline-secondary" onClick={() => signOut()}>Esci</button></CenteredMessage>
+  }
+
   if (!association) {
     if (availableAssociations.length > 1) {
       return (
@@ -237,6 +272,7 @@ export default function WebAuthGate({ children, isSatellite = false }) {
     localUserId,
     user,
     role: clerkApplicationRole(user, sessionClaims),
+    access,
     signOut
   })
 }

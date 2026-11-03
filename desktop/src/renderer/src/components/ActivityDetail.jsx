@@ -15,7 +15,7 @@ const ActivityDetail = ({ activityId, shell, onBack }) => {
     const [activeTab, setActiveTab] = useState('participants');
     const [ricevutaCosto, setRicevutaCosto] = useState(null);
     const [error, setError] = useState('');
-    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api));
+    const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api), shell?.currentUser?.access);
     const canCertificates = Boolean(window.api) || shell?.pages?.some(page => page.id === 'certificates');
     const canImport = Boolean(window.api) || shell?.currentUser?.role === 'presidente';
     const money = value => value == null ? '—' : `€ ${value.toLocaleString('it-IT')}`;

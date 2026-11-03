@@ -55,6 +55,10 @@ public class SuiteAccess {
         if (!environment.acceptsProfiles(Profiles.of("cloud"))) {
             return;
         }
+        if (com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, authentication, associationId, "associago.projects.read");
+            return;
+        }
         if (!(authentication instanceof JwtAuthenticationToken) || !authentication.isAuthenticated()) {
             throw new SuiteException(401, "USER_UNAUTHORIZED", "Accesso autenticato richiesto.");
         }
@@ -71,6 +75,8 @@ public class SuiteAccess {
     }
 
     public boolean mayReadFinancial(Authentication authentication) {
+        if (environment.acceptsProfiles(Profiles.of("cloud")) && com.associago.access.SuiteAssociationScope.enabled(environment))
+            return com.associago.access.SuiteAccessService.permits(authentication, "associago.finance.read");
         return !environment.acceptsProfiles(Profiles.of("cloud")) || authentication != null
                 && authentication.getAuthorities().stream().anyMatch(authority -> Set.of(
                         "ROLE_PRESIDENTE", "ROLE_RESPONSABILE_AMMINISTRATIVO").contains(authority.getAuthority()));

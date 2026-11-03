@@ -261,7 +261,7 @@ function ContextCard({ context, busy, sync }) {
 
 export default function ProjectsDashboard({ associationId, shell }) {
   const requestedSuiteId = shell?.requestedSuiteProjectId ?? null
-  const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api))
+  const canFinance = mayViewProjectFinance(shell?.currentUser?.role, Boolean(window.api), shell?.currentUser?.access)
   const [projects, setProjects] = useState([])
   const [catalog, setCatalog] = useState([])
   const [selected, setSelected] = useState(null)

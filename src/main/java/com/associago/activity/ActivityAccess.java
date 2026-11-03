@@ -34,6 +34,8 @@ public class ActivityAccess {
     public boolean cloud() { return environment.matchesProfiles("cloud"); }
     public boolean mayReadFinancial() {
         Authentication actor = SecurityContextHolder.getContext().getAuthentication();
+        if (cloud() && com.associago.access.SuiteAssociationScope.enabled(environment))
+            return com.associago.access.SuiteAccessService.permits(actor, "associago.finance.read");
         return !cloud() || actor != null && actor.getAuthorities().stream().anyMatch(a ->
                 Set.of("ROLE_PRESIDENTE", "ROLE_RESPONSABILE_AMMINISTRATIVO").contains(a.getAuthority()));
     }
@@ -51,6 +53,10 @@ public class ActivityAccess {
         Long selected = selected();
         if (selected != null && !Objects.equals(selected, association)) forbidden();
         Authentication actor = SecurityContextHolder.getContext().getAuthentication();
+        if (com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, actor, association, "associago.activities.read");
+            return;
+        }
         if (!(actor instanceof JwtAuthenticationToken) || !actor.isAuthenticated()) {
             throw new SuiteException(401, "USER_UNAUTHORIZED", "Accesso autenticato richiesto.");
         }
@@ -67,6 +73,10 @@ public class ActivityAccess {
     }
     public void requireWrite(Long association) {
         require(association);
+        if (cloud() && com.associago.access.SuiteAssociationScope.enabled(environment)) {
+            com.associago.access.SuiteAssociationScope.require(environment, SecurityContextHolder.getContext().getAuthentication(), association, "associago.activities.write");
+            return;
+        }
         if (cloud() && SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
                 .noneMatch(a -> !"ROLE_RESPONSABILE_AMMINISTRATIVO".equals(a.getAuthority()) && ROLES.contains(a.getAuthority()))) {
             throw new SuiteException(403, "ACTIVITY_FORBIDDEN", "Il ruolo non consente di modificare le attività.");

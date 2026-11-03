@@ -18,7 +18,9 @@ class CloudTokenValidationTests {
         ClerkProperties properties = new ClerkProperties();
         properties.setIssuerUri(ISSUER);
         properties.setAudience(audience);
-        return new CloudSecurityConfig(properties, List.of("https://example.org"))
+        return new CloudSecurityConfig(properties, List.of("https://example.org"),
+                org.mockito.Mockito.mock(com.associago.access.SuiteAccessService.class),
+                new com.fasterxml.jackson.databind.ObjectMapper())
                 .cloudTokenValidator();
     }
 

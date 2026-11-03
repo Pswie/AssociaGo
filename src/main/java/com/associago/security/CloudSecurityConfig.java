@@ -112,11 +112,17 @@ public class CloudSecurityConfig {
 
     private final ClerkProperties clerkProperties;
     private final List<String> allowedOrigins;
+    private final com.associago.access.SuiteAccessService suiteAccess;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public CloudSecurityConfig(
             ClerkProperties clerkProperties,
-            @Value("${associago.cors.allowed-origins:}") List<String> allowedOrigins) {
+            @Value("${associago.cors.allowed-origins:}") List<String> allowedOrigins,
+            com.associago.access.SuiteAccessService suiteAccess,
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.clerkProperties = clerkProperties;
+        this.suiteAccess = suiteAccess;
+        this.objectMapper = objectMapper;
         this.allowedOrigins = allowedOrigins.stream().filter(o -> !o.isBlank()).toList();
 
         if (clerkProperties.getIssuerUri() == null || clerkProperties.getIssuerUri().isBlank()) {
@@ -137,7 +143,16 @@ public class CloudSecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.authorizeHttpRequests(auth -> auth
+        http.authorizeHttpRequests(auth -> {
+            auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/error", "/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/api/integrations/v1/peer/**").permitAll()
+                .requestMatchers("/api/access/v1/**").authenticated();
+            if (suiteAccess.enabled()) {
+                suiteAccess.requireEnabled();
+                auth.requestMatchers("/api/**").access(new com.associago.access.SuitePermissionAuthorizationManager());
+            }
+            auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/error", "/actuator/health", "/actuator/info").permitAll()
                 // These controller methods enforce constant-time peer authentication and a fixed organization.
@@ -218,8 +233,11 @@ public class CloudSecurityConfig {
                 // restano del solo presidente. Un nuovo endpoint non diventa
                 // accessibile per errore a tutti i collaboratori.
                 .requestMatchers("/api/**").hasRole("PRESIDENTE")
-                .anyRequest().denyAll()
-        );
+                .anyRequest().denyAll();
+        });
+
+        http.addFilterAfter(new com.associago.access.SuiteAccessFilter(suiteAccess, objectMapper),
+                org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
 
         http.oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(new ClerkRoleConverter(clerkProperties)))

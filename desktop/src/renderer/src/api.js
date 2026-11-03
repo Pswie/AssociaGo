@@ -823,6 +823,12 @@ export const associago = {
      * Passare null la rimuove, ad esempio al logout.
      */
     setTokenProvider: (provider) => { TOKEN_PROVIDER = provider; },
+    accessMe: (options = {}) => apiRequest('/access/v1/me', options),
+    accessCatalog: (options = {}) => apiRequest('/access/v1/catalog', options),
+    accessUsers: ({ offset = 0, limit = 20, q = '' } = {}, options = {}) =>
+        apiRequest(`/access/v1/users?${new URLSearchParams({ offset: String(offset), limit: String(limit), q })}`, options),
+    accessSync: (offset = 0) => apiRequest('/access/v1/users/sync', { method: 'POST', body: { offset } }),
+    accessUpdate: (subject, body) => apiRequest(`/access/v1/users/${encodeURIComponent(subject)}`, { method: 'PUT', body }),
 
     setAuthToken: (token) => {
         // Compatibilità con il flusso desktop, che chiama setAuthToken(null) al

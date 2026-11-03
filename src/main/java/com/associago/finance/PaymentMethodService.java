@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDateTime;
+import com.associago.suite.SuiteException;
 
 @Service
 public class PaymentMethodService {
@@ -46,6 +48,17 @@ public class PaymentMethodService {
         existing.setConfiguration(updatedMethod.getConfiguration());
         
         return paymentMethodRepository.save(existing);
+    }
+
+    @Transactional
+    public PaymentMethod updateWithoutConfiguration(Long id, Long associationId, PaymentMethod updatedMethod) {
+        int changed = paymentMethodRepository.updateWithoutConfiguration(id, associationId,
+                updatedMethod.getName(), updatedMethod.getType(), updatedMethod.isActive(),
+                updatedMethod.isHasCommission(), updatedMethod.getFixedCommission(),
+                updatedMethod.getPercentageCommission(), LocalDateTime.now());
+        if (changed != 1)
+            throw new SuiteException(409, "PAYMENT_METHOD_CHANGED", "Il metodo di pagamento e cambiato. Ricaricalo prima di salvare.");
+        return getById(id);
     }
 
     @Transactional
