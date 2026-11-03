@@ -1,5 +1,5 @@
 {
-  "status": "published_bandi_operational_catalogue",
+  "status": "published_shared_access_20261103",
   "stagingManifest": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/state.json",
   "gatewayUrlConfigured": "https://adf-bandi-portale-api-y5sbh5kxpa-oc.a.run.app",
   "customDomainsAssigned": 3,
@@ -8,8 +8,8 @@
   "deployments": {
     "associago": {
       "projectId": "prj_sJ5h8IcJGJztPxvBhqnrs92Gw3tc",
-      "deploymentId": "dpl_GdK8pbU1diyRTWUaC6Btb1XF5KVS",
-      "url": "https://adf-gestionale-collaudo-gg1lmci4q-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_7xNrTCFt4yPTLffkuhekWktg7rzd",
+      "url": "https://adf-gestionale-collaudo-hr0wdw8cm-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_2GYmY1HpKk26CNth27DyKZdgjsm1",
@@ -18,14 +18,16 @@
       "apiBase": "https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app/api",
       "apiPrefixVerifiedInPublicBundle": true,
       "previousProductionDeploymentId": "dpl_EQ3MvncdNaKczRFnq5yYq6G9kMMg",
-      "sourceCommit": "00a6c6e516cbe54be8239d10f6386abc02b80b9c",
+      "sourceCommit": "bc4a81dae2ff05ccf171d7f88d64915c9f00a72a",
       "officialLogoSha256": "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d",
-      "runtimeRevision": "adf-gestionale-collaudo-as-ui-20261030-c"
+      "runtimeRevision": "adf-gestionale-collaudo-access-20261103-a",
+      "previousAccessReleaseDeploymentId": "dpl_GdK8pbU1diyRTWUaC6Btb1XF5KVS",
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:8c16e2e26708e214c9f3a641dcabc97dd8ccf5aa4e62f0922569db5f237a53f4"
     },
     "librepm": {
       "projectId": "prj_4oEizJdNAACf5Xfc0v9SnKTYjVln",
-      "deploymentId": "dpl_ADTbavfbV19DuAD6o5Aqah3KCP7S",
-      "url": "https://adf-bandi-collaudo-5v0n79oi1-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_Cwg315rgzw8icQ6cGYcEhLxtc3Wv",
+      "url": "https://adf-bandi-collaudo-px3jep4lx-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_H6ya3wG2Coe66sseg3hVXLrWYom7",
@@ -34,27 +36,30 @@
       "apiBase": "https://adf-bandi-collaudo-y5sbh5kxpa-oc.a.run.app/api",
       "apiPrefixVerifiedInPublicBundle": true,
       "previousProductionDeploymentId": "dpl_EnG5NSX8oJDVzpCE26rCr8PBcvVa",
-      "sourceCommit": "78615261b43474f494e69564f4fff63c5aac1827",
-      "officialLogoSha256": "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d"
+      "sourceCommit": "111eee0750c1df607368c61218f55c4c1d068e68",
+      "officialLogoSha256": "24bfb608601d5a3127dc9ee59b09917de11e1857c1b42c9d9560d1c3a662fa5d",
+      "previousAccessReleaseDeploymentId": "dpl_ADTbavfbV19DuAD6o5Aqah3KCP7S",
+      "runtimeRevision": "adf-bandi-collaudo-access-20261103-a",
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:944d58a85c8330d9f028f02004d3de14fa5b92967249a392c08f7f5a37b83cd2"
     },
     "bandi": {
       "projectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-      "deploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb",
-      "url": "https://adf-bandi-portale-o7zzzmkzk-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_E4XKUmAuyH8jDnXER22fgX5Zw3JX",
+      "url": "https://adf-bandi-portale-ec0ba0rth-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "publicUrl": "https://bandi.angelidelfuturoaps.com",
       "previousProductionDeploymentId": "dpl_H6qXRi1SCE4Hw6a62CYC7BALmiaj",
       "stagingManifest": "deployment/.artifacts/bandi-operativi-manual30-candidate-20261101-de8b1b57636b4f74b22cddb42dcca178/state.json",
       "nativeModeEnabled": true,
-      "runtimeRevision": "adf-bandi-portale-api-operativi-20261101-b",
+      "runtimeRevision": "adf-bandi-portale-api-access-20261103-a",
       "functionRegion": "fra1",
       "officialSourcesEnabled": true,
       "officialSourcesEntry": "https://bandi.angelidelfuturoaps.com/fonti",
       "sourceBaseCommit": "ead581a5ea68c1b3b6eb263e36a4551938b6caa7",
       "cloudCatalogEnabled": true,
-      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc",
-      "sourceCommit": "fd7976c26244b7160e8aa7d0f839a2e720d32c08",
+      "runtimeImage": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:37f64557c71a35f54871f3579a3263aea18ea13790846b98d44dcb098c038a44",
+      "sourceCommit": "70953a3ef528a026674f4b76bb189f39d085eb68",
       "cloudCatalogStore": "cloudflare",
       "runtimeSecretVersion": "3",
       "nodeVersion": "22.x",
@@ -78,19 +83,24 @@
       "localCompanionOrigin": "http://127.0.0.1:8768",
       "publicVerificationReceipt": "deployment/.artifacts/bandi-operativi-ui-production-20261101-699bab7bdab44db5a4d7d86093a06797/receipt.json",
       "gatewayVerificationReceipt": "deployment/.artifacts/bandi-operativi-gcp-cursor-20261101-ec8ab0a1895049f28ee14b2abba3f5fd/promotion-run/receipt.json",
-      "sourcePublicationProof": "deployment/.artifacts/bandi-operativi-git-publication-20261101-4803d2be8e8f4ea7ba5d78da78508f7f/frontend47-normalized-source-proof.json"
+      "sourcePublicationProof": "deployment/.artifacts/bandi-operativi-git-publication-20261101-4803d2be8e8f4ea7ba5d78da78508f7f/frontend47-normalized-source-proof.json",
+      "previousAccessReleaseDeploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb"
     },
     "primary": {
       "projectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
-      "deploymentId": "dpl_8jK1uKpHjScZUWKhxChj6yWCG6UH",
-      "url": "https://terzo-settore-1quhh47w9-villa-langellottis-projects.vercel.app",
+      "deploymentId": "dpl_BNc8v63jzCcxfYG16RzVJkp93YMh",
+      "url": "https://terzo-settore-evhos8k6l-villa-langellottis-projects.vercel.app",
       "state": "READY",
       "target": "production",
       "previousPreviewDeploymentId": "dpl_8zpXLTr39L7oJSaspqdVnEBct8rw",
       "publicUrl": "https://www.angelidelfuturoaps.com/admin",
       "previousProductionDeploymentId": "dpl_8fN5nNZoztGsG8dETceZHJJeiHA5",
       "stagingManifest": "deployment/.artifacts/official-frontends-20261030T202257Z-05a42234/state.json",
-      "configuredBandiEntry": "https://bandi.angelidelfuturoaps.com/fonti"
+      "configuredBandiEntry": "https://bandi.angelidelfuturoaps.com/fonti",
+      "previousAccessReleaseDeploymentId": "dpl_8jK1uKpHjScZUWKhxChj6yWCG6UH",
+      "sourceCommit": "32cefcd9578f36c9b663d1272a1f30bd3ac33c76",
+      "sourceBranch": "release/adf-suite-access-20261103",
+      "automaticGitDeploymentsConnected": false
     }
   },
   "qaCompleted": [
@@ -432,5 +442,52 @@
     "receipt": "deployment/.artifacts/bandi-pagination-production-20261102-af24a104ea1f4bc98ba2ab3f3cb16baa/receipt.json",
     "compiledAssetsReceipt": "deployment/.artifacts/bandi-pagination-candidate-20261102-b32b23e5d91c42b8abff109ba253811b/assets-public/receipt.json",
     "validationReceipt": "deployment/.artifacts/bandi-pagination-ui-20261102-b800faf497d04d94ac432d8c127de77a/final-verification-receipt.json"
+  },
+  "sharedAccessRelease20261103": {
+    "status": "published_verified_without_owner_browser_session",
+    "recordedAt": "2026-11-03T20:31:57.980032+00:00",
+    "catalogSchemaVersion": 1,
+    "authority": "https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app",
+    "ownerSubject": "user_3GyG1NastOd4H8LiZChA5g61g9O",
+    "newTables": [
+      "associago.suite_access_users",
+      "associago.suite_access_audit"
+    ],
+    "postgresMigration": "4",
+    "existingBusinessTablesUnchanged": 64,
+    "newSecretVersions": 0,
+    "paidPlansActivated": 0,
+    "sourceCommits": {
+      "associago": "bc4a81dae2ff05ccf171d7f88d64915c9f00a72a",
+      "librepm": "111eee0750c1df607368c61218f55c4c1d068e68",
+      "bandi": "70953a3ef528a026674f4b76bb189f39d085eb68",
+      "primary": "32cefcd9578f36c9b663d1272a1f30bd3ac33c76"
+    },
+    "backendRevisions": {
+      "associago": "adf-gestionale-collaudo-access-20261103-a",
+      "librepm": "adf-bandi-collaudo-access-20261103-a",
+      "bandi": "adf-bandi-portale-api-access-20261103-a"
+    },
+    "frontendDeployments": {
+      "associago": "dpl_7xNrTCFt4yPTLffkuhekWktg7rzd",
+      "librepm": "dpl_Cwg315rgzw8icQ6cGYcEhLxtc3Wv",
+      "bandi": "dpl_E4XKUmAuyH8jDnXER22fgX5Zw3JX",
+      "primary": "dpl_BNc8v63jzCcxfYG16RzVJkp93YMh"
+    },
+    "verification": {
+      "associagoJava": 157,
+      "associagoNode": 24,
+      "librepmJava": 40,
+      "librepmNode": 30,
+      "bandiApi": 56,
+      "bandiWeb": 936,
+      "primaryNode": 14,
+      "deploymentTooling": 46,
+      "publicHttp": 23,
+      "ownerBrowserSession": false
+    },
+    "publicationReceipt": "deployment/.artifacts/nov3-shared-access-publication-a3e80e18f80e45fc9d34a3b60d968dff/publication-receipt.json",
+    "primarySourceBranch": "release/adf-suite-access-20261103",
+    "primaryOriginalWorktreePreserved": true
   }
 }

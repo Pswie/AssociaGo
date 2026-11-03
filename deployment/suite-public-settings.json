@@ -6,12 +6,14 @@
     "librepmService": "adf-bandi-collaudo",
     "bandiGatewayService": "adf-bandi-portale-api",
     "preparedImages": {
-      "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:1b5e8a2d6163cc5876e5b18b459919459443de9eb3874495677ad6155fc51f41",
-      "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:18981e863362d3a15a7a278e29577a1e1c05b2f646a73d96de878f0ec8447b3c",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:b1e1ba70a3c5688855066297fcd9c0880a41fd6c881b92247c11b4b08a2f98cc"
+      "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:8c16e2e26708e214c9f3a641dcabc97dd8ccf5aa4e62f0922569db5f237a53f4",
+      "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:944d58a85c8330d9f028f02004d3de14fa5b92967249a392c08f7f5a37b83cd2",
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:37f64557c71a35f54871f3579a3263aea18ea13790846b98d44dcb098c038a44"
     },
-    "bandiGatewayRevision": "adf-bandi-portale-api-operativi-20261101-b",
-    "bandiGatewayRuntimeSecretVersion": "3"
+    "bandiGatewayRevision": "adf-bandi-portale-api-access-20261103-a",
+    "bandiGatewayRuntimeSecretVersion": "3",
+    "associagoRevision": "adf-gestionale-collaudo-access-20261103-a",
+    "librepmRevision": "adf-bandi-collaudo-access-20261103-a"
   },
   "vercel": {
     "teamId": "team_IO082y04OBhGW2doFuF6qYcy",
@@ -55,7 +57,7 @@
   "supabaseCertificateSha256": "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7",
   "supabasePlan": "free",
   "allowPaidSupabase": false,
-  "status": "published-bandi-operational-catalogue",
+  "status": "published-shared-access-20261103",
   "supabaseProjectName": "Angeli del futuro",
   "cloudCatalog": {
     "snapshotId": "ae14ee67-e992-485f-a58d-8f406a9d7094",
@@ -142,5 +144,52 @@
     "receipt": "deployment/.artifacts/bandi-pagination-production-20261102-af24a104ea1f4bc98ba2ab3f3cb16baa/receipt.json",
     "compiledAssetsReceipt": "deployment/.artifacts/bandi-pagination-candidate-20261102-b32b23e5d91c42b8abff109ba253811b/assets-public/receipt.json",
     "validationReceipt": "deployment/.artifacts/bandi-pagination-ui-20261102-b800faf497d04d94ac432d8c127de77a/final-verification-receipt.json"
+  },
+  "sharedAccessRelease20261103": {
+    "status": "published_verified_without_owner_browser_session",
+    "recordedAt": "2026-11-03T20:31:57.980032+00:00",
+    "catalogSchemaVersion": 1,
+    "authority": "https://adf-gestionale-collaudo-y5sbh5kxpa-oc.a.run.app",
+    "ownerSubject": "user_3GyG1NastOd4H8LiZChA5g61g9O",
+    "newTables": [
+      "associago.suite_access_users",
+      "associago.suite_access_audit"
+    ],
+    "postgresMigration": "4",
+    "existingBusinessTablesUnchanged": 64,
+    "newSecretVersions": 0,
+    "paidPlansActivated": 0,
+    "sourceCommits": {
+      "associago": "bc4a81dae2ff05ccf171d7f88d64915c9f00a72a",
+      "librepm": "111eee0750c1df607368c61218f55c4c1d068e68",
+      "bandi": "70953a3ef528a026674f4b76bb189f39d085eb68",
+      "primary": "32cefcd9578f36c9b663d1272a1f30bd3ac33c76"
+    },
+    "backendRevisions": {
+      "associago": "adf-gestionale-collaudo-access-20261103-a",
+      "librepm": "adf-bandi-collaudo-access-20261103-a",
+      "bandi": "adf-bandi-portale-api-access-20261103-a"
+    },
+    "frontendDeployments": {
+      "associago": "dpl_7xNrTCFt4yPTLffkuhekWktg7rzd",
+      "librepm": "dpl_Cwg315rgzw8icQ6cGYcEhLxtc3Wv",
+      "bandi": "dpl_E4XKUmAuyH8jDnXER22fgX5Zw3JX",
+      "primary": "dpl_BNc8v63jzCcxfYG16RzVJkp93YMh"
+    },
+    "verification": {
+      "associagoJava": 157,
+      "associagoNode": 24,
+      "librepmJava": 40,
+      "librepmNode": 30,
+      "bandiApi": 56,
+      "bandiWeb": 936,
+      "primaryNode": 14,
+      "deploymentTooling": 46,
+      "publicHttp": 23,
+      "ownerBrowserSession": false
+    },
+    "publicationReceipt": "deployment/.artifacts/nov3-shared-access-publication-a3e80e18f80e45fc9d34a3b60d968dff/publication-receipt.json",
+    "primarySourceBranch": "release/adf-suite-access-20261103",
+    "primaryOriginalWorktreePreserved": true
   }
 }
