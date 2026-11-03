@@ -1,0 +1,13 @@
+- generic [ref=e3]:
+  - generic [ref=e4]: "[plugin:vite:import-analysis] Failed to resolve import \"./next-fixture\" from \"../AssociaGo/deployment/.artifacts/bandi-pagination-ui-20261102-b800faf497d04d94ac432d8c127de77a/link-fixture.ts\". Does the file exist?"
+  - generic [ref=e5]: C:/Users/lange/Desktop/Github/AssociaGo/deployment/.artifacts/bandi-pagination-ui-20261102-b800faf497d04d94ac432d8c127de77a/link-fixture.ts:1:30
+  - generic [ref=e6]: "1 | export { Link as default } from \"./next-fixture\"; | ^ 2 |"
+  - generic [ref=e7]: at TransformPluginContext._formatLog (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:8803:39) at TransformPluginContext.error (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:8800:14) at resolveId (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:26594:18) at async file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:26693:23 at async Promise.all (index 0) at async TransformPluginContext.transform (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:26666:4) at async EnvironmentPluginContainer.transform (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:8582:14) at async loadAndTransform (file:///C:/Users/lange/Desktop/Github/Bandi/node_modules/vite/dist/node/chunks/node.js:20155:26)
+  - generic [ref=e8]:
+    - text: Click outside, press Esc key, or fix the code to dismiss.You can also disable this overlay by setting
+    - code [ref=e9]: server.hmr.overlay
+    - text: to
+    - code [ref=e10]: "false"
+    - text: in
+    - code [ref=e11]: vite.config.js
+    - text: .

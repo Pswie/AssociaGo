@@ -1,0 +1,182 @@
+- generic [ref=f4e3]:
+  - link "Vai al contenuto principale" [ref=f4e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - link "Bandi, inizio" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - strong [ref=f4e9]: Bandi
+      - button "Menu" [ref=f4e10] [cursor=pointer]
+  - main [ref=f4e14]:
+    - generic [ref=f4e15]:
+      - heading "Bandi" [level=1] [ref=f4e16]
+      - paragraph [ref=f4e17]: Opportunità e requisiti per i due enti.
+    - generic [ref=f4e18]:
+      - generic [ref=f4e19]:
+        - text: "Dati:"
+        - strong [ref=f4e20]: Online
+      - button "Usa questo PC" [ref=f4e21] [cursor=pointer]
+    - generic [ref=f4e22]:
+      - group "Viste del catalogo" [ref=f4e23]:
+        - button "Bandi aperti" [ref=f4e24] [cursor=pointer]
+        - button "Tutte le schede" [pressed] [ref=f4e25] [cursor=pointer]
+      - search [ref=f4e26]:
+        - generic [ref=f4e27]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [ref=f4e28]
+        - generic [ref=f4e29]:
+          - text: Stato
+          - combobox "Stato" [ref=f4e30]:
+            - option "Aperti"
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede" [selected]
+        - generic [ref=f4e31]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f4e32]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f4e33]:
+          - text: Ente
+          - combobox "Ente" [ref=f4e34]:
+            - option "Angeli del Futuro APS"
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti" [selected]
+        - button "Cerca" [ref=f4e35] [cursor=pointer]
+      - generic [ref=f4e36]:
+        - heading "Tutti i risultati" [active] [level=2] [ref=f4e179]
+        - status [ref=f4e479]: Schede 6–10 · 5 per pagina
+      - navigation "Pagine dei bandi" [ref=f4e480]:
+        - button "Indietro" [ref=f4e481] [cursor=pointer]
+        - generic [ref=f4e482]: Pagina 2
+        - button "Avanti" [ref=f4e484] [cursor=pointer]
+      - list [ref=f4e485]:
+        - listitem [ref=f4e486]:
+          - article [ref=f4e487]:
+            - generic [ref=f4e488]:
+              - paragraph [ref=f4e489]: PR Campania FESR — opportunità di finanziamento
+              - generic [ref=f4e490]: Da verificare
+            - heading [level=2] [ref=f4e491]:
+              - 'button "\"Artigiani innovatori\" del Cilento interno: avviso pubblico per la concessione di contributi a micro, piccole e medie imprese artigiane" [ref=f4e492] [cursor=pointer]'
+            - paragraph [ref=f4e493]: Pubblicazione
+            - generic [ref=f4e494]:
+              - region "Angeli del Futuro APS" [ref=f4e495]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e496]
+                - paragraph [ref=f4e497]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e498]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e499]
+                - paragraph [ref=f4e500]: Da analizzare
+            - generic [ref=f4e501]:
+              - 'button "Apri scheda : \"Artigiani innovatori\" del Cilento interno: avviso pubblico per la concessione di contributi a micro, piccole e medie imprese artigiane" [ref=f4e502] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e503]: ": \"Artigiani innovatori\" del Cilento interno: avviso pubblico per la concessione di contributi a micro, piccole e medie imprese artigiane"
+              - 'link "Fonte ufficiale : \"Artigiani innovatori\" del Cilento interno: avviso pubblico per la concessione di contributi a micro, piccole e medie imprese artigiane" [ref=f4e504] [cursor=pointer]':
+                - /url: https://porfesr.regione.campania.it/it/opportunita-e-bandi/opportunita-di-finanziamento/-artigiani-innovatori-del-cilento-interno-avviso-pubblico-per-la-concessione-di-contributi-a-micro-piccole-e-medie-imprese-artigiane
+                - text: Fonte ufficiale
+                - generic [ref=f4e505]: ": \"Artigiani innovatori\" del Cilento interno: avviso pubblico per la concessione di contributi a micro, piccole e medie imprese artigiane"
+        - listitem [ref=f4e506]:
+          - article [ref=f4e507]:
+            - generic [ref=f4e508]:
+              - paragraph [ref=f4e509]: PR Campania FSE+ 2021-2027 — avvisi pubblici
+              - generic [ref=f4e510]: Da verificare
+            - heading [level=2] [ref=f4e511]:
+              - button "10 milioni per i dottorati di ricerca innovativi con caratterizzazione industriale. Pubblicato l’Avviso per le università" [ref=f4e512] [cursor=pointer]
+            - paragraph [ref=f4e513]: Pubblicazione
+            - generic [ref=f4e514]:
+              - region "Angeli del Futuro APS" [ref=f4e515]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e516]
+                - paragraph [ref=f4e517]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e518]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e519]
+                - paragraph [ref=f4e520]: Da analizzare
+            - generic [ref=f4e521]:
+              - 'button "Apri scheda : 10 milioni per i dottorati di ricerca innovativi con caratterizzazione industriale. Pubblicato l’Avviso per le università" [ref=f4e522] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e523]: ": 10 milioni per i dottorati di ricerca innovativi con caratterizzazione industriale. Pubblicato l’Avviso per le università"
+              - 'link "Fonte ufficiale : 10 milioni per i dottorati di ricerca innovativi con caratterizzazione industriale. Pubblicato l’Avviso per le università" [ref=f4e524] [cursor=pointer]':
+                - /url: https://fse.regione.campania.it/10-milioni-per-i-dottorati-di-ricerca-innovativi-con-caratterizzazione-industriale-pubblicato-lavviso-per-le-universita/
+                - text: Fonte ufficiale
+                - generic [ref=f4e525]: ": 10 milioni per i dottorati di ricerca innovativi con caratterizzazione industriale. Pubblicato l’Avviso per le università"
+        - listitem [ref=f4e526]:
+          - article [ref=f4e527]:
+            - generic [ref=f4e528]:
+              - paragraph [ref=f4e529]: PR Campania FSE+ 2021-2027 — avvisi pubblici
+              - generic [ref=f4e530]: Scaduto / chiuso
+            - heading [level=2] [ref=f4e531]:
+              - button "10 milioni per il finanziamento di borse di studio per la frequenza di Academies regionali di livello internazionale in ambito ICT e Digitale" [ref=f4e532] [cursor=pointer]
+            - paragraph [ref=f4e533]: Pubblicazione · Scadenza 9 set 2025
+            - generic [ref=f4e534]:
+              - region "Angeli del Futuro APS" [ref=f4e535]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e536]
+                - paragraph [ref=f4e537]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e538]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e539]
+                - paragraph [ref=f4e540]: Da analizzare
+            - generic [ref=f4e541]:
+              - 'button "Apri scheda : 10 milioni per il finanziamento di borse di studio per la frequenza di Academies regionali di livello internazionale in ambito ICT e Digitale" [ref=f4e542] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e543]: ": 10 milioni per il finanziamento di borse di studio per la frequenza di Academies regionali di livello internazionale in ambito ICT e Digitale"
+              - 'link "Fonte ufficiale : 10 milioni per il finanziamento di borse di studio per la frequenza di Academies regionali di livello internazionale in ambito ICT e Digitale" [ref=f4e544] [cursor=pointer]':
+                - /url: https://fse.regione.campania.it/10-milioni-per-il-finanziamento-di-borse-di-studio-per-la-frequenza-di-academies-regionali-di-livello-internazionale-in-ambito-ict-e-digitale/
+                - text: Fonte ufficiale
+                - generic [ref=f4e545]: ": 10 milioni per il finanziamento di borse di studio per la frequenza di Academies regionali di livello internazionale in ambito ICT e Digitale"
+        - listitem [ref=f4e546]:
+          - article [ref=f4e547]:
+            - generic [ref=f4e548]:
+              - paragraph [ref=f4e549]: PR Campania FSE+ 2021-2027 — avvisi pubblici
+              - generic [ref=f4e550]: Da verificare
+            - heading [level=2] [ref=f4e551]:
+              - button "5 milioni per favorire la nascita di start up innovative nell’ambito della “ Research and Innovation Strategies for Smart Specialisation – RIS3 ” della Regione Campania" [ref=f4e552] [cursor=pointer]
+            - paragraph [ref=f4e553]: Pubblicazione
+            - generic [ref=f4e554]:
+              - region "Angeli del Futuro APS" [ref=f4e555]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e556]
+                - paragraph [ref=f4e557]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e558]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e559]
+                - paragraph [ref=f4e560]: Da analizzare
+            - generic [ref=f4e561]:
+              - 'button "Apri scheda : 5 milioni per favorire la nascita di start up innovative nell’ambito della “ Research and Innovation Strategies for Smart Specialisation – RIS3 ” della Regione Campania" [ref=f4e562] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e563]: ": 5 milioni per favorire la nascita di start up innovative nell’ambito della “ Research and Innovation Strategies for Smart Specialisation – RIS3 ” della Regione Campania"
+              - 'link "Fonte ufficiale : 5 milioni per favorire la nascita di start up innovative nell’ambito della “ Research and Innovation Strategies for Smart Specialisation – RIS3 ” della Regione Campania" [ref=f4e564] [cursor=pointer]':
+                - /url: https://fse.regione.campania.it/5-milioni-per-favorire-la-nascita-di-start-up-innovative-nellambito-della-research-and-innovation-strategies-for-smart-specialisation-ris3-della-regione-campania/
+                - text: Fonte ufficiale
+                - generic [ref=f4e565]: ": 5 milioni per favorire la nascita di start up innovative nell’ambito della “ Research and Innovation Strategies for Smart Specialisation – RIS3 ” della Regione Campania"
+        - listitem [ref=f4e566]:
+          - article [ref=f4e567]:
+            - generic [ref=f4e568]:
+              - paragraph [ref=f4e569]: Regione Campania — portale bandi e avvisi del territorio
+              - generic [ref=f4e570]: Da verificare
+            - heading [level=2] [ref=f4e571]:
+              - button "ACER / Avviso pubblico per la selezione del Direttore Generale" [ref=f4e572] [cursor=pointer]
+            - paragraph [ref=f4e573]: Pubblicazione
+            - generic [ref=f4e574]:
+              - region "Angeli del Futuro APS" [ref=f4e575]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e576]
+                - paragraph [ref=f4e577]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e578]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e579]
+                - paragraph [ref=f4e580]: Da analizzare
+            - generic [ref=f4e581]:
+              - 'button "Apri scheda : ACER / Avviso pubblico per la selezione del Direttore Generale" [ref=f4e582] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e583]: ": ACER / Avviso pubblico per la selezione del Direttore Generale"
+              - 'link "Fonte ufficiale : ACER / Avviso pubblico per la selezione del Direttore Generale" [ref=f4e584] [cursor=pointer]':
+                - /url: https://www.territorio.regione.campania.it/news-blog/acer-/-avviso-pubblico-per-la-selezione-del-direttore-generale
+                - text: Fonte ufficiale
+                - generic [ref=f4e585]: ": ACER / Avviso pubblico per la selezione del Direttore Generale"
+      - navigation "Pagine dei bandi in fondo" [ref=f4e586]:
+        - button "Indietro" [ref=f4e587] [cursor=pointer]
+        - generic [ref=f4e588]: Pagina 2
+        - button "Avanti" [ref=f4e590] [cursor=pointer]
+      - paragraph [ref=f4e39]:
+        - link "Analisi avanzate e scenari" [ref=f4e40] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f4e41]:
+    - paragraph [ref=f4e42]: Bandi
+    - paragraph [ref=f4e43]: Angeli del Futuro APS

@@ -1,0 +1,232 @@
+- generic [ref=f7e3]:
+  - link "Vai al contenuto principale" [ref=f7e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f7e5]:
+    - link "Bandi, inizio" [ref=f7e7] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f7e8]:
+        - strong [ref=f7e9]: Bandi
+        - generic [ref=f7e10]: Angeli del Futuro APS
+    - generic [ref=f7e11]:
+      - navigation "Navigazione principale" [ref=f7e12]:
+        - generic [ref=f7e13]:
+          - paragraph [ref=f7e14]: Lavoro
+          - link "Inizio" [ref=f7e15] [cursor=pointer]:
+            - /url: /
+          - link "Bandi" [ref=f7e19] [cursor=pointer]:
+            - /url: /bandi
+          - link "Candidature" [ref=f7e23] [cursor=pointer]:
+            - /url: /applications
+          - link "Progetti collegati" [ref=f7e27] [cursor=pointer]:
+            - /url: /suite/projects
+          - link "Bozze e richieste" [ref=f7e31] [cursor=pointer]:
+            - /url: /collabora
+        - generic [ref=f7e35]:
+          - paragraph [ref=f7e36]: Consultazione
+          - link "Progetti" [ref=f7e37] [cursor=pointer]:
+            - /url: /fonti?tipo=progetti
+          - link "RUNTS" [ref=f7e41] [cursor=pointer]:
+            - /url: /fonti?tipo=runts
+        - group [ref=f7e45]:
+          - generic "Altri strumenti" [ref=f7e46] [cursor=pointer]
+      - generic [ref=f7e48]:
+        - generic [ref=f7e49]: Account di prova
+        - button "Esci" [ref=f7e50] [cursor=pointer]
+  - main [ref=f7e51]:
+    - generic [ref=f7e52]:
+      - heading "Bandi" [level=1] [ref=f7e53]
+      - paragraph [ref=f7e54]: Opportunità e requisiti per i due enti.
+    - generic [ref=f7e55]:
+      - generic [ref=f7e56]:
+        - text: "Dati:"
+        - strong [ref=f7e57]: Online
+      - button "Usa questo PC" [ref=f7e260] [cursor=pointer]
+    - generic [ref=f7e261]:
+      - group "Viste del catalogo" [ref=f7e262]:
+        - button "Bandi aperti" [pressed] [ref=f7e263] [cursor=pointer]
+        - button "Tutte le schede" [ref=f7e264] [cursor=pointer]
+      - search [ref=f7e265]:
+        - generic [ref=f7e266]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [ref=f7e267]
+        - generic [ref=f7e268]:
+          - text: Stato
+          - combobox "Stato" [ref=f7e269]:
+            - option "Aperti" [selected]
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede"
+        - generic [ref=f7e270]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f7e271]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f7e272]:
+          - text: Ente
+          - combobox "Ente" [ref=f7e273]:
+            - option "Angeli del Futuro APS" [selected]
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti"
+        - button "Cerca" [ref=f7e274] [cursor=pointer]
+      - generic [ref=f7e275]:
+        - heading "Risultati" [level=2] [ref=f7e276]
+        - status [ref=f7e277]: Schede 1–5 · 5 per pagina
+      - navigation "Pagine dei bandi" [ref=f7e278]:
+        - button "Indietro" [disabled] [ref=f7e279]
+        - generic [ref=f7e280]:
+          - generic [ref=f7e281]: Pagina 1
+          - generic [ref=f7e282]: Fine risultati
+        - button "Avanti" [disabled] [ref=f7e283]
+      - list [ref=f7e284]:
+        - listitem [ref=f7e285]:
+          - article [ref=f7e286]:
+            - generic [ref=f7e287]:
+              - paragraph [ref=f7e288]: politiche giovanili active calls
+              - generic [ref=f7e289]: Aperto
+            - heading [level=2] [ref=f7e290]:
+              - button "Fabbrica – Spazi Civici per la Gioventù" [ref=f7e291] [cursor=pointer]
+            - paragraph [ref=f7e292]: Bando · Scadenza 18 dic 2026
+            - generic [ref=f7e293]:
+              - region "Angeli del Futuro APS" [ref=f7e294]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f7e295]
+                - paragraph [ref=f7e296]: Analisi non riuscita
+                - paragraph [ref=f7e297]: Requisiti da verificare
+                - paragraph [ref=f7e298]: "Richiede analisi estesa: input oltre il limite del metodo."
+              - region "Vitanova cooperativa" [ref=f7e299]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f7e300]
+                - paragraph [ref=f7e301]: Analisi non riuscita
+                - paragraph [ref=f7e302]: Requisiti da verificare
+                - paragraph [ref=f7e303]: "Richiede analisi estesa: input oltre il limite del metodo."
+            - generic [ref=f7e304]:
+              - 'button "Apri scheda : Fabbrica – Spazi Civici per la Gioventù" [ref=f7e305] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f7e306]: ": Fabbrica – Spazi Civici per la Gioventù"
+              - 'link "Fonte ufficiale : Fabbrica – Spazi Civici per la Gioventù" [ref=f7e307] [cursor=pointer]':
+                - /url: https://www.politichegiovanili.gov.it/comunicazione/avvisi-e-bandi/politiche-giovanili/fabbrica
+                - text: Fonte ufficiale
+                - generic [ref=f7e308]: ": Fabbrica – Spazi Civici per la Gioventù"
+        - listitem [ref=f7e309]:
+          - article [ref=f7e310]:
+            - generic [ref=f7e311]:
+              - paragraph [ref=f7e312]: politiche giovanili active calls
+              - generic [ref=f7e313]: Aperto
+            - heading [level=2] [ref=f7e314]:
+              - button "Bando per la selezione di 3.767 operatori volontari da impiegare in progetti di Servizio civile universale afferenti a programmi di intervento di Servizio civile agricolo, di Servizio civile ambientale, Servizio civile digitale e autofinanziati" [ref=f7e315] [cursor=pointer]
+            - paragraph [ref=f7e316]: Bando · Scadenza 6 nov 2026
+            - generic [ref=f7e317]:
+              - region "Angeli del Futuro APS" [ref=f7e318]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f7e319]
+                - paragraph [ref=f7e320]: Analisi non riuscita
+                - paragraph [ref=f7e321]: Requisiti da verificare
+                - paragraph [ref=f7e322]: "Analisi interrotta: verificare la richiesta sul PC."
+              - region "Vitanova cooperativa" [ref=f7e323]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f7e324]
+                - paragraph [ref=f7e325]: Analisi non riuscita
+                - paragraph [ref=f7e326]: Requisiti da verificare
+                - paragraph [ref=f7e327]: "Analisi interrotta: verificare la richiesta sul PC."
+            - generic [ref=f7e328]:
+              - 'button "Apri scheda : Bando per la selezione di 3.767 operatori volontari da impiegare in progetti di Servizio civile universale afferenti a programmi di intervento di Servizio civile agricolo, di Servizio civile ambientale, Servizio civile digitale e autofinanziati" [ref=f7e329] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f7e330]: ": Bando per la selezione di 3.767 operatori volontari da impiegare in progetti di Servizio civile universale afferenti a programmi di intervento di Servizio civile agricolo, di Servizio civile ambientale, Servizio civile digitale e autofinanziati"
+              - 'link "Fonte ufficiale : Bando per la selezione di 3.767 operatori volontari da impiegare in progetti di Servizio civile universale afferenti a programmi di intervento di Servizio civile agricolo, di Servizio civile ambientale, Servizio civile digitale e autofinanziati" [ref=f7e331] [cursor=pointer]':
+                - /url: https://www.politichegiovanili.gov.it/comunicazione/avvisi-e-bandi/servizio-civile/bandi-di-selezione-volontari/bando-2026-tematici
+                - text: Fonte ufficiale
+                - generic [ref=f7e332]: ": Bando per la selezione di 3.767 operatori volontari da impiegare in progetti di Servizio civile universale afferenti a programmi di intervento di Servizio civile agricolo, di Servizio civile ambientale, Servizio civile digitale e autofinanziati"
+        - listitem [ref=f7e333]:
+          - article [ref=f7e334]:
+            - generic [ref=f7e335]:
+              - paragraph [ref=f7e336]: PR Campania FSE+ 2021-2027 — avvisi pubblici
+              - generic [ref=f7e337]: Aperto
+            - heading [level=2] [ref=f7e338]:
+              - button "Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso" [ref=f7e339] [cursor=pointer]
+            - paragraph [ref=f7e340]: Bando · Scadenza 2 nov 2026
+            - paragraph [ref=f7e341]: Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso – FSE+ PR Campania 2021/2027 FSE POR Campania 2014-2020 Area Riservata Italiano Italiano it English Inglese en FSE+ in Campania PR Campania FSE+ 2021-2027 Priorità Autorità del Programma Punto di contatto Avvisi Avvisi Opportunità Attuazio
+            - generic [ref=f7e342]:
+              - region "Angeli del Futuro APS" [ref=f7e343]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f7e344]
+                - paragraph [ref=f7e345]: Analisi non riuscita
+                - paragraph [ref=f7e346]: Requisiti da verificare
+                - paragraph [ref=f7e347]: "Richiede analisi estesa: input oltre il limite del metodo."
+              - region "Vitanova cooperativa" [ref=f7e348]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f7e349]
+                - paragraph [ref=f7e350]: Analisi non riuscita
+                - paragraph [ref=f7e351]: Requisiti da verificare
+                - paragraph [ref=f7e352]: "Richiede analisi estesa: input oltre il limite del metodo."
+            - generic [ref=f7e353]:
+              - 'button "Apri scheda : Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso" [ref=f7e354] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f7e355]: ": Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso"
+              - 'link "Fonte ufficiale : Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso" [ref=f7e356] [cursor=pointer]':
+                - /url: https://fse.regione.campania.it/presa-in-carico-e-accompagnamento-dei-soggetti-con-disturbi-del-neurosviluppo-incluso-lo-spettro-autistico-in-eta-di-transizione-16-21-anni-e-adulti-avviso
+                - text: Fonte ufficiale
+                - generic [ref=f7e357]: ": Presa in carico e accompagnamento dei soggetti con disturbi del neurosviluppo, incluso lo spettro autistico, in età di transizione (16-21 anni) e adulti. Avviso"
+        - listitem [ref=f7e358]:
+          - article [ref=f7e359]:
+            - generic [ref=f7e360]:
+              - paragraph [ref=f7e361]: cattolica intrapresa 2026
+              - generic [ref=f7e362]: Aperto
+            - heading [level=2] [ref=f7e363]:
+              - button "Fondazione Cattolica - Intrapresa Sociale 2026" [ref=f7e364] [cursor=pointer]
+            - paragraph [ref=f7e365]: Bando · Scadenza 13 nov 2026
+            - generic [ref=f7e366]:
+              - region "Angeli del Futuro APS" [ref=f7e367]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f7e368]
+                - paragraph [ref=f7e369]: Valutazione preliminare
+                - paragraph [ref=f7e370]: Requisiti da verificare
+              - region "Vitanova cooperativa" [ref=f7e371]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f7e372]
+                - paragraph [ref=f7e373]: Valutazione preliminare
+                - paragraph [ref=f7e374]: Requisiti da verificare
+            - generic [ref=f7e375]:
+              - 'button "Apri scheda : Fondazione Cattolica - Intrapresa Sociale 2026" [ref=f7e376] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f7e377]: ": Fondazione Cattolica - Intrapresa Sociale 2026"
+              - 'link "Fonte ufficiale : Fondazione Cattolica - Intrapresa Sociale 2026" [ref=f7e378] [cursor=pointer]':
+                - /url: https://www.fondazionecattolica.it/wp-content/uploads/2026/01/Bando-intrapresa-sociale-fondazione-cattolica-2026.pdf
+                - text: Fonte ufficiale
+                - generic [ref=f7e379]: ": Fondazione Cattolica - Intrapresa Sociale 2026"
+        - listitem [ref=f7e380]:
+          - article [ref=f7e381]:
+            - generic [ref=f7e382]:
+              - paragraph [ref=f7e383]: fondazione con il sud call catalogue
+              - generic [ref=f7e384]: Aperto
+            - heading [level=2] [ref=f7e385]:
+              - button "Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f7e386] [cursor=pointer]
+            - paragraph [ref=f7e387]: Bando · Scadenza 10 dic 2026
+            - generic [ref=f7e388]:
+              - region "Angeli del Futuro APS" [ref=f7e389]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f7e390]
+                - paragraph [ref=f7e391]: Ultimo tentativo non riuscito
+                - paragraph [ref=f7e392]: Requisiti da verificare
+                - paragraph [ref=f7e393]: Risultato precedente disponibile
+                - paragraph [ref=f7e394]: "Analisi interrotta: verificare la richiesta sul PC."
+              - region "Vitanova cooperativa" [ref=f7e395]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f7e396]
+                - paragraph [ref=f7e397]: Ultimo tentativo non riuscito
+                - paragraph [ref=f7e398]: Requisiti da verificare
+                - paragraph [ref=f7e399]: Risultato precedente disponibile
+                - paragraph [ref=f7e400]: "Analisi interrotta: verificare la richiesta sul PC."
+            - generic [ref=f7e401]:
+              - 'button "Apri scheda : Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f7e402] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f7e403]: ": Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie"
+              - 'link "Fonte ufficiale : Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f7e404] [cursor=pointer]':
+                - /url: https://www.fondazioneconilsud.it/bandi/iniziativa-2026-per-la-valorizzazione-dei-beni-confiscati-alle-mafie
+                - text: Fonte ufficiale
+                - generic [ref=f7e405]: ": Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie"
+      - navigation "Pagine dei bandi in fondo" [ref=f7e406]:
+        - button "Indietro" [disabled] [ref=f7e407]
+        - generic [ref=f7e408]:
+          - generic [ref=f7e409]: Pagina 1
+          - generic [ref=f7e410]: Fine risultati
+        - button "Avanti" [disabled] [ref=f7e411]
+      - paragraph [ref=f7e412]:
+        - link "Analisi avanzate e scenari" [ref=f7e413] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f7e78]:
+    - paragraph [ref=f7e79]: Bandi
+    - paragraph [ref=f7e80]: Angeli del Futuro APS

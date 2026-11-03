@@ -1,0 +1,100 @@
+- generic [ref=f4e3]:
+  - link "Vai al contenuto principale" [ref=f4e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - link "Bandi, inizio" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - strong [ref=f4e9]: Bandi
+      - button "Menu" [ref=f4e10] [cursor=pointer]
+  - main [ref=f4e14]:
+    - generic [ref=f4e15]:
+      - heading "Bandi" [level=1] [ref=f4e16]
+      - paragraph [ref=f4e17]: Opportunità e requisiti per i due enti.
+    - generic [ref=f4e18]:
+      - generic [ref=f4e19]:
+        - text: "Dati:"
+        - strong [ref=f4e20]: Questo PC
+      - button "Usa online" [ref=f4e899] [cursor=pointer]
+    - generic [ref=f4e900]:
+      - group "Viste del catalogo" [ref=f4e901]:
+        - button "Bandi aperti" [ref=f4e902] [cursor=pointer]
+        - button "Tutte le schede" [ref=f4e903] [cursor=pointer]
+      - search [ref=f4e904]:
+        - generic [ref=f4e905]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [active] [ref=f4e906]: beni confiscati
+        - generic [ref=f4e907]:
+          - text: Stato
+          - combobox "Stato" [ref=f4e908]:
+            - option "Aperti"
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede" [selected]
+        - generic [ref=f4e909]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f4e910]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f4e911]:
+          - text: Ente
+          - combobox "Ente" [ref=f4e912]:
+            - option "Angeli del Futuro APS"
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti" [selected]
+        - button "Cerca" [ref=f4e913] [cursor=pointer]
+      - generic [ref=f4e914]:
+        - heading "Risultati" [level=2] [ref=f4e1462]
+        - status [ref=f4e1463]: Schede 1–1 · 5 per pagina
+      - navigation "Pagine dei bandi" [ref=f4e1464]:
+        - button "Indietro" [disabled] [ref=f4e1465]
+        - generic [ref=f4e1466]:
+          - generic [ref=f4e1467]: Pagina 1
+          - generic [ref=f4e1468]: Fine risultati
+        - button "Avanti" [disabled] [ref=f4e1469]
+      - list [ref=f4e1470]:
+        - listitem [ref=f4e1471]:
+          - article [ref=f4e1472]:
+            - generic [ref=f4e1473]:
+              - paragraph [ref=f4e1474]: fondazione con il sud call catalogue
+              - generic [ref=f4e1475]: Aperto
+            - heading [level=2] [ref=f4e1476]:
+              - button "Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f4e1477] [cursor=pointer]
+            - paragraph [ref=f4e1478]: Bando · Scadenza 10 dic 2026
+            - generic [ref=f4e1479]:
+              - region "Angeli del Futuro APS" [ref=f4e1480]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e1481]
+                - paragraph [ref=f4e1482]: Ultimo tentativo non riuscito
+                - paragraph [ref=f4e1483]: Requisiti da verificare
+                - paragraph [ref=f4e1484]: Risultato precedente disponibile
+                - paragraph [ref=f4e1485]: "Analisi interrotta: verificare la richiesta sul PC."
+              - region "Vitanova cooperativa" [ref=f4e1486]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e1487]
+                - paragraph [ref=f4e1488]: Ultimo tentativo non riuscito
+                - paragraph [ref=f4e1489]: Requisiti da verificare
+                - paragraph [ref=f4e1490]: Risultato precedente disponibile
+                - paragraph [ref=f4e1491]: "Analisi interrotta: verificare la richiesta sul PC."
+            - generic [ref=f4e1492]:
+              - 'button "Apri scheda : Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f4e1493] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e1494]: ": Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie"
+              - 'link "Fonte ufficiale : Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie" [ref=f4e1495] [cursor=pointer]':
+                - /url: https://www.fondazioneconilsud.it/bandi/iniziativa-2026-per-la-valorizzazione-dei-beni-confiscati-alle-mafie
+                - text: Fonte ufficiale
+                - generic [ref=f4e1496]: ": Iniziativa 2026 per la valorizzazione dei beni confiscati alle mafie"
+      - navigation "Pagine dei bandi in fondo" [ref=f4e1497]:
+        - button "Indietro" [disabled] [ref=f4e1498]
+        - generic [ref=f4e1499]:
+          - generic [ref=f4e1500]: Pagina 1
+          - generic [ref=f4e1501]: Fine risultati
+        - button "Avanti" [disabled] [ref=f4e1502]
+      - paragraph [ref=f4e1049]:
+        - link "Analisi avanzate e scenari" [ref=f4e1050] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f4e41]:
+    - paragraph [ref=f4e42]: Bandi
+    - paragraph [ref=f4e43]: Angeli del Futuro APS

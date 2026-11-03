@@ -1,0 +1,82 @@
+- generic [ref=f7e3]:
+  - link "Vai al contenuto principale" [ref=f7e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f7e5]:
+    - link "Bandi, inizio" [ref=f7e7] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f7e8]:
+        - strong [ref=f7e9]: Bandi
+        - generic [ref=f7e10]: Angeli del Futuro APS
+    - generic [ref=f7e11]:
+      - navigation "Navigazione principale" [ref=f7e12]:
+        - generic [ref=f7e13]:
+          - paragraph [ref=f7e14]: Lavoro
+          - link "Inizio" [ref=f7e15] [cursor=pointer]:
+            - /url: /
+          - link "Bandi" [ref=f7e19] [cursor=pointer]:
+            - /url: /bandi
+          - link "Candidature" [ref=f7e23] [cursor=pointer]:
+            - /url: /applications
+          - link "Progetti collegati" [ref=f7e27] [cursor=pointer]:
+            - /url: /suite/projects
+          - link "Bozze e richieste" [ref=f7e31] [cursor=pointer]:
+            - /url: /collabora
+        - generic [ref=f7e35]:
+          - paragraph [ref=f7e36]: Consultazione
+          - link "Progetti" [ref=f7e37] [cursor=pointer]:
+            - /url: /fonti?tipo=progetti
+          - link "RUNTS" [ref=f7e41] [cursor=pointer]:
+            - /url: /fonti?tipo=runts
+        - group [ref=f7e45]:
+          - generic "Altri strumenti" [ref=f7e46] [cursor=pointer]
+      - generic [ref=f7e48]:
+        - generic [ref=f7e49]: Account di prova
+        - button "Esci" [ref=f7e50] [cursor=pointer]
+  - main [ref=f7e51]:
+    - generic [ref=f7e52]:
+      - heading "Bandi" [level=1] [ref=f7e53]
+      - paragraph [ref=f7e54]: Opportunità e requisiti per i due enti.
+    - generic [ref=f7e55]:
+      - generic [ref=f7e56]:
+        - text: "Dati:"
+        - strong [ref=f7e57]: Online
+      - button "Usa questo PC" [ref=f7e58] [cursor=pointer]
+    - generic [ref=f7e59]:
+      - group "Viste del catalogo" [ref=f7e60]:
+        - button "Bandi aperti" [pressed] [ref=f7e61] [cursor=pointer]
+        - button "Tutte le schede" [ref=f7e62] [cursor=pointer]
+      - search [ref=f7e63]:
+        - generic [ref=f7e64]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [ref=f7e65]
+        - generic [ref=f7e66]:
+          - text: Stato
+          - combobox "Stato" [ref=f7e67]:
+            - option "Aperti" [selected]
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede"
+        - generic [ref=f7e68]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f7e69]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f7e70]:
+          - text: Ente
+          - combobox "Ente" [ref=f7e71]:
+            - option "Angeli del Futuro APS" [selected]
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti"
+        - button "Cerca" [ref=f7e72] [cursor=pointer]
+      - heading "Risultati" [level=2] [ref=f7e74]
+      - status [ref=f7e75]: Caricamento dei bandi…
+      - paragraph [ref=f7e76]:
+        - link "Analisi avanzate e scenari" [ref=f7e77] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f7e78]:
+    - paragraph [ref=f7e79]: Bandi
+    - paragraph [ref=f7e80]: Angeli del Futuro APS

@@ -1,0 +1,57 @@
+- generic [ref=f2e3]:
+  - link "Vai al contenuto principale" [ref=f2e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f2e5]:
+    - generic [ref=f2e6]:
+      - link "Bandi, inizio" [ref=f2e7] [cursor=pointer]:
+        - /url: /
+        - strong [ref=f2e9]: Bandi
+      - button "Menu" [ref=f2e10] [cursor=pointer]
+  - main [ref=f2e14]:
+    - generic [ref=f2e15]:
+      - heading "Bandi" [level=1] [ref=f2e16]
+      - paragraph [ref=f2e17]: Opportunità e requisiti per i due enti.
+    - generic [ref=f2e18]:
+      - generic [ref=f2e19]:
+        - text: "Dati:"
+        - strong [ref=f2e20]: Online
+      - button "Usa questo PC" [ref=f2e21] [cursor=pointer]
+    - generic [ref=f2e22]:
+      - group "Viste del catalogo" [ref=f2e23]:
+        - button "Bandi aperti" [pressed] [ref=f2e24] [cursor=pointer]
+        - button "Tutte le schede" [ref=f2e25] [cursor=pointer]
+      - search [ref=f2e26]:
+        - generic [ref=f2e27]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [ref=f2e28]
+        - generic [ref=f2e29]:
+          - text: Stato
+          - combobox "Stato" [ref=f2e30]:
+            - option "Aperti" [selected]
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede"
+        - generic [ref=f2e31]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f2e32]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f2e33]:
+          - text: Ente
+          - combobox "Ente" [ref=f2e34]:
+            - option "Angeli del Futuro APS" [selected]
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti"
+        - button "Cerca" [ref=f2e35] [cursor=pointer]
+      - heading "Risultati" [level=2] [ref=f2e37]
+      - status [ref=f2e38]: Caricamento dei bandi…
+      - paragraph [ref=f2e39]:
+        - link "Analisi avanzate e scenari" [ref=f2e40] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f2e41]:
+    - paragraph [ref=f2e42]: Bandi
+    - paragraph [ref=f2e43]: Angeli del Futuro APS

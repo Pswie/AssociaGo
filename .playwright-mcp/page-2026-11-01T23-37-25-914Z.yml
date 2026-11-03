@@ -1,0 +1,117 @@
+- generic [ref=f4e3]:
+  - link "Vai al contenuto principale" [ref=f4e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - link "Bandi, inizio" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - strong [ref=f4e9]: Bandi
+      - button "Menu" [ref=f4e10] [cursor=pointer]
+  - main [ref=f4e14]:
+    - generic [ref=f4e15]:
+      - heading "Bandi" [level=1] [ref=f4e16]
+      - paragraph [ref=f4e17]: Opportunità e requisiti per i due enti.
+    - generic [ref=f4e18]:
+      - generic [ref=f4e19]:
+        - text: "Dati:"
+        - strong [ref=f4e20]: Online
+      - button "Usa questo PC" [ref=f4e21] [cursor=pointer]
+    - generic [ref=f4e22]:
+      - group "Viste del catalogo" [ref=f4e23]:
+        - button "Bandi aperti" [ref=f4e24] [cursor=pointer]
+        - button "Tutte le schede" [pressed] [ref=f4e25] [cursor=pointer]
+      - search [ref=f4e26]:
+        - generic [ref=f4e27]:
+          - text: Cerca un bando
+          - textbox "Cerca un bando" [ref=f4e28]
+        - generic [ref=f4e29]:
+          - text: Stato
+          - combobox "Stato" [ref=f4e30]:
+            - option "Aperti"
+            - option "In apertura"
+            - option "Da verificare"
+            - option "Scaduti e archivio"
+            - option "Tutte le schede" [selected]
+        - generic [ref=f4e31]:
+          - text: Analisi
+          - combobox "Analisi" [ref=f4e32]:
+            - option "Tutte" [selected]
+            - option "In attesa"
+            - option "Analizzate"
+            - option "Da aggiornare"
+            - option "Non riuscite"
+        - generic [ref=f4e33]:
+          - text: Ente
+          - combobox "Ente" [ref=f4e34]:
+            - option "Angeli del Futuro APS"
+            - option "Vitanova cooperativa"
+            - option "Entrambi gli enti" [selected]
+        - button "Cerca" [ref=f4e35] [cursor=pointer]
+      - generic [ref=f4e36]:
+        - heading "Tutti i risultati" [active] [level=2] [ref=f4e179]
+        - status [ref=f4e425]: Schede 11–12 · 5 per pagina
+      - navigation "Pagine dei bandi" [ref=f4e426]:
+        - button "Indietro" [ref=f4e427] [cursor=pointer]
+        - generic [ref=f4e428]:
+          - generic [ref=f4e429]: Pagina 3
+          - generic [ref=f4e430]: Fine risultati
+        - button "Avanti" [disabled] [ref=f4e431]
+      - list [ref=f4e432]:
+        - listitem [ref=f4e433]:
+          - article [ref=f4e434]:
+            - generic [ref=f4e435]:
+              - paragraph [ref=f4e436]: PR Campania FESR — opportunità di finanziamento
+              - generic [ref=f4e437]: Da verificare
+            - heading [level=2] [ref=f4e438]:
+              - 'button "AIUTI ALLE IMPRESE: 200 MILIONI PER INTERVENTI DI DIGITALIZZAZIONE, AMMODERNAMENTO E RISTRUTTURAZIONE" [ref=f4e439] [cursor=pointer]'
+            - paragraph [ref=f4e440]: Pubblicazione
+            - generic [ref=f4e441]:
+              - region "Angeli del Futuro APS" [ref=f4e442]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e443]
+                - paragraph [ref=f4e444]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e445]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e446]
+                - paragraph [ref=f4e447]: Da analizzare
+            - generic [ref=f4e448]:
+              - 'button "Apri scheda : AIUTI ALLE IMPRESE: 200 MILIONI PER INTERVENTI DI DIGITALIZZAZIONE, AMMODERNAMENTO E RISTRUTTURAZIONE" [ref=f4e449] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e450]: ": AIUTI ALLE IMPRESE: 200 MILIONI PER INTERVENTI DI DIGITALIZZAZIONE, AMMODERNAMENTO E RISTRUTTURAZIONE"
+              - 'link "Fonte ufficiale : AIUTI ALLE IMPRESE: 200 MILIONI PER INTERVENTI DI DIGITALIZZAZIONE, AMMODERNAMENTO E RISTRUTTURAZIONE" [ref=f4e451] [cursor=pointer]':
+                - /url: https://porfesr.regione.campania.it/it/opportunita-e-bandi/opportunita-di-finanziamento/aiuti-alle-imprese-200-milioni-per-interventi-di-digitalizzazione-ammodernamento-e-ristrutturazione
+                - text: Fonte ufficiale
+                - generic [ref=f4e452]: ": AIUTI ALLE IMPRESE: 200 MILIONI PER INTERVENTI DI DIGITALIZZAZIONE, AMMODERNAMENTO E RISTRUTTURAZIONE"
+        - listitem [ref=f4e453]:
+          - article [ref=f4e454]:
+            - generic [ref=f4e455]:
+              - paragraph [ref=f4e456]: Sviluppo Campania — bandi e avvisi
+              - generic [ref=f4e457]: Da verificare
+            - heading [level=2] [ref=f4e458]:
+              - button "AVVISO AGLI UTENTI" [ref=f4e459] [cursor=pointer]
+            - paragraph [ref=f4e460]: Notizia
+            - generic [ref=f4e461]:
+              - region "Angeli del Futuro APS" [ref=f4e462]:
+                - heading "Angeli del Futuro APS" [level=3] [ref=f4e463]
+                - paragraph [ref=f4e464]: Da analizzare
+              - region "Vitanova cooperativa" [ref=f4e465]:
+                - heading "Vitanova cooperativa" [level=3] [ref=f4e466]
+                - paragraph [ref=f4e467]: Da analizzare
+            - generic [ref=f4e468]:
+              - 'button "Apri scheda : AVVISO AGLI UTENTI" [ref=f4e469] [cursor=pointer]':
+                - text: Apri scheda
+                - generic [ref=f4e470]: ": AVVISO AGLI UTENTI"
+              - 'link "Fonte ufficiale : AVVISO AGLI UTENTI" [ref=f4e471] [cursor=pointer]':
+                - /url: https://www.sviluppocampania.it/2024/02/29/avviso-agli-utenti/
+                - text: Fonte ufficiale
+                - generic [ref=f4e472]: ": AVVISO AGLI UTENTI"
+      - navigation "Pagine dei bandi in fondo" [ref=f4e473]:
+        - button "Indietro" [ref=f4e474] [cursor=pointer]
+        - generic [ref=f4e475]:
+          - generic [ref=f4e476]: Pagina 3
+          - generic [ref=f4e477]: Fine risultati
+        - button "Avanti" [disabled] [ref=f4e478]
+      - paragraph [ref=f4e39]:
+        - link "Analisi avanzate e scenari" [ref=f4e40] [cursor=pointer]:
+          - /url: /radar
+  - contentinfo [ref=f4e41]:
+    - paragraph [ref=f4e42]: Bandi
+    - paragraph [ref=f4e43]: Angeli del Futuro APS
