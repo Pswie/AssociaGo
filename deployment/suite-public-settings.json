@@ -8,9 +8,9 @@
     "preparedImages": {
       "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:8c16e2e26708e214c9f3a641dcabc97dd8ccf5aa4e62f0922569db5f237a53f4",
       "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:944d58a85c8330d9f028f02004d3de14fa5b92967249a392c08f7f5a37b83cd2",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:37f64557c71a35f54871f3579a3263aea18ea13790846b98d44dcb098c038a44"
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:03662a54a868d7eca65b4118e94ea5f0b562a4f99ff912f46c0fc1184477133f"
     },
-    "bandiGatewayRevision": "adf-bandi-portale-api-access-20261103-a",
+    "bandiGatewayRevision": "adf-bandi-portale-api-calendar-20261104-a",
     "bandiGatewayRuntimeSecretVersion": "3",
     "associagoRevision": "adf-gestionale-collaudo-access-20261103-a",
     "librepmRevision": "adf-bandi-collaudo-access-20261103-a"
@@ -22,7 +22,7 @@
     "mainSiteProjectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
     "bandiPortalProjectName": "adf-bandi-portale",
     "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-    "bandiPortalDeploymentId": "dpl_4zhagLBQf6vjHFz9gP1o6a1Maeqb"
+    "bandiPortalDeploymentId": "dpl_E96sJqQhKTcAcKYs6QYSVhzX91aZ"
   },
   "origins": {
     "primary": "https://www.angelidelfuturoaps.com",
@@ -191,5 +191,28 @@
     "publicationReceipt": "deployment/.artifacts/nov3-shared-access-publication-a3e80e18f80e45fc9d34a3b60d968dff/publication-receipt.json",
     "primarySourceBranch": "release/adf-suite-access-20261103",
     "primaryOriginalWorktreePreserved": true
+  },
+  "bandiRelease20261104": {
+    "scope": "Bandi sources, Luna previews, paging and metadata updates",
+    "frontendDeploymentId": "dpl_E96sJqQhKTcAcKYs6QYSVhzX91aZ",
+    "gatewayRevision": "adf-bandi-portale-api-calendar-20261104-a",
+    "workerVersion": "b094b9dd-36b8-4ce8-8f1c-c8939669fc06",
+    "reviewedOpportunities": 14,
+    "analyzedProfileSummaries": 28,
+    "open": 13,
+    "upcoming": 1,
+    "pageSize": 5,
+    "metadataOnly": true,
+    "metadataPriorityControllerSha256": "9e446f93cbd67ada5acb69e13919a8abfc64df30590b8a5dc98a33dfd377737c",
+    "nativeAiPaused": true,
+    "providerRequests": 19,
+    "totalTokens": 802313,
+    "standardEstimatedUsd": "0.262988250",
+    "currentBatchStandardEstimatedUsd": "0.113348200",
+    "actualBilledUsd": null,
+    "freeQuotaEligibilityVerified": false,
+    "backendStrictMypyPassed": false,
+    "ownerBrowserSessionVerified": false,
+    "report": "https://github.com/Pswie/ets-intelligence-graph/blob/agent/phase-4-structured-extraction/docs/BANDI-ANALISI-E-MIGLIORAMENTI-20261104.md"
   }
 }

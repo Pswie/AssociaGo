@@ -26,7 +26,7 @@ def gateway_modules(repository: Path) -> list[str]:
         "__init__", "gateway", "router", "security", "store", "models", "results",
         "schemas", "errors", "maintenance", "migrate", "suite_adapter",
         "native_contract", "native_router", "native_store", "native_binding",
-        "access", "access_router",
+        "access", "access_router", "usage_router",
     )]
     modules.append("apps/api/collaboration/native_catalog.json")
     modules.append("apps/api/collaboration/access_catalog.json")

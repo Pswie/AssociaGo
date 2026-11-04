@@ -1,6 +1,7 @@
 """Offline artifact guards: no Docker, provider calls or application data."""
 from __future__ import annotations
 
+import ast
 import hashlib
 from pathlib import Path
 from types import SimpleNamespace
@@ -76,6 +77,20 @@ class JarPinningTests(unittest.TestCase):
             self.assertIn(relative, files)
             self.assertTrue((repository / relative).is_file())
         self.assertFalse(any(name.startswith("data/") or ".env" in name for name in files))
+
+    def test_gateway_direct_collaboration_imports_exist_in_packaged_image(self):
+        repository = Path(__file__).resolve().parents[2] / "Bandi"
+        packaged = set(runtime.gateway_modules(repository))
+        source = repository / "apps/api/collaboration/gateway.py"
+        imports = {
+            node.module.replace(".", "/") + ".py"
+            for node in ast.walk(ast.parse(source.read_text(encoding="utf8")))
+            if isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.startswith("apps.api.collaboration.")
+        }
+        self.assertTrue(imports)
+        self.assertFalse(imports - packaged, "Gateway imports missing from image context")
 
 
 class SpaIsolationTests(unittest.TestCase):

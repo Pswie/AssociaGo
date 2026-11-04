@@ -1,5 +1,8 @@
 # Accessi condivisi e verifica Bandi — 3 novembre 2026
 
+Aggiornamento Bandi del 4 novembre:
+[analisi, interfaccia e ricerca delle fonti](https://github.com/Pswie/ets-intelligence-graph/blob/agent/phase-4-structured-extraction/docs/BANDI-ANALISI-E-MIGLIORAMENTI-20261104.md).
+
 ## Cosa puoi fare adesso
 
 Da **Impostazioni → Utenti e accessi** di Gestionale, Progetti o Bandi puoi gestire lo stesso elenco di persone. Una modifica vale per tutti e tre i siti.
