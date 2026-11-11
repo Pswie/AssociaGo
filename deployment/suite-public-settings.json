@@ -22,7 +22,7 @@
     "mainSiteProjectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
     "bandiPortalProjectName": "adf-bandi-portale",
     "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-    "bandiPortalDeploymentId": "dpl_E96sJqQhKTcAcKYs6QYSVhzX91aZ"
+    "bandiPortalDeploymentId": "dpl_4zXZ44HMqwuGnRfJ1JjUAHs2rWNb"
   },
   "origins": {
     "primary": "https://www.angelidelfuturoaps.com",
@@ -214,5 +214,34 @@
     "backendStrictMypyPassed": false,
     "ownerBrowserSessionVerified": false,
     "report": "https://github.com/Pswie/ets-intelligence-graph/blob/agent/phase-4-structured-extraction/docs/BANDI-ANALISI-E-MIGLIORAMENTI-20261104.md"
+  },
+  "bandiRelease20261111": {
+    "date": "2026-11-11",
+    "sourceCommit": "6dd33bad1d1dfe6b84679a35c062d14a669f39f5",
+    "frontendDeploymentId": "dpl_4zXZ44HMqwuGnRfJ1JjUAHs2rWNb",
+    "workerVersion": "b111fdbd-105f-4dc9-a24f-a8b1c52eef0f",
+    "workerSourceSha256": "59b69b2c503f8124bdbf6bec0a273e45ee6e731d3d404cf38aa103c37ee15ba0",
+    "shortlistPolicySha256": "1d1806913e88e92dde46589185bbbdf70b95c4712949e6c5efb3b99df08c950f",
+    "pageSize": 5,
+    "cursorVersion": 3,
+    "cloudRecordsTraversed": 962,
+    "shortlistOpen": 10,
+    "rawOpen": 15,
+    "previousLunaOpportunities": 14,
+    "preservedProfileSummaries": 28,
+    "providerCalls": 0,
+    "businessRecordsDeleted": 0,
+    "databaseMigrations": 0,
+    "paidPlanActivated": false,
+    "readerStartupBudgetSeconds": 120,
+    "readerServingLossBudgetSeconds": 30,
+    "frontendTests": 1000,
+    "frontendSuites": 107,
+    "eslint": "passed",
+    "typescript": "passed",
+    "workerD1Tests": 52,
+    "ownerClerkBrowserSessionVerified": false,
+    "fullRepositoryMypyVerified": false,
+    "report": "https://github.com/Pswie/ets-intelligence-graph/blob/6dd33bad1d1dfe6b84679a35c062d14a669f39f5/docs/BANDI-CHECK-USABILITA-20261111.md"
   }
 }
