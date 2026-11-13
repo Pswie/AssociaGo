@@ -22,7 +22,7 @@
     "mainSiteProjectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
     "bandiPortalProjectName": "adf-bandi-portale",
     "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-    "bandiPortalDeploymentId": "dpl_4zXZ44HMqwuGnRfJ1JjUAHs2rWNb"
+    "bandiPortalDeploymentId": "dpl_92zEhLszgRoxKJdSKPr7ENCpb9i8"
   },
   "origins": {
     "primary": "https://www.angelidelfuturoaps.com",
@@ -243,5 +243,35 @@
     "ownerClerkBrowserSessionVerified": false,
     "fullRepositoryMypyVerified": false,
     "report": "https://github.com/Pswie/ets-intelligence-graph/blob/6dd33bad1d1dfe6b84679a35c062d14a669f39f5/docs/BANDI-CHECK-USABILITA-20261111.md"
+  },
+  "bandiRelease20261113": {
+    "date": "2026-11-13",
+    "sourceCommit": "0fed65e53f25dc1c406c576133107f8a8a29dcc8",
+    "frontendDeploymentId": "dpl_92zEhLszgRoxKJdSKPr7ENCpb9i8",
+    "gatewayRevision": "adf-bandi-portale-api-entities-20261113-a",
+    "gatewayImageSha256": "dbbc419ac778c0b89b0c9b4d905d483d2a946ff0ccaf8eb97d123a8d37521a1e",
+    "databaseMigrations": [
+      6,
+      7
+    ],
+    "databaseAllocatedBytesAdded": 196608,
+    "schemaReceiptSha256": "ad38f961bb62f5bc49bc20da0440599e1387187ce06597467dac2e90fe0584ef",
+    "privateAssociationProfiles": true,
+    "documentPayloadBudgetBytes": 20971520,
+    "extractedPayloadBudgetBytes": 20971520,
+    "revisionPayloadBudgetBytes": 20971520,
+    "frontendTests": 1023,
+    "frontendSuites": 111,
+    "eslint": true,
+    "typescript": true,
+    "postgresTests": 127,
+    "postgresSkipped": 0,
+    "linuxImageSmoke": true,
+    "providerCalls": 0,
+    "paidPlanActivated": false,
+    "businessRecordsDeleted": 0,
+    "ownerClerkBrowserSessionVerified": false,
+    "genericAiRequirementExtractorConnected": false,
+    "report": "../Bandi/docs/ENTI-STATUTI-E-ABBINAMENTO-BANDI-20261113.md"
   }
 }
