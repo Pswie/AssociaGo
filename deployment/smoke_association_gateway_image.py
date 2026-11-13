@@ -169,9 +169,9 @@ try:
         actual = dict(connection.execute('SELECT version,checksum FROM bandi_portal.portal_schema_migrations'))
         expected = {int(p.name.split('_')[0]): hashlib.sha256(p.read_text().encode()).hexdigest()
                     for p in Path('/app/apps/api/collaboration/migrations').glob('*.sql')}
-        assert actual == expected and {6,7} <= set(actual)
+        assert actual == expected and {6,7,8} <= set(actual)
         tables = [r[0] for r in connection.execute("SELECT tablename FROM pg_tables WHERE schemaname='bandi_portal' AND tablename LIKE 'association_%'")]
-        assert len(tables) == 6
+        assert len(tables) == 7
         for table in tables:
             target = 'bandi_portal.' + table
             for role in ('anon','authenticated'):
@@ -286,6 +286,53 @@ try:
         result = request('GET','/associations/'+first['id']+'/matches',subject='user_smoke_editor')
         assert result['items'][0]['assessment']['state']=='compatible'
         passed('manual_financial_period_and_public_rules_match_without_ai')
+
+        phase = 'source_reading'
+        from apps.api.association_profiles.source_reading import (
+            ModelProposal, PublicSourcePage, SourceSnapshot, build_proposal, text_hash,
+        )
+        public_text = 'Il proponente deve svolgere attivita sportive previste dallo statuto.'
+        source = SourceSnapshot(call_id='c'*64,source_revision='a'*64,input_hash=None,
+            title='Synthetic sport call',complete=True,pages=(PublicSourcePage(
+                page_id='p1',source_url='https://example.org/call',document_sha256='d'*64,
+                page_number=1,text=public_text,text_sha256=text_hash(public_text)),))
+        proposal = build_proposal(source,ModelProposal.model_validate({
+            'summary':'Sintesi di prova, nessun modello invocato.',
+            'requirements':[{'id':'sport','label':'Attivita sportive','role':'lead','mandatory':True,
+                'alternatives':[{'allOf':[{'key':'statutory_activities','operator':'all','values':['sport']}]}],
+                'proofs':[{'pageId':'p1','firstLine':1,'lastLine':1}]}],
+            'routes':[],'unresolved':[],'coverageNotes':[]}))
+        reading_path = '/association-readings/'+'c'*64
+        request('GET',reading_path,subject=None,status=401)
+        request('POST',reading_path,{},subject='user_smoke_editor',status=403)
+        queued = request('POST',reading_path,{})
+        assert request('POST',reading_path,{})['reading']['id'] == queued['reading']['id']
+        node_headers = {'X-Local-Node-Id':settings.collab_node_id,
+            'X-Local-Node-Key':settings.collab_node_key.get_secret_value()}
+        def node(suffix,payload):
+            response=client.post(prefix+'/association-readings/worker/'+suffix,
+                headers=node_headers,json=payload)
+            assert response.status_code==200,(suffix,response.status_code)
+            return response.json()
+        job=node('claim',{})['job']
+        assert job['id']==queued['reading']['id'] and job['kind']=='reading'
+        node('sources/'+job['id'],{'leaseToken':job['leaseToken'],
+            'snapshot':source.model_dump(mode='json',by_alias=True)})
+        node('finish/'+job['id'],{'leaseToken':job['leaseToken'],'result':{
+            'snapshot':source.model_dump(mode='json',by_alias=True),
+            'proposal':proposal.model_dump(mode='json',by_alias=True)}})
+        pending=request('GET',reading_path)
+        assert pending['reading']['status']=='pending_review'
+        assert pending['reading']['proposal']['completeRoles']==[]
+        reviewed_rules={**pending['reading']['proposal'],'completeRoles':['lead']}
+        reviewed=request('POST',reading_path+'/review',{'readingId':job['id'],
+            'expectedDigest':pending['digest'],'confirmedEvidence':True,'rules':reviewed_rules})
+        assert reviewed['reading']['status']=='reviewed' and reviewed['rulesCurrent'] is True
+        evidence=request('GET',reading_path+'/passages?q=attivita%20sportive')
+        assert evidence['method']=='lexical' and evidence['items']
+        assert request('GET','/associations/'+first['id']+'/matches',
+            subject='user_smoke_editor')['items'][0]['assessment']['state']=='compatible'
+        passed('source_reading_checkpoint_review_and_evidence_search_without_ai')
 
         phase = 'revocation'
         first = member(first,'user_smoke_viewer','none')

@@ -8,9 +8,9 @@
     "preparedImages": {
       "associago": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-gestionale-collaudo@sha256:8c16e2e26708e214c9f3a641dcabc97dd8ccf5aa4e62f0922569db5f237a53f4",
       "librepm": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-collaudo@sha256:944d58a85c8330d9f028f02004d3de14fa5b92967249a392c08f7f5a37b83cd2",
-      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:03662a54a868d7eca65b4118e94ea5f0b562a4f99ff912f46c0fc1184477133f"
+      "bandiGateway": "europe-west8-docker.pkg.dev/flawless-star-503422-q3/cloud-run-source-deploy/adf-bandi-portale-api@sha256:d41e501999a31a13ca9c951e41025f4289292ad21246c2f398805c7e5b19346b"
     },
-    "bandiGatewayRevision": "adf-bandi-portale-api-calendar-20261104-a",
+    "bandiGatewayRevision": "adf-bandi-portale-api-requirements-20261113-a",
     "bandiGatewayRuntimeSecretVersion": "3",
     "associagoRevision": "adf-gestionale-collaudo-access-20261103-a",
     "librepmRevision": "adf-bandi-collaudo-access-20261103-a"
@@ -22,7 +22,7 @@
     "mainSiteProjectId": "prj_Zuk47syOpE2n2zsIMn4p5v8cacY6",
     "bandiPortalProjectName": "adf-bandi-portale",
     "bandiPortalProjectId": "prj_oSIG5ZS4MPNB1CyUqb89asUo50hO",
-    "bandiPortalDeploymentId": "dpl_92zEhLszgRoxKJdSKPr7ENCpb9i8"
+    "bandiPortalDeploymentId": "dpl_BtAH78mPMnPxH7dBXCM1Si7b9gwd"
   },
   "origins": {
     "primary": "https://www.angelidelfuturoaps.com",
@@ -273,5 +273,66 @@
     "ownerClerkBrowserSessionVerified": false,
     "genericAiRequirementExtractorConnected": false,
     "report": "../Bandi/docs/ENTI-STATUTI-E-ABBINAMENTO-BANDI-20261113.md"
+  },
+  "bandiRequirementsRelease20261113": {
+    "date": "2026-11-13",
+    "sourceCommit": "7673c10f2dbf755de463bb63287e30d68a905def",
+    "frontendDeploymentId": "dpl_BtAH78mPMnPxH7dBXCM1Si7b9gwd",
+    "frontendPreviousRetained": "dpl_92zEhLszgRoxKJdSKPr7ENCpb9i8",
+    "gatewayRevision": "adf-bandi-portale-api-requirements-20261113-a",
+    "gatewayImageSha256": "d41e501999a31a13ca9c951e41025f4289292ad21246c2f398805c7e5b19346b",
+    "databaseMigrations": [
+      8
+    ],
+    "databaseAllocatedBytesAdded": 40960,
+    "schemaReceiptSha256": "16ae87c06ef3e7eac45a0ed7abfef0b811710e52f50e255bf67868ade3b59364",
+    "frontendPublicationReceiptSha256": "3db2fdf5889b733c71767af2d675c7017e4f8c90098261267f90e53340e09a80",
+    "publicSourcePayloadBudgetBytes": 16777216,
+    "reviewedRulePayloadBudgetBytes": 16777216,
+    "sourceResultMaxBytes": 2000000,
+    "sourceJobLimit": 1000,
+    "sourceJobConcurrency": 1,
+    "frontendTests": 1051,
+    "frontendSuites": 115,
+    "typescript": true,
+    "eslint": true,
+    "postgresTests": 374,
+    "postgresSkipped": 0,
+    "linuxImageSmoke": true,
+    "linuxImageSmokeChecks": 9,
+    "sourceSnapshotRealPcPages": 3,
+    "sourceSnapshotRealPcCharacters": 6423,
+    "sourceSnapshotRealPcSeconds": 7.51,
+    "publicHttpChecks": 6,
+    "genericAiRequirementExtractorConnected": true,
+    "newSourceModelEnabled": false,
+    "semanticRetrievalConnected": true,
+    "semanticRuntimeReady": false,
+    "localNodeRestored": true,
+    "providerInferenceCalls": 0,
+    "externalDailyBudgetUsd": "0",
+    "freeQuotaEligibilityVerified": false,
+    "paidPlanActivated": false,
+    "businessRecordsDeleted": 0,
+    "ownerClerkBrowserSessionVerified": false,
+    "report": "../Bandi/docs/PIPELINE-REQUISITI-BANDI-20261113.md",
+    "brokerRecoveryNoReplay": true,
+    "brokerRecoveryHistoryRowsRetained": 8,
+    "semanticRealProbe": {
+      "status": "blocked_by_capacity",
+      "reason": "commit_headroom_low",
+      "queuedEmbeddingRequests": 1,
+      "modelInferenceCalls": 0,
+      "deadlineSeconds": 120,
+      "automaticReplay": false,
+      "cleanupComplete": true,
+      "queuedRequestFinalState": "cancelled/SERVER_STOPPING",
+      "historyRowsRetained": 9,
+      "cleanupReceiptSha256": "bb75b52236c1b4e2947bec58b9d02715d43ddf8e7a0ee972af9c231c1e8acda6"
+    },
+    "sourceSearchWorkerEnabled": true,
+    "sourceSearchWorkerClaims": "search_only",
+    "sourceSearchActivationReceiptSha256": "929acca99554b8ef515fc28c7439eb87204768668906cadf238dc603192c1d57",
+    "sourceReadingJobsClaimed": 0
   }
 }
